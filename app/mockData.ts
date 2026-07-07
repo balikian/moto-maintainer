@@ -15,6 +15,9 @@ export interface MaintenanceTask {
   last_performed_mileage: number;
   is_diy: boolean;
   status: 'Urgent' | 'Soon' | 'Healthy';
+  // Optional time-based scheduling
+  last_performed_date?: string; // YYYY-MM-DD
+  interval_months?: number;
 }
 
 export const mockBikes: Bike[] = [
@@ -41,6 +44,8 @@ export const mockTasks: MaintenanceTask[] = [
     task_name: 'Engine Oil & Filter',
     interval_mileage: 5000,
     last_performed_mileage: 5000,
+    last_performed_date: '2026-06-15',
+    interval_months: 12,
     is_diy: true,
     status: 'Healthy'
   },
@@ -50,6 +55,8 @@ export const mockTasks: MaintenanceTask[] = [
     task_name: 'Chain Clean & Tension',
     interval_mileage: 500,
     last_performed_mileage: 6100,
+    last_performed_date: '2026-06-01',
+    interval_months: 1,
     is_diy: true,
     status: 'Urgent'
   },
@@ -59,6 +66,8 @@ export const mockTasks: MaintenanceTask[] = [
     task_name: 'Valve Clearance Check',
     interval_mileage: 15000,
     last_performed_mileage: 0,
+    last_performed_date: '2024-03-01',
+    interval_months: 24,
     is_diy: false,
     status: 'Soon'
   }

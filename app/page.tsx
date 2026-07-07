@@ -100,6 +100,8 @@ export default function GarageDashboard() {
       task_name: task.task_name,
       interval_mileage: task.interval_mileage,
       last_performed_mileage: newlyCreatedBike.current_mileage,
+      last_performed_date: new Date().toISOString().split('T')[0],
+      interval_months: (task as any).interval_months || 0,
       is_diy: task.is_diy,
       status: 'Healthy'
     }));
@@ -133,6 +135,18 @@ export default function GarageDashboard() {
     if (selectedBikeId === bikeId) {
       setSelectedBikeId(updatedBikes[0]?.id || '');
     }
+  };
+
+  const handleTaskLogged = (taskId: string) => {
+    if (!activeBike) return;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    setTasks(prev => prev.map(task =>
+      task.id === taskId
+        ? { ...task, last_performed_mileage: activeBike.current_mileage, last_performed_date: today }
+        : task
+    ));
   };
 
   return (
@@ -260,15 +274,47 @@ export default function GarageDashboard() {
                 {activeTasks.length > 0 ? (
                   activeTasks.map((task) => {
                     const milesRemaining = task.interval_mileage - (activeBike.current_mileage - task.last_performed_mileage);
-                    const warningThreshold = task.interval_mileage * 0.25;
-                    const urgentThreshold = task.interval_mileage * 0.1;
-                    const derivedStatus = milesRemaining < 0
-                      ? 'Overdue'
-                      : milesRemaining <= urgentThreshold
-                        ? 'Urgent'
-                        : milesRemaining <= warningThreshold
-                          ? 'Soon'
-                          : 'Healthy';
+
+                    // Time-based calculation: convert months to days (approximate 1 month = 30 days)
+                    const intervalMonths = task.interval_months || 0;
+                    const intervalDays = intervalMonths * 30;
+                    let daysRemaining = Number.POSITIVE_INFINITY;
+                    if (task.last_performed_date && intervalDays > 0) {
+                      const lastDate = new Date(task.last_performed_date);
+                      const nextDue = new Date(lastDate);
+                      nextDue.setDate(nextDue.getDate() + intervalDays);
+                      daysRemaining = Math.ceil((nextDue.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                    } else if (intervalDays > 0) {
+                      daysRemaining = intervalDays; // fallback if no last date
+                    }
+
+                    // Normalize remaining ratios so we can pick the closer trigger
+                    const milesRatio = task.interval_mileage > 0 ? Math.abs(milesRemaining) / task.interval_mileage : Number.POSITIVE_INFINITY;
+                    const daysRatio = intervalDays > 0 ? Math.abs(daysRemaining) / intervalDays : Number.POSITIVE_INFINITY;
+
+                    const primaryTrigger = milesRatio <= daysRatio ? 'mileage' : 'time';
+
+                    // Status thresholds (percent of interval)
+                    const warningThresholdPct = 0.25;
+                    const urgentThresholdPct = 0.1;
+
+                    let derivedStatus: 'Healthy' | 'Soon' | 'Urgent' | 'Overdue' = 'Healthy';
+                    if (primaryTrigger === 'mileage') {
+                      if (milesRemaining < 0) derivedStatus = 'Overdue';
+                      else if (milesRemaining <= task.interval_mileage * urgentThresholdPct) derivedStatus = 'Urgent';
+                      else if (milesRemaining <= task.interval_mileage * warningThresholdPct) derivedStatus = 'Soon';
+                    } else {
+                      if (daysRemaining < 0) derivedStatus = 'Overdue';
+                      else if (daysRemaining <= intervalDays * urgentThresholdPct) derivedStatus = 'Urgent';
+                      else if (daysRemaining <= intervalDays * warningThresholdPct) derivedStatus = 'Soon';
+                    }
+
+                    // Badge text depends on which trigger is closer
+                    const badgeText = primaryTrigger === 'time'
+                      ? (daysRemaining < 0 ? 'Overdue (Time)' : `${daysRemaining} days left`)
+                      : (milesRemaining < 0 ? 'Overdue (Mileage)' : `${milesRemaining.toLocaleString()} mi left`);
+
+                    const subLabel = `Every ${task.interval_mileage.toLocaleString()} mi / ${intervalMonths} mo`;
 
                     return (
                       <div key={task.id} className="bg-slate-900/40 border border-slate-900 rounded-xl p-4 flex items-center justify-between gap-4">
@@ -288,14 +334,21 @@ export default function GarageDashboard() {
                           </div>
                         </div>
 
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end gap-2">
                           <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${
                             derivedStatus === 'Overdue' || derivedStatus === 'Urgent' ? 'bg-rose-500/10 text-rose-400' :
                             derivedStatus === 'Soon' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400'
                           }`}>
-                            {derivedStatus === 'Overdue' ? 'Overdue' : derivedStatus === 'Urgent' ? 'Urgent' : `${milesRemaining.toLocaleString()} mi left`}
+                            {badgeText}
                           </span>
-                          <p className="text-[10px] text-slate-500 mt-1 font-mono">Every {task.interval_mileage.toLocaleString()} mi</p>
+                          <button
+                            type="button"
+                            onClick={() => handleTaskLogged(task.id)}
+                            className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/40 hover:text-amber-400 transition-colors"
+                          >
+                            Logged
+                          </button>
+                          <p className="text-[10px] text-slate-500 font-mono">{subLabel}</p>
                         </div>
                       </div>
                     );
