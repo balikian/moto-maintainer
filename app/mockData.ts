@@ -44,7 +44,7 @@ export const mockTasks: MaintenanceTask[] = [
     task_name: 'Engine Oil & Filter',
     interval_mileage: 5000,
     last_performed_mileage: 5000,
-    last_performed_date: '2026-06-15',
+    last_performed_date: '2026-069-15',
     interval_months: 12,
     is_diy: true,
     status: 'Healthy'

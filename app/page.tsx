@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { mockBikes, mockTasks, Bike, MaintenanceTask } from './mockData';
 import { bikeDatabase } from './bikeDatabase';
-import { Bike as BikeIcon, Gauge, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Trash2, ChevronDown } from 'lucide-react';
+import { Bike as BikeIcon, Gauge, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Trash2, ChevronDown, User } from 'lucide-react';
 
 export default function GarageDashboard() {
   const [bikes, setBikes] = useState<Bike[]>(mockBikes);
@@ -11,7 +11,26 @@ export default function GarageDashboard() {
   const [selectedBikeId, setSelectedBikeId] = useState<string>(mockBikes[0]?.id || '');
   const [mileageInput, setMileageInput] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  
+  const [unitSystem, setUnitSystem] = useState<'imperial' | 'metric'>('imperial');
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
+
+  const unitLabel = unitSystem === 'metric' ? 'km' : 'mi';
+  const convertDistance = (miles: number) => unitSystem === 'metric' ? miles * 1.60934 : miles;
+  const formatDistance = (miles: number) => `${Math.round(convertDistance(miles)).toLocaleString()} ${unitLabel}`;
+  const parseDistanceInput = (value: string) => {
+    const parsed = parseFloat(value.replace(/[^0-9.]/g, ''));
+    if (Number.isNaN(parsed)) return NaN;
+    return unitSystem === 'metric' ? parsed / 1.60934 : parsed;
+  };
+
+  const pageBgClass = isDarkMode ? 'bg-slate-950 text-slate-50' : 'bg-slate-50 text-slate-900';
+  const cardBgClass = isDarkMode ? 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-slate-300';
+  const selectedCardBgClass = isDarkMode ? 'bg-gradient-to-br from-slate-900 to-slate-950 border-amber-500 shadow-lg shadow-amber-500/5' : 'bg-slate-100 border-amber-500 shadow-lg shadow-amber-500/5';
+  const sectionCardClass = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200';
+  const softCardClass = isDarkMode ? 'bg-slate-900/40 border-slate-900' : 'bg-white/90 border-slate-200';
+  const secondaryTextClass = isDarkMode ? 'text-slate-400' : 'text-slate-500';
+
   // Modal states for adding a bike
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [newBike, setNewBike] = useState({
@@ -34,12 +53,12 @@ export default function GarageDashboard() {
 
   const handleMileageUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    const newMileage = parseInt(mileageInput);
+    const newMileage = parseDistanceInput(mileageInput);
     if (isNaN(newMileage) || newMileage <= 0) return;
 
     setBikes(prevBikes =>
       prevBikes.map(b =>
-        b.id === selectedBikeId ? { ...b, current_mileage: newMileage } : b
+        b.id === selectedBikeId ? { ...b, current_mileage: Math.round(newMileage) } : b
       )
     );
     setMileageInput('');
@@ -150,42 +169,121 @@ export default function GarageDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 p-4 md:p-8 relative">
+    <div className={`min-h-screen p-4 md:p-8 relative ${pageBgClass}`}>
       {/* Header */}
-      <header className="max-w-4xl mx-auto mb-8 flex justify-between items-center">
+      <header className="max-w-4xl mx-auto mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-amber-500">MOTO_MAINTAIN</h1>
-          <p className="text-sm text-slate-400">Digital Garage & Service Tracker</p>
+          <p className={`text-sm ${secondaryTextClass}`}>Digital Garage & Service Tracker</p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center gap-2 bg-slate-900 border border-slate-800 hover:border-amber-500/50 px-4 py-2 rounded-xl text-sm font-medium transition-all"
-        >
-          <Plus size={16} className="text-amber-500" /> Add Bike
-        </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsUserMenuOpen((prev) => !prev)}
+            className={`p-3 rounded-full transition-all ${isDarkMode ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
+            aria-label="User options"
+          >
+            <User size={18} />
+          </button>
+          {isUserMenuOpen && (
+            <div className={`absolute right-0 top-full mt-2 w-48 rounded-2xl shadow-xl z-20 ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-slate-100' : 'bg-white border border-slate-200 text-slate-900'}`}>
+              <div className="p-3 space-y-2">
+                <div className="text-xs uppercase tracking-wide text-slate-500">User Options</div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUnitSystem((prev) => prev === 'imperial' ? 'metric' : 'imperial');
+                    setIsUserMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-50'}`}
+                >
+                  {unitSystem === 'imperial' ? 'Switch to Metric (km)' : 'Switch to Imperial (mi)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDarkMode((prev) => !prev);
+                    setIsUserMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-50'}`}
+                >
+                  {isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="max-w-4xl mx-auto grid gap-6">
+        {/* Selected Bike - Sticky Display */}
+        {activeBike && (
+          <div className="sticky top-4 z-20">
+            <div className={`w-full p-5 rounded-2xl border text-left transition-all relative group ${selectedCardBgClass}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-slate-800/60 rounded-xl text-amber-500">
+                    <BikeIcon size={20} />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-lg leading-tight truncate">{activeBike.make}</h3>
+                    <p className="text-slate-400 text-sm truncate">{activeBike.model}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold bg-slate-800 text-slate-400 px-2 py-1 rounded-md">
+                    {activeBike.year}
+                  </span>
+                  <button
+                    onClick={(e) => handleRemoveBike(activeBike.id, `${activeBike.year} ${activeBike.make} ${activeBike.model}`, e)}
+                    className="p-1.5 bg-slate-950/80 border border-slate-800/80 text-slate-500 hover:text-rose-400 hover:border-rose-500/30 rounded-lg transition-all"
+                    title="Remove Bike"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+              <div className={`mt-4 flex items-center gap-2 text-sm font-mono p-2 rounded-lg ${isDarkMode ? 'text-slate-300 bg-black/30' : 'text-slate-700 bg-slate-100'}`}>
+                <Gauge size={14} className={isDarkMode ? 'text-slate-500' : 'text-slate-500'} />
+                <span>{formatDistance(activeBike.current_mileage)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Garage Slider/Selector */}
         <section>
           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Your Garage</h2>
           {bikes.length > 0 ? (
-            <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
               {bikes.map((bike) => {
                 const isSelected = bike.id === selectedBikeId;
+                // Skip rendering selected bike here - it's shown sticky above
+                if (isSelected) return null;
+                
                 return (
-                  <button
+                  <div
                     key={bike.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setSelectedBikeId(bike.id)}
-                    className={`flex-shrink-0 w-64 p-5 rounded-2xl border text-left transition-all relative group ${
-                      isSelected
-                        ? 'bg-gradient-to-br from-slate-900 to-slate-950 border-amber-500 shadow-lg shadow-amber-500/5'
-                        : 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700'
-                    }`}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedBikeId(bike.id);
+                      }
+                    }}
+                    className={`w-full p-5 rounded-2xl border text-left transition-all relative group ${cardBgClass}`}
                   >
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="p-3 bg-slate-800/60 rounded-xl text-amber-500">
-                        <BikeIcon size={20} />
+                    <div className="flex items-start justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 bg-slate-800/60 rounded-xl text-amber-500">
+                          <BikeIcon size={20} />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-lg leading-tight truncate">{bike.make}</h3>
+                          <p className="text-slate-400 text-sm truncate">{bike.model}</p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold bg-slate-800 text-slate-400 px-2 py-1 rounded-md">
@@ -200,36 +298,43 @@ export default function GarageDashboard() {
                         </button>
                       </div>
                     </div>
-                    <h3 className="font-bold text-lg leading-tight truncate pr-4">{bike.make}</h3>
-                    <p className="text-slate-400 text-sm mb-4 truncate pr-4">{bike.model}</p>
-                    <div className="flex items-center gap-2 text-slate-300 text-sm font-mono bg-black/30 p-2 rounded-lg">
-                      <Gauge size={14} className="text-slate-500" />
-                      <span>{bike.current_mileage.toLocaleString()} mi</span>
+                    <div className={`flex items-center gap-2 text-sm font-mono p-2 rounded-lg ${isDarkMode ? 'text-slate-300 bg-black/30' : 'text-slate-700 bg-slate-100'}`}>
+                      <Gauge size={14} className={isDarkMode ? 'text-slate-500' : 'text-slate-500'} />
+                      <span>{formatDistance(bike.current_mileage)}</span>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
           ) : (
-            <div className="text-center p-12 bg-slate-900/20 border border-dashed border-slate-800 rounded-2xl text-slate-400">
+            <div className={`text-center p-12 rounded-2xl text-sm ${isDarkMode ? 'bg-slate-900/20 border border-dashed border-slate-800 text-slate-400' : 'bg-white border border-dashed border-slate-200 text-slate-600'}`}>
               <BikeIcon size={36} className="mx-auto text-slate-600 mb-3" />
               <p className="font-medium mb-1">Your garage is empty</p>
-              <p className="text-xs text-slate-500 mb-4">Click "Add Bike" above to park your first motorcycle.</p>
+              <p className="text-xs text-slate-500 mb-4">Use the button below to park your first motorcycle.</p>
             </div>
           )}
+          <div className="mt-4 flex justify-start">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${isDarkMode ? 'bg-slate-900 border border-slate-800 hover:border-amber-500/50 text-slate-50' : 'bg-slate-100 border border-slate-200 text-slate-900 hover:border-slate-300'}`}
+            >
+              <Plus size={16} className="text-amber-500" /> Add Bike
+            </button>
+          </div>
         </section>
 
         {activeBike ? (
           <>
             {/* Quick Mileage Update Widget */}
-            <section className="bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <section className={`${sectionCardClass} rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4`}>
               <div className="flex items-center gap-3">
                 <div className="p-2.5 bg-amber-500/10 text-amber-500 rounded-xl">
                   <Gauge size={22} />
                 </div>
                 <div>
-                  <h3 className="font-bold">Odometer Check</h3>
-                  <p className="text-xs text-slate-400">Keep intervals accurate by logging your latest mileage.</p>
+                  <h3 className={`font-bold ${isDarkMode ? 'text-slate-50' : 'text-slate-900'}`}>Odometer Check</h3>
+                  <p className={`text-xs ${secondaryTextClass}`}>Keep intervals accurate by logging your latest mileage.</p>
                 </div>
               </div>
 
@@ -246,11 +351,15 @@ export default function GarageDashboard() {
               ) : (
                 <form onSubmit={handleMileageUpdate} className="flex gap-2 w-full md:w-auto">
                   <input
-                    type="number"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={mileageInput}
                     onChange={(e) => setMileageInput(e.target.value)}
-                    className="bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500 w-full md:w-32"
-                    placeholder="New mi"
+                    onFocus={(e) => e.currentTarget.select()}
+                    onClick={(e) => e.currentTarget.select()}
+                    className={`rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500 w-full md:w-32 ${isDarkMode ? 'bg-slate-950 border border-slate-700 text-slate-100' : 'bg-slate-100 border border-slate-300 text-slate-900'}`}
+                    placeholder={`New ${unitLabel}`}
                     autoFocus
                   />
                   <button type="submit" className="bg-amber-500 text-slate-950 text-sm font-bold px-4 py-2 rounded-xl">
@@ -312,12 +421,12 @@ export default function GarageDashboard() {
                     // Badge text depends on which trigger is closer
                     const badgeText = primaryTrigger === 'time'
                       ? (daysRemaining < 0 ? 'Overdue (Time)' : `${daysRemaining} days left`)
-                      : (milesRemaining < 0 ? 'Overdue (Mileage)' : `${milesRemaining.toLocaleString()} mi left`);
+                      : (milesRemaining < 0 ? 'Overdue (Mileage)' : formatDistance(milesRemaining));
 
-                    const subLabel = `Every ${task.interval_mileage.toLocaleString()} mi / ${intervalMonths} mo`;
+                    const subLabel = `Every ${formatDistance(task.interval_mileage)} / ${intervalMonths} mo`;
 
                     return (
-                      <div key={task.id} className="bg-slate-900/40 border border-slate-900 rounded-xl p-4 flex items-center justify-between gap-4">
+                      <div key={task.id} className={`${softCardClass} rounded-xl p-4 flex items-center justify-between gap-4`}>
                         <div className="flex items-center gap-3">
                           {derivedStatus === 'Overdue' || derivedStatus === 'Urgent' ? (
                             <div className="text-rose-500 bg-rose-500/10 p-2 rounded-lg"><AlertTriangle size={18} /></div>
@@ -344,7 +453,7 @@ export default function GarageDashboard() {
                           <button
                             type="button"
                             onClick={() => handleTaskLogged(task.id)}
-                            className="text-[11px] font-semibold px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/40 hover:text-amber-400 transition-colors"
+                            className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/40 hover:text-amber-400' : 'border-slate-300 bg-slate-100 text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}
                           >
                             Logged
                           </button>
