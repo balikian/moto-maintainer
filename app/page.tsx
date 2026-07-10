@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { mockBikes, mockTasks, Bike, MaintenanceTask } from './mockData';
 import { bikeDatabase } from './bikeDatabase';
-import { Bike as BikeIcon, Gauge, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Trash2, ChevronDown, User } from 'lucide-react';
+import { Bike as BikeIcon, Gauge, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Trash2, ChevronDown, User, RotateCcw, Pencil, Check } from 'lucide-react';
 
 export default function GarageDashboard() {
   const [bikes, setBikes] = useState<Bike[]>(mockBikes);
@@ -40,6 +40,16 @@ export default function GarageDashboard() {
     current_mileage: ''
   });
   const [customModelName, setCustomModelName] = useState<string>('');
+  const [customTask, setCustomTask] = useState({
+    name: '',
+    intervalMileage: '',
+    intervalMonths: ''
+  });
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [isAddTaskFormOpen, setIsAddTaskFormOpen] = useState<boolean>(false);
+  const [taskErrors, setTaskErrors] = useState<string[]>([]);
+  const mileageInputRef = React.useRef<HTMLInputElement | null>(null);
+  const monthsInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const activeBike = bikes.find(b => b.id === selectedBikeId);
   const activeTasks = tasks.filter(t => t.bike_id === selectedBikeId);
@@ -166,6 +176,102 @@ export default function GarageDashboard() {
         ? { ...task, last_performed_mileage: activeBike.current_mileage, last_performed_date: today }
         : task
     ));
+  };
+
+  const handleEditTask = (taskId: string) => {
+    setEditingTaskId((prev) => (prev === taskId ? null : taskId));
+    if (typeof document !== 'undefined') {
+      document.activeElement instanceof HTMLElement && document.activeElement.blur();
+    }
+  };
+
+const handleSaveTaskEdit = () => {
+    // Force the browser to explicitly drop focus from whatever field is currently blinking
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+    setEditingTaskId(null);
+  };
+  
+  const handleDismissTaskError = (index: number) => {
+    setTaskErrors((prev) => prev.filter((_, idx) => idx !== index));
+  };
+
+  const handleResetTaskToDefault = (taskId: string, taskName: string) => {
+    if (!activeBike) return;
+
+    const selectedModelData = bikeDatabase[activeBike.year]?.[activeBike.make]?.find((model) => model.name === activeBike.model);
+    const defaultTask = selectedModelData?.tasks?.find((task) => task.task_name.toLowerCase() === taskName.trim().toLowerCase());
+
+    if (!defaultTask) {
+      setTaskErrors((prev) => [
+        ...prev,
+        `No default interval found for “${taskName}” on ${activeBike.year} ${activeBike.make} ${activeBike.model}.`
+      ]);
+      return;
+    }
+
+    setTasks(prev => prev.map(task =>
+      task.id === taskId
+        ? {
+            ...task,
+            interval_mileage: defaultTask.interval_mileage,
+            interval_months: (defaultTask as any).interval_months || 0
+          }
+        : task
+    ));
+  };
+
+  const handleDeleteTask = (taskId: string) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId));
+  };
+
+  const handleIntervalMileageEdit = (taskId: string, value: string) => {
+    const parsed = parseDistanceInput(value);
+    const nextMileage = Number.isNaN(parsed) ? 0 : Math.max(0, Math.round(parsed));
+
+    setTasks(prev => prev.map(task =>
+      task.id === taskId ? { ...task, interval_mileage: nextMileage } : task
+    ));
+  };
+
+  const handleIntervalMonthsEdit = (taskId: string, value: string) => {
+    const parsed = Number(value);
+    const nextMonths = Number.isNaN(parsed) ? 0 : Math.max(0, Math.round(parsed));
+
+    setTasks(prev => prev.map(task =>
+      task.id === taskId ? { ...task, interval_months: nextMonths } : task
+    ));
+  };
+
+  const handleAddCustomTask = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeBike) return;
+
+    const taskName = customTask.name.trim();
+    const intervalMileage = Number(customTask.intervalMileage);
+    const intervalMonths = Number(customTask.intervalMonths);
+
+    if (!taskName || Number.isNaN(intervalMileage) || intervalMileage <= 0) return;
+
+    const today = new Date().toISOString().split('T')[0];
+
+    setTasks(prev => [
+      ...prev,
+      {
+        id: `task-${Date.now()}`,
+        bike_id: activeBike.id,
+        task_name: taskName,
+        interval_mileage: Math.max(0, Math.round(intervalMileage)),
+        last_performed_mileage: activeBike.current_mileage,
+        last_performed_date: today,
+        interval_months: Number.isNaN(intervalMonths) ? 0 : Math.max(0, Math.round(intervalMonths)),
+        is_diy: true,
+        status: 'Healthy' as const
+      }
+    ]);
+
+    setCustomTask({ name: '', intervalMileage: '', intervalMonths: '' });
   };
 
   return (
@@ -379,6 +485,23 @@ export default function GarageDashboard() {
             {/* Maintenance Status List */}
             <section>
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Maintenance Checklist</h2>
+              {taskErrors.length > 0 && (
+                <div className="space-y-2 mb-4">
+                  {taskErrors.map((error, index) => (
+                    <div key={index} className={`rounded-2xl border px-4 py-3 flex items-start justify-between gap-4 ${isDarkMode ? 'bg-rose-500/10 border-rose-500/30 text-rose-100' : 'bg-rose-50 border-rose-200 text-rose-700'}`}>
+                      <div className="text-sm leading-snug">{error}</div>
+                      <button
+                        type="button"
+                        onClick={() => handleDismissTaskError(index)}
+                        className={`rounded-full p-1 ${isDarkMode ? 'bg-slate-800/70 text-slate-300 hover:bg-slate-700' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+                        aria-label="Dismiss error"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
               <div className="grid gap-3">
                 {activeTasks.length > 0 ? (
                   activeTasks.map((task) => {
@@ -423,7 +546,7 @@ export default function GarageDashboard() {
                       ? (daysRemaining < 0 ? 'Overdue (Time)' : `${daysRemaining} days left`)
                       : (milesRemaining < 0 ? 'Overdue (Mileage)' : formatDistance(milesRemaining));
 
-                    const subLabel = `Every ${formatDistance(task.interval_mileage)} / ${intervalMonths} mo`;
+                    const displayMileageInterval = Math.round(convertDistance(task.interval_mileage));
 
                     return (
                       <div key={task.id} className={`${softCardClass} rounded-xl p-4 flex items-center justify-between gap-4`}>
@@ -450,14 +573,84 @@ export default function GarageDashboard() {
                           }`}>
                             {badgeText}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => handleTaskLogged(task.id)}
-                            className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/40 hover:text-amber-400' : 'border-slate-300 bg-slate-100 text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}
-                          >
-                            Logged
-                          </button>
-                          <p className="text-[10px] text-slate-500 font-mono">{subLabel}</p>
+                          <div className={`flex items-center gap-1 text-[10px] ${secondaryTextClass}`}>
+                            <span>Every</span>
+                            {editingTaskId === task.id ? (
+                              <input
+                                ref={mileageInputRef}
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={displayMileageInterval}
+                                onChange={(e) => handleIntervalMileageEdit(task.id, e.target.value)}
+                                className={`w-14 rounded-md border appearance-none px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-amber-500 ${isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-100' : 'border-slate-300 bg-white text-slate-900'}`}
+                              />
+                            ) : (
+                              <span className="font-semibold">{displayMileageInterval}</span>
+                            )}
+                            <span>{unitLabel}</span>
+                            <span>/</span>
+                            {editingTaskId === task.id ? (
+                              <input
+                                ref={monthsInputRef}
+                                type="text"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                value={task.interval_months ?? 0}
+                                onChange={(e) => handleIntervalMonthsEdit(task.id, e.target.value)}
+                                className={`w-10 rounded-md border appearance-none px-1.5 py-0.5 text-[10px] focus:outline-none focus:border-amber-500 ${isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-100' : 'border-slate-300 bg-white text-slate-900'}`}
+                              />
+                            ) : (
+                              <span className="font-semibold">{task.interval_months ?? 0}</span>
+                            )}
+                            <span>mo</span>
+                            {editingTaskId === task.id && (
+                              <button
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={handleSaveTaskEdit}
+                                className={`p-1 rounded hover:text-emerald-400 transition-colors ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}
+                                title="Save changes"
+                              >
+                                <Check size={14} />
+                              </button>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleTaskLogged(task.id)}
+                              className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/40 hover:text-amber-400' : 'border-slate-300 bg-slate-100 text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}
+                            >
+                              Logged
+                            </button>
+                            <div className={`flex items-center gap-1 rounded-lg border px-1.5 py-1 ${isDarkMode ? 'border-slate-700 bg-slate-800/70' : 'border-slate-300 bg-slate-100'}`}>
+                              <button
+                                type="button"
+                                onClick={() => handleEditTask(task.id)}
+                                className="p-1 rounded hover:text-amber-400 transition-colors"
+                                title={editingTaskId === task.id ? 'Stop editing' : 'Edit task intervals'}
+                              >
+                                <Pencil size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleResetTaskToDefault(task.id, task.task_name)}
+                                className="p-1 rounded hover:text-amber-400 transition-colors"
+                                title="Reset to default"
+                              >
+                                <RotateCcw size={12} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="p-1 rounded hover:text-rose-400 transition-colors"
+                                title="Delete task"
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     );
@@ -467,6 +660,54 @@ export default function GarageDashboard() {
                     No active maintenance plan assigned to this bike yet.
                   </div>
                 )}
+                <div className="space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsAddTaskFormOpen((prev) => !prev)}
+                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-slate-200 text-slate-900 hover:bg-slate-300'}`}
+                  >
+                    <Plus size={16} className="text-amber-500" />
+                    {isAddTaskFormOpen ? 'Hide task form' : 'Add a task'}
+                  </button>
+
+                  {isAddTaskFormOpen && (
+                    <form onSubmit={handleAddCustomTask} className={`flex flex-col gap-2 rounded-xl border p-3 ${isDarkMode ? 'border-slate-800 bg-slate-900/30' : 'border-slate-200 bg-slate-50'}`}>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <input
+                          type="text"
+                          value={customTask.name}
+                          onChange={(e) => setCustomTask(prev => ({ ...prev, name: e.target.value }))}
+                          placeholder="Task name"
+                          className={`flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none focus:border-amber-500 ${isDarkMode ? 'border-slate-800 bg-slate-950 text-slate-100' : 'border-slate-300 bg-white text-slate-900'}`}
+                        />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={customTask.intervalMileage}
+                          onChange={(e) => setCustomTask(prev => ({ ...prev, intervalMileage: e.target.value }))}
+                          placeholder={`Interval ${unitLabel}`}
+                          className={`w-full sm:w-32 rounded-xl border appearance-none px-3 py-2 text-sm focus:outline-none focus:border-amber-500 ${isDarkMode ? 'border-slate-800 bg-slate-950 text-slate-100' : 'border-slate-300 bg-white text-slate-900'}`}
+                        />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={customTask.intervalMonths}
+                          onChange={(e) => setCustomTask(prev => ({ ...prev, intervalMonths: e.target.value }))}
+                          placeholder="Months"
+                          className={`w-full sm:w-24 rounded-xl border appearance-none px-3 py-2 text-sm focus:outline-none focus:border-amber-500 ${isDarkMode ? 'border-slate-800 bg-slate-950 text-slate-100' : 'border-slate-300 bg-white text-slate-900'}`}
+                        />
+                        <button
+                          type="submit"
+                          className={`inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-slate-200 text-slate-900 hover:bg-slate-300'}`}
+                        >
+                          <Plus size={16} className="text-amber-500" />
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
               </div>
             </section>
           </>
