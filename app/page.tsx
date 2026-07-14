@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { mockBikes, mockTasks, Bike, MaintenanceTask } from './mockData';
 import { bikeDatabase } from './bikeDatabase';
 import { Bike as BikeIcon, Gauge, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Trash2, ChevronDown, User, RotateCcw, Pencil, Check } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { signInWithGoogle, signInWithApple, logout } from '@/lib/actions/auth';
 
 export default function GarageDashboard() {
   const [bikes, setBikes] = useState<Bike[]>(mockBikes);
@@ -14,6 +16,10 @@ export default function GarageDashboard() {
   const [unitSystem, setUnitSystem] = useState<'imperial' | 'metric'>('imperial');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
+  const [user, setUser] = useState<any | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const supabase = React.useMemo(() => createClient(), []);
 
   const unitLabel = unitSystem === 'metric' ? 'km' : 'mi';
   const convertDistance = (miles: number) => unitSystem === 'metric' ? miles * 1.60934 : miles;
@@ -39,6 +45,57 @@ export default function GarageDashboard() {
     model: '',
     current_mileage: ''
   });
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!mounted) return;
+        setUser(data?.session?.user ?? null);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      await signInWithGoogle();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    setLoading(true);
+    try {
+      await signInWithApple();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      await logout();
+      setUser(null);
+    } finally {
+      setLoading(false);
+      setIsUserMenuOpen(false);
+    }
+  };
   const [customModelName, setCustomModelName] = useState<string>('');
   const [customTask, setCustomTask] = useState({
     name: '',
@@ -274,6 +331,46 @@ const handleSaveTaskEdit = () => {
     setCustomTask({ name: '', intervalMileage: '', intervalMonths: '' });
   };
 
+  if (loading) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center p-4 ${pageBgClass}`}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <p className={`text-sm ${secondaryTextClass}`}>Checking your garage access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center p-4 ${pageBgClass}`}>
+        <div className={`w-full max-w-md rounded-3xl border p-8 shadow-xl ${isDarkMode ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-white'}`}>
+          <div className="mb-6 text-center">
+            <h1 className="text-3xl font-black tracking-tight text-amber-500">MOTO_MAINTAIN</h1>
+            <p className={`mt-2 text-sm ${secondaryTextClass}`}>Sign in to unlock your digital garage.</p>
+          </div>
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition-all ${isDarkMode ? 'border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700' : 'border-slate-200 bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
+            >
+              Sign in with Google
+            </button>
+            <button
+              type="button"
+              onClick={handleAppleLogin}
+              className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition-all ${isDarkMode ? 'border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700' : 'border-slate-200 bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
+            >
+              Sign in with Apple
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen p-4 md:p-8 relative ${pageBgClass}`}>
       {/* Header */}
@@ -292,7 +389,7 @@ const handleSaveTaskEdit = () => {
             <User size={18} />
           </button>
           {isUserMenuOpen && (
-            <div className={`absolute right-0 top-full mt-2 w-48 rounded-2xl shadow-xl z-20 ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-slate-100' : 'bg-white border border-slate-200 text-slate-900'}`}>
+            <div className={`absolute right-0 top-full mt-2 w-48 rounded-2xl shadow-xl z-1000 ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-slate-100' : 'bg-white border border-slate-200 text-slate-900'}`}>
               <div className="p-3 space-y-2">
                 <div className="text-xs uppercase tracking-wide text-slate-500">User Options</div>
                 <button
