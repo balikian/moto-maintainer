@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { mockBikes, mockTasks, Bike, MaintenanceTask } from './mockData';
 import { bikeDatabase } from './bikeDatabase';
-import { Bike as BikeIcon, Gauge, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Trash2, ChevronDown, User, RotateCcw, Pencil, Check } from 'lucide-react';
+import { Bike as BikeIcon, Gauge, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Trash2, ChevronDown, User, RotateCcw, Pencil, Check, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import { signInWithGoogle, signInWithApple, logout } from '@/lib/actions/auth';
+import { signInWithGoogle, sendMagicLink, logout } from '@/lib/actions/auth';
 
 export default function GarageDashboard() {
   const [bikes, setBikes] = useState<Bike[]>(mockBikes);
@@ -20,6 +20,10 @@ export default function GarageDashboard() {
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [magicEmail, setMagicEmail] = useState<string>('');
+  const [magicLinkSent, setMagicLinkSent] = useState<boolean>(false);
+  const [magicLoading, setMagicLoading] = useState<boolean>(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   const supabase = React.useMemo(() => createClient(), []);
 
@@ -99,14 +103,44 @@ useEffect(() => {
     }
   };
 
-  const handleAppleLogin = async () => {
-    setLoading(true);
+  const handleMagicLinkSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const normalizedEmail = magicEmail.trim();
+
+    if (!normalizedEmail) {
+      setAuthError('Please enter a valid email address.');
+      return;
+    }
+
+    setAuthError(null);
+    setMagicLoading(true);
+
     try {
-      await signInWithApple();
+      const formData = new FormData();
+      formData.append('email', normalizedEmail);
+
+      const result = await sendMagicLink(formData);
+      if (result?.error) {
+        setAuthError(result.error);
+        setMagicLinkSent(false);
+        return;
+      }
+
+      setMagicLinkSent(true);
+    } catch {
+      setAuthError('Unable to send a magic link right now. Please try again.');
+      setMagicLinkSent(false);
     } finally {
-      setLoading(false);
+      setMagicLoading(false);
     }
   };
+
+  const handleResetMagicLink = () => {
+    setMagicEmail('');
+    setMagicLinkSent(false);
+    setAuthError(null);
+  };
+
 
   const handleLogout = async () => {
     setLoading(true);
@@ -372,21 +406,71 @@ const handleSaveTaskEdit = () => {
             <h1 className="text-3xl font-black tracking-tight text-amber-500">MOTO_MAINTAIN</h1>
             <p className={`mt-2 text-sm ${secondaryTextClass}`}>Sign in to unlock your digital garage.</p>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-4">
             <button
               type="button"
               onClick={handleGoogleLogin}
+              disabled={loading || magicLoading}
               className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition-all ${isDarkMode ? 'border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700' : 'border-slate-200 bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
             >
               Sign in with Google
             </button>
-            <button
-              type="button"
-              onClick={handleAppleLogin}
-              className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition-all ${isDarkMode ? 'border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700' : 'border-slate-200 bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
-            >
-              Sign in with Apple
-            </button>
+
+            <div className="flex items-center gap-3">
+              <div className={`h-px flex-1 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-300'}`} />
+              <span className={`text-xs font-semibold tracking-[0.18em] ${secondaryTextClass}`}>OR</span>
+              <div className={`h-px flex-1 ${isDarkMode ? 'bg-slate-700' : 'bg-slate-300'}`} />
+            </div>
+
+            {magicLinkSent ? (
+              <div className={`rounded-2xl border p-4 ${isDarkMode ? 'border-emerald-900/60 bg-emerald-950/30' : 'border-emerald-200 bg-emerald-50'}`}>
+                <p className={`text-sm font-semibold ${isDarkMode ? 'text-emerald-300' : 'text-emerald-700'}`}>
+                  Sign-in link sent!
+                </p>
+                <p className={`mt-1 text-sm ${secondaryTextClass}`}>
+                  We sent a one-click magic link to <span className="font-medium">{magicEmail}</span>. Tap the link in your email to open your garage.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResetMagicLink}
+                  className={`mt-3 w-full rounded-xl border px-3 py-2 text-sm font-semibold transition-all ${isDarkMode ? 'border-slate-700 bg-slate-900 text-slate-100 hover:bg-slate-800' : 'border-slate-300 bg-white text-slate-900 hover:bg-slate-50'}`}
+                >
+                  Use a different email
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleMagicLinkSubmit} className="space-y-3">
+                <label htmlFor="magic-email" className="text-xs font-medium text-slate-400 mb-1.5 block text-left">
+                  Email Address
+                </label>
+                <input
+                  id="magic-email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={magicEmail}
+                  onChange={(e) => {
+                    setMagicEmail(e.target.value);
+                    if (authError) setAuthError(null);
+                  }}
+                  disabled={magicLoading}
+                  className={`w-full rounded-xl border px-3 py-2 text-sm outline-none transition-all ${isDarkMode ? 'border-slate-700 bg-slate-950 text-slate-100 placeholder:text-slate-500 focus:border-amber-500' : 'border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 focus:border-amber-500'}`}
+                  placeholder="rider@example.com"
+                  required
+                />
+                {authError && (
+                  <p className={`text-sm ${isDarkMode ? 'text-rose-300' : 'text-rose-600'}`}>{authError}</p>
+                )}
+                <button
+                  type="submit"
+                  disabled={magicLoading}
+                  className={`w-full rounded-2xl border px-4 py-3 text-sm font-semibold transition-all ${isDarkMode ? 'border-slate-700 bg-slate-800 text-slate-100 hover:bg-slate-700 disabled:opacity-60' : 'border-slate-200 bg-slate-100 text-slate-900 hover:bg-slate-200 disabled:opacity-60'}`}
+                >
+                  {magicLoading ? 'Sending magic link...' : 'Send magic link'}
+                </button>
+                <p className="text-[11px] text-slate-500 text-center mt-2">We'll email you a secure, password-free login link (magic link).</p>
+              </form>
+            )}
           </div>
         </div>
       </div>
@@ -446,6 +530,16 @@ const handleSaveTaskEdit = () => {
                   >
                     {isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
                   </button>
+                  <div className="border-t border-slate-800 my-2" />
+                  <form action={logout}>
+                    <button
+                      type="submit"
+                      className="text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 rounded-lg p-2 text-xs font-medium w-full flex items-center gap-2 transition-colors"
+                    >
+                      <LogOut size={14} />
+                      <span>Sign Out</span>
+                    </button>
+                  </form>
                 </div>
               </div>
             )}
