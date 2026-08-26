@@ -1,29 +1,84 @@
 ﻿'use client';
 
 import React, { useEffect, useState } from 'react';
-import { mockBikes, mockTasks, Bike, MaintenanceTask } from './mockData';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { bikeDatabase } from './bikeDatabase';
 import { Bike as BikeIcon, Gauge, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Trash2, ChevronDown, User, RotateCcw, Pencil, Check, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signInWithGoogle, sendMagicLink, logout } from '@/lib/actions/auth';
 
+interface Motorcycle {
+  id: string;
+  user_id: string;
+  make: string;
+  model: string;
+  year: number;
+  current_mileage: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface MaintenanceTask {
+  id: string;
+  motorcycle_id: string;
+  user_id: string;
+  task_name: string;
+  interval_mileage: number;
+  interval_months: number;
+  last_performed_mileage: number;
+  last_performed_date: string | null;
+  is_diy: boolean;
+  created_at?: string;
+}
+
+const DEFAULT_MAINTENANCE_TASKS: Array<Pick<MaintenanceTask, 'task_name' | 'interval_mileage' | 'interval_months' | 'is_diy'>> = [
+  {
+    task_name: 'Engine Oil & Filter',
+    interval_mileage: 5000,
+    interval_months: 12,
+    is_diy: true,
+  },
+  {
+    task_name: 'Chain Clean & Tension',
+    interval_mileage: 500,
+    interval_months: 1,
+    is_diy: true,
+  },
+  {
+    task_name: 'Valve Clearance Check',
+    interval_mileage: 15000,
+    interval_months: 24,
+    is_diy: false,
+  },
+];
+
 export default function GarageDashboard() {
-  const [bikes, setBikes] = useState<Bike[]>(mockBikes);
-  const [tasks, setTasks] = useState<MaintenanceTask[]>(mockTasks);
-  const [selectedBikeId, setSelectedBikeId] = useState<string>(mockBikes[0]?.id || '');
+  const [bikes, setBikes] = useState<Motorcycle[]>([]);
+  const [tasks, setTasks] = useState<MaintenanceTask[]>([]);
+  const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null);
   const [mileageInput, setMileageInput] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [unitSystem, setUnitSystem] = useState<'imperial' | 'metric'>('imperial');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
   const [isGarageOpen, setIsGarageOpen] = useState(false);
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [magicEmail, setMagicEmail] = useState<string>('');
   const [magicLinkSent, setMagicLinkSent] = useState<boolean>(false);
   const [magicLoading, setMagicLoading] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [customMakeName, setCustomMakeName] = useState<string>('');
+  const [customModelName, setCustomModelName] = useState<string>('');
+  const [customTask, setCustomTask] = useState({
+    name: '',
+    intervalMileage: '',
+    intervalMonths: ''
+  });
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
+  const [isAddTaskFormOpen, setIsAddTaskFormOpen] = useState<boolean>(false);
+  const [taskErrors, setTaskErrors] = useState<string[]>([]);
 
   const supabase = React.useMemo(() => createClient(), []);
 
@@ -51,48 +106,119 @@ export default function GarageDashboard() {
     model: '',
     current_mileage: ''
   });
+  const mileageInputRef = React.useRef<HTMLInputElement | null>(null);
+  const monthsInputRef = React.useRef<HTMLInputElement | null>(null);
 
-useEffect(() => {
-  let mounted = true;
+  useEffect(() => {
+    let mounted = true;
 
-  // 1. Fetch initial session & extract user and avatar url
-  (async () => {
-    try {
-      const { data } = await supabase.auth.getSession();
+    const syncMotorcycles = async (currentUser: SupabaseUser | null) => {
+      if (!currentUser) {
+        if (!mounted) return;
+        setBikes([]);
+        setTasks([]);
+        setSelectedBikeId(null);
+        setLoading(false);
+        return;
+      }
+
+      const { data: userBikes, error } = await supabase
+        .from('motorcycles')
+        .select('*')
+        .order('created_at', { ascending: true });
+
       if (!mounted) return;
-      
-      const currentUser = data?.session?.user ?? null;
+
+      if (error) {
+        console.error('Failed to fetch motorcycles', error);
+        setBikes([]);
+        setTasks([]);
+        setSelectedBikeId(null);
+        setLoading(false);
+        return;
+      }
+
+      const nextBikes = (userBikes ?? []) as Motorcycle[];
+      setBikes(nextBikes);
+      setSelectedBikeId((previousSelectedBikeId) =>
+        nextBikes.some((bike) => bike.id === previousSelectedBikeId)
+          ? previousSelectedBikeId
+          : nextBikes[0]?.id ?? null
+      );
+
+      if (nextBikes.length === 0) {
+        setTasks([]);
+      }
+
+      setLoading(false);
+    };
+
+    const applySessionState = async (currentUser: SupabaseUser | null) => {
+      if (!mounted) return;
+
       setUser(currentUser);
-      
+
       if (currentUser) {
         const url = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture;
         setAvatarUrl(url || null);
       } else {
         setAvatarUrl(null);
       }
-    } finally {
-      if (mounted) setLoading(false);
-    }
-  })();
 
-  // 2. Listen to auth changes and update state dynamically
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-    const currentUser = session?.user ?? null;
-    setUser(currentUser);
-    
-    if (currentUser) {
-      const url = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture;
-      setAvatarUrl(url || null);
-    } else {
-      setAvatarUrl(null);
-    }
-  });
+      setLoading(true);
+      await syncMotorcycles(currentUser);
+    };
 
-  return () => {
-    mounted = false;
-    subscription.unsubscribe();
-  };
-}, [supabase]);
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      await applySessionState(data?.session?.user ?? null);
+    })();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      void applySessionState(session?.user ?? null);
+    });
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [supabase]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    const fetchTasks = async () => {
+      if (!user || !selectedBikeId) {
+        if (mounted) {
+          setTasks([]);
+        }
+        return;
+      }
+
+      const { data: bikeTasks, error } = await supabase
+        .from('maintenance_tasks')
+        .select('*')
+        .eq('motorcycle_id', selectedBikeId)
+        .order('interval_mileage', { ascending: true });
+
+      if (!mounted) return;
+
+      if (error) {
+        console.error('Failed to fetch maintenance tasks', error);
+        setTasks([]);
+        return;
+      }
+
+      setTasks((bikeTasks ?? []) as MaintenanceTask[]);
+    };
+
+    void fetchTasks();
+
+    return () => {
+      mounted = false;
+    };
+  }, [selectedBikeId, supabase, user]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -141,31 +267,8 @@ useEffect(() => {
     setAuthError(null);
   };
 
-
-  const handleLogout = async () => {
-    setLoading(true);
-    try {
-      await logout();
-      setUser(null);
-    } finally {
-      setLoading(false);
-      setIsUserMenuOpen(false);
-    }
-  };
-  const [customModelName, setCustomModelName] = useState<string>('');
-  const [customTask, setCustomTask] = useState({
-    name: '',
-    intervalMileage: '',
-    intervalMonths: ''
-  });
-  const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [isAddTaskFormOpen, setIsAddTaskFormOpen] = useState<boolean>(false);
-  const [taskErrors, setTaskErrors] = useState<string[]>([]);
-  const mileageInputRef = React.useRef<HTMLInputElement | null>(null);
-  const monthsInputRef = React.useRef<HTMLInputElement | null>(null);
-
   const activeBike = bikes.find(b => b.id === selectedBikeId);
-  const activeTasks = tasks.filter(t => t.bike_id === selectedBikeId);
+  const activeTasks = tasks.filter(t => t.motorcycle_id === selectedBikeId);
   const availableYears = Object.keys(bikeDatabase)
     .map(Number)
     .sort((a, b) => b - a);
@@ -174,14 +277,27 @@ useEffect(() => {
     ? (bikeDatabase[newBike.year]?.[newBike.make] || []).map((model) => model.name)
     : [];
 
-  const handleMileageUpdate = (e: React.FormEvent) => {
+  const handleMileageUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!activeBike) return;
+
     const newMileage = parseDistanceInput(mileageInput);
     if (isNaN(newMileage) || newMileage <= 0) return;
 
+    const roundedMileage = Math.round(newMileage);
+    const { error } = await supabase
+      .from('motorcycles')
+      .update({ current_mileage: roundedMileage })
+      .eq('id', activeBike.id);
+
+    if (error) {
+      setTaskErrors((prev) => [...prev, `Unable to update odometer for ${activeBike.make} ${activeBike.model}.`]);
+      return;
+    }
+
     setBikes(prevBikes =>
       prevBikes.map(b =>
-        b.id === selectedBikeId ? { ...b, current_mileage: Math.round(newMileage) } : b
+        b.id === activeBike.id ? { ...b, current_mileage: roundedMileage } : b
       )
     );
     setMileageInput('');
@@ -196,6 +312,7 @@ useEffect(() => {
       model: '',
       current_mileage: prev.current_mileage
     }));
+    setCustomMakeName('');
     setCustomModelName('');
   };
 
@@ -206,6 +323,7 @@ useEffect(() => {
       model: '',
       current_mileage: prev.current_mileage
     }));
+    setCustomMakeName('');
     setCustomModelName('');
   };
 
@@ -220,36 +338,56 @@ useEffect(() => {
     }
   };
 
-  const handleAddBikeSubmit = (e: React.FormEvent) => {
+  const handleAddBikeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newBike.make || !newBike.model || !newBike.current_mileage) return;
+    if (!user || !newBike.make || !newBike.model || !newBike.current_mileage) return;
 
+    const makeName = newBike.make === 'custom' ? customMakeName.trim() : newBike.make;
     const selectedModelName = newBike.model === 'custom' ? customModelName.trim() : newBike.model;
-    if (!selectedModelName) return;
+    if (!makeName || !selectedModelName) return;
 
-    const newlyCreatedBike: Bike = {
-      id: `bike-${Date.now()}`,
-      year: Number(newBike.year),
-      make: newBike.make,
-      model: selectedModelName,
-      current_mileage: parseInt(newBike.current_mileage) || 0
-    };
+    const parsedMileage = parseInt(newBike.current_mileage, 10) || 0;
+    const { data: insertedBike, error: bikeInsertError } = await supabase
+      .from('motorcycles')
+      .insert({
+        user_id: user.id,
+        year: Number(newBike.year),
+        make: makeName,
+        model: selectedModelName,
+        current_mileage: parsedMileage,
+      })
+      .select()
+      .single();
 
-    const selectedModelData = bikeDatabase[newBike.year]?.[newBike.make]?.find((model) => model.name === selectedModelName);
-    const defaultTasks: MaintenanceTask[] = (selectedModelData?.tasks || []).map((task, index) => ({
-      id: `task-${Date.now()}-${index}`,
-      bike_id: newlyCreatedBike.id,
+    if (bikeInsertError || !insertedBike) {
+      setTaskErrors((prev) => [...prev, 'Unable to add this motorcycle right now.']);
+      return;
+    }
+
+    const newlyCreatedBike = insertedBike as Motorcycle;
+    const today = new Date().toISOString().split('T')[0];
+    const seededTasks = DEFAULT_MAINTENANCE_TASKS.map((task) => ({
+      motorcycle_id: newlyCreatedBike.id,
+      user_id: user.id,
       task_name: task.task_name,
       interval_mileage: task.interval_mileage,
+      interval_months: task.interval_months,
       last_performed_mileage: newlyCreatedBike.current_mileage,
-      last_performed_date: new Date().toISOString().split('T')[0],
-      interval_months: (task as any).interval_months || 0,
+      last_performed_date: today,
       is_diy: task.is_diy,
-      status: 'Healthy'
     }));
 
+    const { data: insertedTasks, error: taskInsertError } = await supabase
+      .from('maintenance_tasks')
+      .insert(seededTasks)
+      .select();
+
+    if (taskInsertError) {
+      setTaskErrors((prev) => [...prev, `Added ${newlyCreatedBike.make} ${newlyCreatedBike.model}, but failed to seed its maintenance tasks.`]);
+    }
+
     setBikes(prev => [...prev, newlyCreatedBike]);
-    setTasks(prev => [...prev, ...defaultTasks]);
+    setTasks(((insertedTasks ?? []) as MaintenanceTask[]));
     setSelectedBikeId(newlyCreatedBike.id);
     
     setNewBike({
@@ -258,6 +396,7 @@ useEffect(() => {
       model: '',
       current_mileage: ''
     });
+    setCustomMakeName('');
     setCustomModelName('');
     setIsModalOpen(false);
   };
@@ -269,20 +408,41 @@ useEffect(() => {
     const confirmed = window.confirm(`Are you sure you want to remove the ${bikeName} from your garage? This will clear all tracking data.`);
     if (!confirmed) return;
 
-    const updatedBikes = bikes.filter(b => b.id !== bikeId);
-    setBikes(updatedBikes);
-    setTasks(prev => prev.filter(task => task.bike_id !== bikeId));
+    void (async () => {
+      const { error } = await supabase.from('motorcycles').delete().eq('id', bikeId);
 
-    // If we just deleted the bike we were looking at, shift focus to the first available bike
-    if (selectedBikeId === bikeId) {
-      setSelectedBikeId(updatedBikes[0]?.id || '');
-    }
+      if (error) {
+        setTaskErrors((prev) => [...prev, `Unable to remove ${bikeName} right now.`]);
+        return;
+      }
+
+      const updatedBikes = bikes.filter(b => b.id !== bikeId);
+      setBikes(updatedBikes);
+      setTasks(prev => prev.filter(task => task.motorcycle_id !== bikeId));
+
+      if (selectedBikeId === bikeId) {
+        setSelectedBikeId(updatedBikes[0]?.id ?? null);
+      }
+    })();
   };
 
-  const handleTaskLogged = (taskId: string) => {
+  const handleTaskLogged = async (taskId: string) => {
     if (!activeBike) return;
 
     const today = new Date().toISOString().split('T')[0];
+
+    const { error } = await supabase
+      .from('maintenance_tasks')
+      .update({
+        last_performed_mileage: activeBike.current_mileage,
+        last_performed_date: today,
+      })
+      .eq('id', taskId);
+
+    if (error) {
+      setTaskErrors((prev) => [...prev, 'Unable to mark that maintenance item as logged.']);
+      return;
+    }
 
     setTasks(prev => prev.map(task =>
       task.id === taskId
@@ -294,11 +454,29 @@ useEffect(() => {
   const handleEditTask = (taskId: string) => {
     setEditingTaskId((prev) => (prev === taskId ? null : taskId));
     if (typeof document !== 'undefined') {
-      document.activeElement instanceof HTMLElement && document.activeElement.blur();
+      if (document.activeElement instanceof HTMLElement) {
+        document.activeElement.blur();
+      }
     }
   };
 
-const handleSaveTaskEdit = () => {
+  const handleSaveTaskEdit = async (taskId: string) => {
+    const editedTask = tasks.find((task) => task.id === taskId);
+    if (!editedTask) return;
+
+    const { error } = await supabase
+      .from('maintenance_tasks')
+      .update({
+        interval_mileage: editedTask.interval_mileage,
+        interval_months: editedTask.interval_months,
+      })
+      .eq('id', taskId);
+
+    if (error) {
+      setTaskErrors((prev) => [...prev, `Unable to save interval changes for ${editedTask.task_name}.`]);
+      return;
+    }
+
     // Force the browser to explicitly drop focus from whatever field is currently blinking
     if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
@@ -310,7 +488,7 @@ const handleSaveTaskEdit = () => {
     setTaskErrors((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  const handleResetTaskToDefault = (taskId: string, taskName: string) => {
+  const handleResetTaskToDefault = async (taskId: string, taskName: string) => {
     if (!activeBike) return;
 
     const selectedModelData = bikeDatabase[activeBike.year]?.[activeBike.make]?.find((model) => model.name === activeBike.model);
@@ -324,18 +502,40 @@ const handleSaveTaskEdit = () => {
       return;
     }
 
+    const nextIntervalMileage = defaultTask.interval_mileage;
+    const nextIntervalMonths = (defaultTask as { interval_months?: number }).interval_months || 0;
+    const { error } = await supabase
+      .from('maintenance_tasks')
+      .update({
+        interval_mileage: nextIntervalMileage,
+        interval_months: nextIntervalMonths,
+      })
+      .eq('id', taskId);
+
+    if (error) {
+      setTaskErrors((prev) => [...prev, `Unable to reset ${taskName} to its default interval.`]);
+      return;
+    }
+
     setTasks(prev => prev.map(task =>
       task.id === taskId
         ? {
             ...task,
-            interval_mileage: defaultTask.interval_mileage,
-            interval_months: (defaultTask as any).interval_months || 0
+            interval_mileage: nextIntervalMileage,
+            interval_months: nextIntervalMonths
           }
         : task
     ));
   };
 
-  const handleDeleteTask = (taskId: string) => {
+  const handleDeleteTask = async (taskId: string) => {
+    const { error } = await supabase.from('maintenance_tasks').delete().eq('id', taskId);
+
+    if (error) {
+      setTaskErrors((prev) => [...prev, 'Unable to delete that maintenance task right now.']);
+      return;
+    }
+
     setTasks(prev => prev.filter(task => task.id !== taskId));
   };
 
@@ -357,31 +557,41 @@ const handleSaveTaskEdit = () => {
     ));
   };
 
-  const handleAddCustomTask = (e: React.FormEvent) => {
+  const handleAddCustomTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeBike) return;
+    if (!activeBike || !user) return;
 
     const taskName = customTask.name.trim();
-    const intervalMileage = Number(customTask.intervalMileage);
+    const intervalMileage = parseDistanceInput(customTask.intervalMileage);
     const intervalMonths = Number(customTask.intervalMonths);
 
     if (!taskName || Number.isNaN(intervalMileage) || intervalMileage <= 0) return;
 
     const today = new Date().toISOString().split('T')[0];
 
-    setTasks(prev => [
-      ...prev,
-      {
-        id: `task-${Date.now()}`,
-        bike_id: activeBike.id,
+    const { data: insertedTask, error } = await supabase
+      .from('maintenance_tasks')
+      .insert({
+        motorcycle_id: activeBike.id,
+        user_id: user.id,
         task_name: taskName,
         interval_mileage: Math.max(0, Math.round(intervalMileage)),
+        interval_months: Number.isNaN(intervalMonths) ? 0 : Math.max(0, Math.round(intervalMonths)),
         last_performed_mileage: activeBike.current_mileage,
         last_performed_date: today,
-        interval_months: Number.isNaN(intervalMonths) ? 0 : Math.max(0, Math.round(intervalMonths)),
         is_diy: true,
-        status: 'Healthy' as const
-      }
+      })
+      .select()
+      .single();
+
+    if (error || !insertedTask) {
+      setTaskErrors((prev) => [...prev, `Unable to add ${taskName} right now.`]);
+      return;
+    }
+
+    setTasks(prev => [
+      ...prev,
+      insertedTask as MaintenanceTask
     ]);
 
     setCustomTask({ name: '', intervalMileage: '', intervalMonths: '' });
@@ -468,7 +678,7 @@ const handleSaveTaskEdit = () => {
                 >
                   {magicLoading ? 'Sending magic link...' : 'Send magic link'}
                 </button>
-                <p className="text-[11px] text-slate-500 text-center mt-2">We'll email you a secure, password-free login link (magic link).</p>
+                <p className="text-[11px] text-slate-500 text-center mt-2">We&apos;ll email you a secure, password-free login link (magic link).</p>
               </form>
             )}
           </div>
@@ -714,22 +924,24 @@ const handleSaveTaskEdit = () => {
 
                     // Time-based calculation: convert months to days (approximate 1 month = 30 days)
                     const intervalMonths = task.interval_months || 0;
-                    const intervalDays = intervalMonths * 30;
-                    let daysRemaining = Number.POSITIVE_INFINITY;
+                    const intervalDays = intervalMonths > 0 ? intervalMonths * 30 : 0;
+                    let daysRemaining: number | null = null;
                     if (task.last_performed_date && intervalDays > 0) {
                       const lastDate = new Date(task.last_performed_date);
-                      const nextDue = new Date(lastDate);
-                      nextDue.setDate(nextDue.getDate() + intervalDays);
-                      daysRemaining = Math.ceil((nextDue.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-                    } else if (intervalDays > 0) {
-                      daysRemaining = intervalDays; // fallback if no last date
+                      if (!Number.isNaN(lastDate.getTime())) {
+                        const nextDue = new Date(lastDate);
+                        nextDue.setDate(nextDue.getDate() + intervalDays);
+                        daysRemaining = Math.ceil((nextDue.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+                      }
                     }
 
                     // Normalize remaining ratios so we can pick the closer trigger
                     const milesRatio = task.interval_mileage > 0 ? Math.abs(milesRemaining) / task.interval_mileage : Number.POSITIVE_INFINITY;
-                    const daysRatio = intervalDays > 0 ? Math.abs(daysRemaining) / intervalDays : Number.POSITIVE_INFINITY;
+                    const hasTimeTrigger = intervalDays > 0 && daysRemaining !== null;
+                    const safeDaysRemaining = daysRemaining ?? Number.POSITIVE_INFINITY;
+                    const daysRatio = hasTimeTrigger ? Math.abs(safeDaysRemaining) / intervalDays : Number.POSITIVE_INFINITY;
 
-                    const primaryTrigger = milesRatio <= daysRatio ? 'mileage' : 'time';
+                    const primaryTrigger = hasTimeTrigger && daysRatio < milesRatio ? 'time' : 'mileage';
 
                     // Status thresholds (percent of interval)
                     const warningThresholdPct = 0.25;
@@ -740,15 +952,15 @@ const handleSaveTaskEdit = () => {
                       if (milesRemaining < 0) derivedStatus = 'Overdue';
                       else if (milesRemaining <= task.interval_mileage * urgentThresholdPct) derivedStatus = 'Urgent';
                       else if (milesRemaining <= task.interval_mileage * warningThresholdPct) derivedStatus = 'Soon';
-                    } else {
-                      if (daysRemaining < 0) derivedStatus = 'Overdue';
-                      else if (daysRemaining <= intervalDays * urgentThresholdPct) derivedStatus = 'Urgent';
-                      else if (daysRemaining <= intervalDays * warningThresholdPct) derivedStatus = 'Soon';
+                    } else if (daysRemaining !== null) {
+                      if (safeDaysRemaining < 0) derivedStatus = 'Overdue';
+                      else if (safeDaysRemaining <= intervalDays * urgentThresholdPct) derivedStatus = 'Urgent';
+                      else if (safeDaysRemaining <= intervalDays * warningThresholdPct) derivedStatus = 'Soon';
                     }
 
                     // Badge text depends on which trigger is closer
-                    const badgeText = primaryTrigger === 'time'
-                      ? (daysRemaining < 0 ? 'Overdue (Time)' : `${daysRemaining} days left`)
+                    const badgeText = primaryTrigger === 'time' && daysRemaining !== null
+                      ? (safeDaysRemaining < 0 ? 'Overdue (Time)' : `${safeDaysRemaining} days left`)
                       : (milesRemaining < 0 ? 'Overdue (Mileage)' : formatDistance(milesRemaining));
 
                     const displayMileageInterval = Math.round(convertDistance(task.interval_mileage));
@@ -813,7 +1025,7 @@ const handleSaveTaskEdit = () => {
                               <button
                                 type="button"
                                 onMouseDown={(e) => e.preventDefault()}
-                                onClick={handleSaveTaskEdit}
+                                onClick={() => void handleSaveTaskEdit(task.id)}
                                 className={`p-1 rounded hover:text-emerald-400 transition-colors ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}
                                 title="Save changes"
                               >
@@ -973,8 +1185,19 @@ const handleSaveTaskEdit = () => {
                         {make}
                       </option>
                     ))}
+                    <option value="custom">Custom / Not Listed</option>
                   </select>
                 </div>
+                {newBike.make === 'custom' && (
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter custom make name"
+                    value={customMakeName}
+                    onChange={(e) => setCustomMakeName(e.target.value)}
+                    className="w-full mt-2 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-amber-500 placeholder:text-slate-600"
+                  />
+                )}
               </div>
 
               <div>
