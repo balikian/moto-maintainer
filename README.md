@@ -20,6 +20,16 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Refresh motorcycle data
+
+The Add Bike modal reads from the bundled JSON file at `lib/data/motorcycles.json`. To refresh it from the public NHTSA vPIC API, run:
+
+```bash
+npm run sync:bikes
+```
+
+This updates the curated motorcycle make/model list used by the selector without changing the app logic.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

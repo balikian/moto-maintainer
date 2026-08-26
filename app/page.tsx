@@ -1,11 +1,12 @@
 ﻿'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { bikeDatabase } from './bikeDatabase';
 import { Bike as BikeIcon, Gauge, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Trash2, ChevronDown, User, RotateCcw, Pencil, Check, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signInWithGoogle, sendMagicLink, logout } from '@/lib/actions/auth';
+import motorcyclesData from '@/lib/data/motorcycles.json';
 
 interface Motorcycle {
   id: string;
@@ -79,8 +80,10 @@ export default function GarageDashboard() {
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
   const [isAddTaskFormOpen, setIsAddTaskFormOpen] = useState<boolean>(false);
   const [taskErrors, setTaskErrors] = useState<string[]>([]);
+  const [isSavingBike, setIsSavingBike] = useState<boolean>(false);
 
   const supabase = React.useMemo(() => createClient(), []);
+  const currentYear = new Date().getFullYear();
 
   const unitLabel = unitSystem === 'metric' ? 'km' : 'mi';
   const convertDistance = (miles: number) => unitSystem === 'metric' ? miles * 1.60934 : miles;
@@ -101,7 +104,7 @@ export default function GarageDashboard() {
   // Modal states for adding a bike
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [newBike, setNewBike] = useState({
-    year: new Date().getFullYear(),
+    year: currentYear,
     make: '',
     model: '',
     current_mileage: ''
@@ -269,13 +272,28 @@ export default function GarageDashboard() {
 
   const activeBike = bikes.find(b => b.id === selectedBikeId);
   const activeTasks = tasks.filter(t => t.motorcycle_id === selectedBikeId);
-  const availableYears = Object.keys(bikeDatabase)
-    .map(Number)
-    .sort((a, b) => b - a);
-  const availableMakes = Object.keys(bikeDatabase[newBike.year] || {});
-  const availableModels = newBike.make
-    ? (bikeDatabase[newBike.year]?.[newBike.make] || []).map((model) => model.name)
-    : [];
+  const availableYears = useMemo(
+    () => Array.from({ length: currentYear + 2 - 1970 }, (_, index) => currentYear + 1 - index),
+    [currentYear]
+  );
+  const motorcycleRegistry = motorcyclesData as Record<string, { years: number[]; models: string[] }>;
+  const availableMakes = useMemo(
+    () => [...Object.keys(motorcycleRegistry).sort((a, b) => a.localeCompare(b)), 'Other'],
+    [motorcycleRegistry]
+  );
+  const availableModels = useMemo(() => {
+    if (!newBike.make || newBike.make === 'other') {
+      return [];
+    }
+
+    const makeModels = motorcycleRegistry[newBike.make]?.models ?? [];
+    return makeModels.length > 0 ? [...makeModels, 'Other'] : ['Other'];
+  }, [motorcycleRegistry, newBike.make]);
+  const hasMakeModels = Boolean(newBike.make && newBike.make !== 'other' && (motorcycleRegistry[newBike.make]?.models?.length ?? 0) > 0);
+  const showCustomMakeInput = newBike.make === 'other';
+  const showCustomModelInput = newBike.model === 'other' || (Boolean(newBike.make) && newBike.make !== 'other' && !hasMakeModels);
+  const resolvedMake = newBike.make === 'other' ? customMakeName.trim() : newBike.make.trim();
+  const resolvedModel = newBike.model === 'other' ? customModelName.trim() : newBike.model.trim();
 
   const handleMileageUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -305,11 +323,10 @@ export default function GarageDashboard() {
   };
 
   const handleYearChange = (value: string) => {
+    const nextYear = Number(value);
     setNewBike((prev) => ({
       ...prev,
-      year: Number(value),
-      make: '',
-      model: '',
+      year: nextYear,
       current_mileage: prev.current_mileage
     }));
     setCustomMakeName('');
@@ -333,72 +350,86 @@ export default function GarageDashboard() {
       model: value,
       current_mileage: prev.current_mileage
     }));
-    if (value !== 'custom') {
+    if (value !== 'other') {
       setCustomModelName('');
     }
   };
 
   const handleAddBikeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !newBike.make || !newBike.model || !newBike.current_mileage) return;
 
-    const makeName = newBike.make === 'custom' ? customMakeName.trim() : newBike.make;
-    const selectedModelName = newBike.model === 'custom' ? customModelName.trim() : newBike.model;
-    if (!makeName || !selectedModelName) return;
-
-    const parsedMileage = parseInt(newBike.current_mileage, 10) || 0;
-    const { data: insertedBike, error: bikeInsertError } = await supabase
-      .from('motorcycles')
-      .insert({
-        user_id: user.id,
-        year: Number(newBike.year),
-        make: makeName,
-        model: selectedModelName,
-        current_mileage: parsedMileage,
-      })
-      .select()
-      .single();
-
-    if (bikeInsertError || !insertedBike) {
-      setTaskErrors((prev) => [...prev, 'Unable to add this motorcycle right now.']);
+    if (!user) {
+      setTaskErrors((prev) => [...prev, 'You must sign in before adding a motorcycle.']);
       return;
     }
 
-    const newlyCreatedBike = insertedBike as Motorcycle;
-    const today = new Date().toISOString().split('T')[0];
-    const seededTasks = DEFAULT_MAINTENANCE_TASKS.map((task) => ({
-      motorcycle_id: newlyCreatedBike.id,
-      user_id: user.id,
-      task_name: task.task_name,
-      interval_mileage: task.interval_mileage,
-      interval_months: task.interval_months,
-      last_performed_mileage: newlyCreatedBike.current_mileage,
-      last_performed_date: today,
-      is_diy: task.is_diy,
-    }));
+    const trimmedMake = resolvedMake;
+    const trimmedModel = resolvedModel;
+    const parsedMileage = parseInt(newBike.current_mileage, 10) || 0;
 
-    const { data: insertedTasks, error: taskInsertError } = await supabase
-      .from('maintenance_tasks')
-      .insert(seededTasks)
-      .select();
-
-    if (taskInsertError) {
-      setTaskErrors((prev) => [...prev, `Added ${newlyCreatedBike.make} ${newlyCreatedBike.model}, but failed to seed its maintenance tasks.`]);
+    if (!trimmedMake || !trimmedModel || !newBike.current_mileage || Number(newBike.current_mileage) < 0) {
+      setTaskErrors((prev) => [...prev, 'Please choose a valid make, model, and odometer reading before saving.']);
+      return;
     }
 
-    setBikes(prev => [...prev, newlyCreatedBike]);
-    setTasks(((insertedTasks ?? []) as MaintenanceTask[]));
-    setSelectedBikeId(newlyCreatedBike.id);
-    
-    setNewBike({
-      year: new Date().getFullYear(),
-      make: '',
-      model: '',
-      current_mileage: ''
-    });
-    setCustomMakeName('');
-    setCustomModelName('');
-    setIsModalOpen(false);
+    setIsSavingBike(true);
+
+    try {
+      const { data: insertedBike, error: bikeInsertError } = await supabase
+        .from('motorcycles')
+        .insert({
+          user_id: user.id,
+          year: Number(newBike.year),
+          make: trimmedMake,
+          model: trimmedModel,
+          current_mileage: parsedMileage,
+        })
+        .select()
+        .single();
+
+      if (bikeInsertError || !insertedBike) {
+        setTaskErrors((prev) => [...prev, 'Unable to add this motorcycle right now.']);
+        return;
+      }
+
+      const newlyCreatedBike = insertedBike as Motorcycle;
+      const today = new Date().toISOString().split('T')[0];
+      const seededTasks = DEFAULT_MAINTENANCE_TASKS.map((task) => ({
+        motorcycle_id: newlyCreatedBike.id,
+        user_id: user.id,
+        task_name: task.task_name,
+        interval_mileage: task.interval_mileage,
+        interval_months: task.interval_months,
+        last_performed_mileage: newlyCreatedBike.current_mileage,
+        last_performed_date: today,
+        is_diy: task.is_diy,
+      }));
+
+      const { data: insertedTasks, error: taskInsertError } = await supabase
+        .from('maintenance_tasks')
+        .insert(seededTasks)
+        .select();
+
+      if (taskInsertError) {
+        setTaskErrors((prev) => [...prev, `Added ${newlyCreatedBike.make} ${newlyCreatedBike.model}, but failed to seed its maintenance tasks.`]);
+      }
+
+      setBikes(prev => [...prev, newlyCreatedBike]);
+      setTasks(((insertedTasks ?? []) as MaintenanceTask[]));
+      setSelectedBikeId(newlyCreatedBike.id);
+
+      setNewBike({
+        year: currentYear,
+        make: '',
+        model: '',
+        current_mileage: ''
+      });
+      setCustomMakeName('');
+      setCustomModelName('');
+      setIsModalOpen(false);
+    } finally {
+      setIsSavingBike(false);
+    }
   };
 
   const handleRemoveBike = (bikeId: string, bikeName: string, e: React.MouseEvent) => {
@@ -1175,20 +1206,19 @@ export default function GarageDashboard() {
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                   <select
                     required
-                    value={newBike.make}
+                    value={newBike.make || ''}
                     onChange={(e) => handleMakeChange(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500 appearance-none"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500 appearance-none disabled:opacity-60"
                   >
                     <option value="">Select a make</option>
                     {availableMakes.map((make) => (
                       <option key={make} value={make}>
-                        {make}
+                        {make === 'Other' ? 'Other / Not Listed' : make}
                       </option>
                     ))}
-                    <option value="custom">Custom / Not Listed</option>
                   </select>
                 </div>
-                {newBike.make === 'custom' && (
+                {showCustomMakeInput && (
                   <input
                     type="text"
                     required
@@ -1206,21 +1236,20 @@ export default function GarageDashboard() {
                   <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                   <select
                     required
-                    value={newBike.model}
+                    value={newBike.model || ''}
                     onChange={(e) => handleModelChange(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-3 pr-9 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500 appearance-none disabled:opacity-60"
-                    disabled={!newBike.make}
+                    disabled={!newBike.make || newBike.make === 'other'}
                   >
-                    <option value="">Select a model</option>
+                    <option value="">{!newBike.make ? 'Select a make first' : 'Select a model'}</option>
                     {availableModels.map((model) => (
                       <option key={model} value={model}>
-                        {model}
+                        {model === 'Other' ? 'Other / Not Listed' : model}
                       </option>
                     ))}
-                    <option value="custom">Custom / Not Listed</option>
                   </select>
                 </div>
-                {newBike.model === 'custom' && (
+                {showCustomModelInput && (
                   <input
                     type="text"
                     required
@@ -1255,9 +1284,10 @@ export default function GarageDashboard() {
                 </button>
                 <button 
                   type="submit" 
-                  className="w-1/2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-amber-500/10"
+                  disabled={isSavingBike}
+                  className="w-1/2 bg-amber-500 hover:bg-amber-600 disabled:opacity-70 disabled:cursor-not-allowed text-slate-950 font-bold py-2.5 rounded-xl text-sm transition-all shadow-lg shadow-amber-500/10"
                 >
-                  Add to Garage
+                  {isSavingBike ? 'Saving…' : 'Add to Garage'}
                 </button>
               </div>
             </form>
