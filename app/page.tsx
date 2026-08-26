@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { mockBikes, mockTasks, Bike, MaintenanceTask } from './mockData';
@@ -16,8 +16,10 @@ export default function GarageDashboard() {
   const [unitSystem, setUnitSystem] = useState<'imperial' | 'metric'>('imperial');
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState<boolean>(false);
+  const [isGarageOpen, setIsGarageOpen] = useState(false);
   const [user, setUser] = useState<any | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   const supabase = React.useMemo(() => createClient(), []);
 
@@ -46,27 +48,47 @@ export default function GarageDashboard() {
     current_mileage: ''
   });
 
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (!mounted) return;
-        setUser(data?.session?.user ?? null);
-      } finally {
-        if (mounted) setLoading(false);
+useEffect(() => {
+  let mounted = true;
+
+  // 1. Fetch initial session & extract user and avatar url
+  (async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!mounted) return;
+      
+      const currentUser = data?.session?.user ?? null;
+      setUser(currentUser);
+      
+      if (currentUser) {
+        const url = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture;
+        setAvatarUrl(url || null);
+      } else {
+        setAvatarUrl(null);
       }
-    })();
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  })();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
+  // 2. Listen to auth changes and update state dynamically
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const currentUser = session?.user ?? null;
+    setUser(currentUser);
+    
+    if (currentUser) {
+      const url = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture;
+      setAvatarUrl(url || null);
+    } else {
+      setAvatarUrl(null);
+    }
+  });
 
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [supabase]);
+  return () => {
+    mounted = false;
+    subscription.unsubscribe();
+  };
+}, [supabase]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -374,211 +396,203 @@ const handleSaveTaskEdit = () => {
   return (
     <div className={`min-h-screen p-4 md:p-8 relative ${pageBgClass}`}>
       {/* Header */}
-      <header className="max-w-4xl mx-auto mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-amber-500">MOTO_MAINTAIN</h1>
-          <p className={`text-sm ${secondaryTextClass}`}>Digital Garage & Service Tracker</p>
-        </div>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setIsUserMenuOpen((prev) => !prev)}
-            className={`p-3 rounded-full transition-all ${isDarkMode ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
-            aria-label="User options"
-          >
-            <User size={18} />
-          </button>
-          {isUserMenuOpen && (
-            <div className={`absolute right-0 top-full mt-2 w-48 rounded-2xl shadow-xl z-1000 ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-slate-100' : 'bg-white border border-slate-200 text-slate-900'}`}>
-              <div className="p-3 space-y-2">
-                <div className="text-xs uppercase tracking-wide text-slate-500">User Options</div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUnitSystem((prev) => prev === 'imperial' ? 'metric' : 'imperial');
-                    setIsUserMenuOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-50'}`}
-                >
-                  {unitSystem === 'imperial' ? 'Switch to Metric (km)' : 'Switch to Imperial (mi)'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDarkMode((prev) => !prev);
-                    setIsUserMenuOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-50'}`}
-                >
-                  {isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-                </button>
+      <header className="max-w-4xl mx-auto bg-slate-900/80 backdrop-blur-md border border-slate-800 border-l-4 border-l-amber-500 rounded-2xl p-5 mb-8 shadow-xl relative">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-black tracking-tight text-amber-500">MOTO_MAINTAIN</h1>
+            <p className={`text-sm ${secondaryTextClass}`}>Digital Garage & Service Tracker</p>
+          </div>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsUserMenuOpen((prev) => !prev)}
+              className={`p-1 rounded-full transition-all overflow-hidden flex items-center justify-center ${isDarkMode ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}
+              aria-label="User options"
+            >
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="w-9 h-9 rounded-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="p-2">
+                  <User size={18} />
+                </div>
+              )}
+            </button>
+            {isUserMenuOpen && (
+              <div className={`absolute right-0 top-full mt-2 w-48 rounded-2xl shadow-xl z-1000 ${isDarkMode ? 'bg-slate-900 border border-slate-800 text-slate-100' : 'bg-white border border-slate-200 text-slate-900'}`}>
+                <div className="p-3 space-y-2">
+                  <div className="text-xs uppercase tracking-wide text-slate-500">User Options</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUnitSystem((prev) => prev === 'imperial' ? 'metric' : 'imperial');
+                      setIsUserMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-50'}`}
+                  >
+                    {unitSystem === 'imperial' ? 'Switch to Metric (km)' : 'Switch to Imperial (mi)'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsDarkMode((prev) => !prev);
+                      setIsUserMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-xl transition-all ${isDarkMode ? 'bg-slate-800 hover:bg-slate-700' : 'bg-slate-100 hover:bg-slate-50'}`}
+                  >
+                    {isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsGarageOpen((prev) => !prev)}
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-100 hover:border-slate-700 transition-all text-xs font-semibold"
+            >
+              <BikeIcon size={14} className="text-amber-500" />
+              {activeBike ? (
+                <>
+                  <span className="max-w-[180px] truncate">{activeBike.make} {activeBike.model}</span>
+                  <span className="text-[10px] font-bold bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded-md">{activeBike.year}</span>
+                </>
+              ) : (
+                <span>No bikes in garage</span>
+              )}
+              <ChevronDown
+                size={14}
+                className={`text-slate-400 transition-transform ${isGarageOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {isGarageOpen && (
+              <div className="absolute z-30 left-0 top-full mt-2 w-[26rem] max-w-[calc(100vw-3rem)] bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden divide-y divide-slate-850">
+                <div className="max-h-72 overflow-y-auto">
+                  {bikes.length > 0 ? (
+                    bikes.map((bike) => {
+                      const isSelected = bike.id === selectedBikeId;
+
+                      return (
+                        <div
+                          key={bike.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => {
+                            setSelectedBikeId(bike.id);
+                            setIsGarageOpen(false);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setSelectedBikeId(bike.id);
+                              setIsGarageOpen(false);
+                            }
+                          }}
+                          className={`w-full px-3 py-2.5 text-left transition-colors cursor-pointer ${isSelected ? 'bg-amber-500/10 border-l-2 border-amber-500' : 'hover:bg-slate-800/80 border-l-2 border-transparent'}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-amber-500"><BikeIcon size={14} /></span>
+                            <span className="text-sm text-slate-100 truncate">{bike.make} {bike.model}</span>
+                            <span className="text-[11px] font-bold bg-slate-800 text-slate-300 px-1.5 py-0.5 rounded shrink-0">{bike.year}</span>
+                            <span className="text-xs font-mono text-slate-400 ml-auto shrink-0">{formatDistance(bike.current_mileage)}</span>
+                            <span>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRemoveBike(bike.id, `${bike.year} ${bike.make} ${bike.model}`, e);
+                                }}
+                                className="p-1.5 rounded-md border border-slate-700 text-slate-500 hover:text-rose-400 hover:border-rose-500/40 transition-colors"
+                                title="Remove Bike"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="px-4 py-4 text-sm text-slate-400">Your garage is empty.</div>
+                  )}
+                </div>
+                <div className="p-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsModalOpen(true);
+                      setIsGarageOpen(false);
+                    }}
+                    className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-sm font-medium bg-slate-800 border border-slate-700 text-slate-100 hover:border-amber-500/50 transition-all"
+                  >
+                    <Plus size={15} className="text-amber-500" /> + Add Bike
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs">
+            <Gauge size={14} className="text-amber-500" />
+            <span className="font-mono font-bold text-slate-100">
+              {activeBike ? formatDistance(activeBike.current_mileage) : '--'}
+            </span>
+
+            {!isUpdating ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!activeBike) return;
+                  setMileageInput(activeBike.current_mileage.toString());
+                  setIsUpdating(true);
+                }}
+                className="text-[11px] font-bold text-amber-500 hover:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded-lg transition-colors"
+              >
+                Update
+              </button>
+            ) : (
+              <form onSubmit={handleMileageUpdate} className="inline-flex items-center gap-1">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  value={mileageInput}
+                  onChange={(e) => setMileageInput(e.target.value)}
+                  onFocus={(e) => e.currentTarget.select()}
+                  onClick={(e) => e.currentTarget.select()}
+                  className={`w-24 text-xs py-1 px-2 rounded-lg font-mono focus:outline-none focus:border-amber-500 ${isDarkMode ? 'bg-slate-950 border border-slate-700 text-slate-100' : 'bg-slate-100 border border-slate-300 text-slate-900'}`}
+                  placeholder={`New ${unitLabel}`}
+                  autoFocus
+                />
+                <button type="submit" className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-bold rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 transition-colors">
+                  <Check size={11} /> Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsUpdating(false)}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-semibold rounded-lg bg-slate-800 text-slate-300 hover:text-slate-100 transition-colors"
+                >
+                  <X size={11} /> Cancel
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </header>
 
       <main className="max-w-4xl mx-auto grid gap-6">
-        {/* Selected Bike - Sticky Display */}
-        {activeBike && (
-          <div className="sticky top-4 z-20">
-            <div className={`w-full p-5 rounded-2xl border text-left transition-all relative group ${selectedCardBgClass}`}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-slate-800/60 rounded-xl text-amber-500">
-                    <BikeIcon size={20} />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-lg leading-tight truncate">{activeBike.make}</h3>
-                    <p className="text-slate-400 text-sm truncate">{activeBike.model}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold bg-slate-800 text-slate-400 px-2 py-1 rounded-md">
-                    {activeBike.year}
-                  </span>
-                  <button
-                    onClick={(e) => handleRemoveBike(activeBike.id, `${activeBike.year} ${activeBike.make} ${activeBike.model}`, e)}
-                    className="p-1.5 bg-slate-950/80 border border-slate-800/80 text-slate-500 hover:text-rose-400 hover:border-rose-500/30 rounded-lg transition-all"
-                    title="Remove Bike"
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-              <div className={`mt-4 flex items-center gap-2 text-sm font-mono p-2 rounded-lg ${isDarkMode ? 'text-slate-300 bg-black/30' : 'text-slate-700 bg-slate-100'}`}>
-                <Gauge size={14} className={isDarkMode ? 'text-slate-500' : 'text-slate-500'} />
-                <span>{formatDistance(activeBike.current_mileage)}</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Garage Slider/Selector */}
-        <section>
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Your Garage</h2>
-          {bikes.length > 0 ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3">
-              {bikes.map((bike) => {
-                const isSelected = bike.id === selectedBikeId;
-                // Skip rendering selected bike here - it's shown sticky above
-                if (isSelected) return null;
-                
-                return (
-                  <div
-                    key={bike.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => setSelectedBikeId(bike.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setSelectedBikeId(bike.id);
-                      }
-                    }}
-                    className={`w-full p-5 rounded-2xl border text-left transition-all relative group ${cardBgClass}`}
-                  >
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-3 bg-slate-800/60 rounded-xl text-amber-500">
-                          <BikeIcon size={20} />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-bold text-lg leading-tight truncate">{bike.make}</h3>
-                          <p className="text-slate-400 text-sm truncate">{bike.model}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold bg-slate-800 text-slate-400 px-2 py-1 rounded-md">
-                          {bike.year}
-                        </span>
-                        <button
-                          onClick={(e) => handleRemoveBike(bike.id, `${bike.year} ${bike.make} ${bike.model}`, e)}
-                          className="p-1.5 bg-slate-950/80 border border-slate-800/80 text-slate-500 hover:text-rose-400 hover:border-rose-500/30 rounded-lg opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all"
-                          title="Remove Bike"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className={`flex items-center gap-2 text-sm font-mono p-2 rounded-lg ${isDarkMode ? 'text-slate-300 bg-black/30' : 'text-slate-700 bg-slate-100'}`}>
-                      <Gauge size={14} className={isDarkMode ? 'text-slate-500' : 'text-slate-500'} />
-                      <span>{formatDistance(bike.current_mileage)}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className={`text-center p-12 rounded-2xl text-sm ${isDarkMode ? 'bg-slate-900/20 border border-dashed border-slate-800 text-slate-400' : 'bg-white border border-dashed border-slate-200 text-slate-600'}`}>
-              <BikeIcon size={36} className="mx-auto text-slate-600 mb-3" />
-              <p className="font-medium mb-1">Your garage is empty</p>
-              <p className="text-xs text-slate-500 mb-4">Use the button below to park your first motorcycle.</p>
-            </div>
-          )}
-          <div className="mt-4 flex justify-start">
-            <button
-              type="button"
-              onClick={() => setIsModalOpen(true)}
-              className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${isDarkMode ? 'bg-slate-900 border border-slate-800 hover:border-amber-500/50 text-slate-50' : 'bg-slate-100 border border-slate-200 text-slate-900 hover:border-slate-300'}`}
-            >
-              <Plus size={16} className="text-amber-500" /> Add Bike
-            </button>
-          </div>
-        </section>
 
         {activeBike ? (
           <>
-            {/* Quick Mileage Update Widget */}
-            <section className={`${sectionCardClass} rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4`}>
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-amber-500/10 text-amber-500 rounded-xl">
-                  <Gauge size={22} />
-                </div>
-                <div>
-                  <h3 className={`font-bold ${isDarkMode ? 'text-slate-50' : 'text-slate-900'}`}>Odometer Check</h3>
-                  <p className={`text-xs ${secondaryTextClass}`}>Keep intervals accurate by logging your latest mileage.</p>
-                </div>
-              </div>
-
-              {!isUpdating ? (
-                <button
-                  onClick={() => {
-                    setMileageInput(activeBike.current_mileage.toString());
-                    setIsUpdating(true);
-                  }}
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 text-sm font-bold px-5 py-2.5 rounded-xl transition-all text-center"
-                >
-                  Update Mileage
-                </button>
-              ) : (
-                <form onSubmit={handleMileageUpdate} className="flex gap-2 w-full md:w-auto">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={mileageInput}
-                    onChange={(e) => setMileageInput(e.target.value)}
-                    onFocus={(e) => e.currentTarget.select()}
-                    onClick={(e) => e.currentTarget.select()}
-                    className={`rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:border-amber-500 w-full md:w-32 ${isDarkMode ? 'bg-slate-950 border border-slate-700 text-slate-100' : 'bg-slate-100 border border-slate-300 text-slate-900'}`}
-                    placeholder={`New ${unitLabel}`}
-                    autoFocus
-                  />
-                  <button type="submit" className="bg-amber-500 text-slate-950 text-sm font-bold px-4 py-2 rounded-xl">
-                    Save
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsUpdating(false)}
-                    className="bg-slate-800 text-slate-400 text-sm px-3 py-2 rounded-xl hover:text-slate-200"
-                  >
-                    Cancel
-                  </button>
-                </form>
-              )}
-            </section>
-
             {/* Maintenance Status List */}
             <section>
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Maintenance Checklist</h2>
