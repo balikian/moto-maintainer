@@ -17,8 +17,16 @@ export async function updatePreferencesAction(
   if (preferences.theme === 'dark' || preferences.theme === 'light') {
     changes.theme = preferences.theme;
   }
+  if (Object.keys(changes).length === 0) return {};
 
-  const { error } = await supabase.from('profiles').upsert({ id: user.id, ...changes });
-  if (error) return { error: `Couldn't save your settings: ${error.message}` };
+  // Update the existing profile row. Only create one if the user doesn't have
+  // it yet, so saving a setting never touches the other profile columns.
+  const updated = await supabase.from('profiles').update(changes).eq('id', user.id).select('id');
+  if (updated.error) return { error: `Couldn't save your settings: ${updated.error.message}` };
+  if (updated.data.length > 0) return {};
+
+  const fullName = user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? '';
+  const inserted = await supabase.from('profiles').insert({ id: user.id, full_name: fullName, ...changes });
+  if (inserted.error) return { error: `Couldn't save your settings: ${inserted.error.message}` };
   return {};
 }

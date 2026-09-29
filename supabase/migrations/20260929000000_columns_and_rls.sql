@@ -15,6 +15,36 @@ alter table public.maintenance_tasks add column if not exists notes text;
 -- Light/dark preference, next to the existing unit_system column.
 alter table public.profiles add column if not exists theme text not null default 'dark';
 
+-- unit_system: store exactly 'imperial' or 'metric', which is what the app
+-- writes. Existing values like 'mi' / 'km' are converted; anything else
+-- becomes 'imperial'. First drop any old check constraint on the column.
+do $$
+declare
+  existing record;
+begin
+  for existing in
+    select con.conname
+    from pg_constraint con
+    join pg_attribute att on att.attrelid = con.conrelid and att.attnum = any (con.conkey)
+    where con.conrelid = 'public.profiles'::regclass
+      and con.contype = 'c'
+      and att.attname = 'unit_system'
+  loop
+    execute format('alter table public.profiles drop constraint %I', existing.conname);
+  end loop;
+end $$;
+
+alter table public.profiles alter column unit_system drop default;
+alter table public.profiles
+  alter column unit_system type text
+  using case
+    when lower(unit_system::text) in ('metric', 'km', 'kilometers', 'kilometres') then 'metric'
+    else 'imperial'
+  end;
+alter table public.profiles alter column unit_system set default 'imperial';
+alter table public.profiles
+  add constraint profiles_unit_system_check check (unit_system in ('imperial', 'metric'));
+
 -- ---------------------------------------------------------------------------
 -- 2. Row-level security
 -- ---------------------------------------------------------------------------
