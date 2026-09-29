@@ -6,6 +6,10 @@ import { bikeDatabase } from './bikeDatabase';
 import { Bike as BikeIcon, Gauge, Plus, Wrench, AlertTriangle, CheckCircle, Clock, X, Trash2, ChevronDown, User, RotateCcw, Pencil, Check, LogOut } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { signInWithGoogle, sendMagicLink, logout } from '@/lib/actions/auth';
+import { completeTaskAction } from '@/lib/actions/tasks';
+import AddCustomTaskModal from './components/AddCustomTaskModal';
+import LogServiceModal from './components/LogServiceModal';
+import ServiceHistoryView from './components/ServiceHistoryView';
 import motorcyclesData from '@/lib/data/motorcycles.json';
 
 interface Motorcycle {
@@ -27,10 +31,20 @@ interface MaintenanceTask {
   interval_mileage: number;
   interval_months: number;
   last_performed_mileage: number;
+  last_performed_odometer?: number;
   last_performed_date: string | null;
   is_diy: boolean;
   created_at?: string;
 }
+
+type LogServiceFormValues = {
+  taskId: string | null;
+  taskName: string;
+  performedAt: string;
+  odometer: number;
+  cost?: number | null;
+  notes?: string | null;
+};
 
 const DEFAULT_MAINTENANCE_TASKS: Array<Pick<MaintenanceTask, 'task_name' | 'interval_mileage' | 'interval_months' | 'is_diy'>> = [
   {
@@ -72,13 +86,11 @@ export default function GarageDashboard() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [customMakeName, setCustomMakeName] = useState<string>('');
   const [customModelName, setCustomModelName] = useState<string>('');
-  const [customTask, setCustomTask] = useState({
-    name: '',
-    intervalMileage: '',
-    intervalMonths: ''
-  });
+  const [isAddTaskModalOpen, setIsAddTaskModalOpen] = useState<boolean>(false);
+  const [isLogServiceModalOpen, setIsLogServiceModalOpen] = useState<boolean>(false);
+  const [taskToLog, setTaskToLog] = useState<MaintenanceTask | null>(null);
+  const [historyRefreshKey, setHistoryRefreshKey] = useState<number>(0);
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null);
-  const [isAddTaskFormOpen, setIsAddTaskFormOpen] = useState<boolean>(false);
   const [taskErrors, setTaskErrors] = useState<string[]>([]);
   const [isSavingBike, setIsSavingBike] = useState<boolean>(false);
 
@@ -188,40 +200,35 @@ export default function GarageDashboard() {
     };
   }, [supabase]);
 
+  const fetchTasksForMotorcycle = React.useCallback(async (motorcycleId: string) => {
+    const { data: bikeTasks, error } = await supabase
+      .from('maintenance_tasks')
+      .select('*')
+      .eq('motorcycle_id', motorcycleId)
+      .order('interval_mileage', { ascending: true });
+
+    if (error) {
+      console.error('Failed to fetch maintenance tasks', error);
+      setTasks([]);
+      return;
+    }
+
+    const normalizedTasks = ((bikeTasks ?? []) as Partial<MaintenanceTask>[]).map((task) => ({
+      ...task,
+      last_performed_mileage: Number(task.last_performed_mileage ?? task.last_performed_odometer ?? 0),
+    })) as MaintenanceTask[];
+
+    setTasks(normalizedTasks);
+  }, [supabase]);
+
   useEffect(() => {
-    let mounted = true;
+    if (!user || !selectedBikeId) {
+      setTasks([]);
+      return;
+    }
 
-    const fetchTasks = async () => {
-      if (!user || !selectedBikeId) {
-        if (mounted) {
-          setTasks([]);
-        }
-        return;
-      }
-
-      const { data: bikeTasks, error } = await supabase
-        .from('maintenance_tasks')
-        .select('*')
-        .eq('motorcycle_id', selectedBikeId)
-        .order('interval_mileage', { ascending: true });
-
-      if (!mounted) return;
-
-      if (error) {
-        console.error('Failed to fetch maintenance tasks', error);
-        setTasks([]);
-        return;
-      }
-
-      setTasks((bikeTasks ?? []) as MaintenanceTask[]);
-    };
-
-    void fetchTasks();
-
-    return () => {
-      mounted = false;
-    };
-  }, [selectedBikeId, supabase, user]);
+    void fetchTasksForMotorcycle(selectedBikeId);
+  }, [fetchTasksForMotorcycle, selectedBikeId, user]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -457,29 +464,71 @@ export default function GarageDashboard() {
     })();
   };
 
-  const handleTaskLogged = async (taskId: string) => {
-    if (!activeBike) return;
+  const handleOpenLogServiceModal = (task?: MaintenanceTask | null) => {
+    setTaskToLog(task ?? null);
+    setIsLogServiceModalOpen(true);
+  };
 
-    const today = new Date().toISOString().split('T')[0];
+  const handleCloseLogServiceModal = () => {
+    setIsLogServiceModalOpen(false);
+    setTaskToLog(null);
+  };
 
-    const { error } = await supabase
-      .from('maintenance_tasks')
-      .update({
-        last_performed_mileage: activeBike.current_mileage,
-        last_performed_date: today,
-      })
-      .eq('id', taskId);
+  const handleTaskLogged = async (values: LogServiceFormValues): Promise<string | null> => {
+    if (!activeBike) return 'Select a bike before logging service.';
 
-    if (error) {
-      setTaskErrors((prev) => [...prev, 'Unable to mark that maintenance item as logged.']);
-      return;
+    const selectedTask = values.taskId
+      ? activeTasks.find((task) => task.id === values.taskId)
+      : null;
+
+    if (values.taskId && !selectedTask) {
+      return 'Selected task could not be found for this motorcycle.';
     }
 
-    setTasks(prev => prev.map(task =>
-      task.id === taskId
-        ? { ...task, last_performed_mileage: activeBike.current_mileage, last_performed_date: today }
-        : task
-    ));
+    try {
+      const result = await completeTaskAction({
+        motorcycle_id: activeBike.id,
+        task_id: values.taskId,
+        task_name: values.taskName,
+        performed_at: values.performedAt,
+        odometer_at_service: values.odometer,
+        notes: values.notes ?? null,
+        cost: values.cost ?? null,
+      });
+
+      if (result.error) {
+        return result.error || 'Unable to mark that maintenance item as logged.';
+      }
+
+      const nextOdometer = Math.max(0, Math.round(values.odometer));
+      if (selectedTask) {
+        setTasks(prev => prev.map(task =>
+          task.id === selectedTask.id
+            ? {
+                ...task,
+                last_performed_mileage: nextOdometer,
+                last_performed_odometer: nextOdometer,
+                last_performed_date: values.performedAt
+              }
+            : task
+        ));
+      }
+
+      if (nextOdometer > activeBike.current_mileage) {
+        setBikes((prev) => prev.map((bike) => (
+          bike.id === activeBike.id
+            ? { ...bike, current_mileage: nextOdometer }
+            : bike
+        )));
+      }
+
+      setHistoryRefreshKey((prev) => prev + 1);
+      return null;
+    } catch (error) {
+      return error instanceof Error
+        ? error.message
+        : 'Unable to save the service log right now. Please try again.';
+    }
   };
 
   const handleEditTask = (taskId: string) => {
@@ -586,46 +635,6 @@ export default function GarageDashboard() {
     setTasks(prev => prev.map(task =>
       task.id === taskId ? { ...task, interval_months: nextMonths } : task
     ));
-  };
-
-  const handleAddCustomTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!activeBike || !user) return;
-
-    const taskName = customTask.name.trim();
-    const intervalMileage = parseDistanceInput(customTask.intervalMileage);
-    const intervalMonths = Number(customTask.intervalMonths);
-
-    if (!taskName || Number.isNaN(intervalMileage) || intervalMileage <= 0) return;
-
-    const today = new Date().toISOString().split('T')[0];
-
-    const { data: insertedTask, error } = await supabase
-      .from('maintenance_tasks')
-      .insert({
-        motorcycle_id: activeBike.id,
-        user_id: user.id,
-        task_name: taskName,
-        interval_mileage: Math.max(0, Math.round(intervalMileage)),
-        interval_months: Number.isNaN(intervalMonths) ? 0 : Math.max(0, Math.round(intervalMonths)),
-        last_performed_mileage: activeBike.current_mileage,
-        last_performed_date: today,
-        is_diy: true,
-      })
-      .select()
-      .single();
-
-    if (error || !insertedTask) {
-      setTaskErrors((prev) => [...prev, `Unable to add ${taskName} right now.`]);
-      return;
-    }
-
-    setTasks(prev => [
-      ...prev,
-      insertedTask as MaintenanceTask
-    ]);
-
-    setCustomTask({ name: '', intervalMileage: '', intervalMonths: '' });
   };
 
   if (loading) {
@@ -930,7 +939,17 @@ export default function GarageDashboard() {
           <>
             {/* Maintenance Status List */}
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Maintenance Checklist</h2>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Maintenance Checklist</h2>
+                <button
+                  type="button"
+                  onClick={() => setIsAddTaskModalOpen(true)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-xs font-semibold text-zinc-100 transition-colors hover:border-amber-500/60"
+                >
+                  <Plus size={14} className="text-amber-500" />
+                  + Add Task
+                </button>
+              </div>
               {taskErrors.length > 0 && (
                 <div className="space-y-2 mb-4">
                   {taskErrors.map((error, index) => (
@@ -1067,7 +1086,7 @@ export default function GarageDashboard() {
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
-                              onClick={() => handleTaskLogged(task.id)}
+                              onClick={() => handleOpenLogServiceModal(task)}
                               className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-colors ${isDarkMode ? 'border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/40 hover:text-amber-400' : 'border-slate-300 bg-slate-100 text-slate-700 hover:border-slate-400 hover:text-slate-900'}`}
                             >
                               Logged
@@ -1108,56 +1127,15 @@ export default function GarageDashboard() {
                     No active maintenance plan assigned to this bike yet.
                   </div>
                 )}
-                <div className="space-y-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddTaskFormOpen((prev) => !prev)}
-                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-slate-200 text-slate-900 hover:bg-slate-300'}`}
-                  >
-                    <Plus size={16} className="text-amber-500" />
-                    {isAddTaskFormOpen ? 'Hide task form' : 'Add a task'}
-                  </button>
-
-                  {isAddTaskFormOpen && (
-                    <form onSubmit={handleAddCustomTask} className={`flex flex-col gap-2 rounded-xl border p-3 ${isDarkMode ? 'border-slate-800 bg-slate-900/30' : 'border-slate-200 bg-slate-50'}`}>
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        <input
-                          type="text"
-                          value={customTask.name}
-                          onChange={(e) => setCustomTask(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Task name"
-                          className={`flex-1 rounded-xl border px-3 py-2 text-sm focus:outline-none focus:border-amber-500 ${isDarkMode ? 'border-slate-800 bg-slate-950 text-slate-100' : 'border-slate-300 bg-white text-slate-900'}`}
-                        />
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={customTask.intervalMileage}
-                          onChange={(e) => setCustomTask(prev => ({ ...prev, intervalMileage: e.target.value }))}
-                          placeholder={`Interval ${unitLabel}`}
-                          className={`w-full sm:w-32 rounded-xl border appearance-none px-3 py-2 text-sm focus:outline-none focus:border-amber-500 ${isDarkMode ? 'border-slate-800 bg-slate-950 text-slate-100' : 'border-slate-300 bg-white text-slate-900'}`}
-                        />
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={customTask.intervalMonths}
-                          onChange={(e) => setCustomTask(prev => ({ ...prev, intervalMonths: e.target.value }))}
-                          placeholder="Months"
-                          className={`w-full sm:w-24 rounded-xl border appearance-none px-3 py-2 text-sm focus:outline-none focus:border-amber-500 ${isDarkMode ? 'border-slate-800 bg-slate-950 text-slate-100' : 'border-slate-300 bg-white text-slate-900'}`}
-                        />
-                        <button
-                          type="submit"
-                          className={`inline-flex items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${isDarkMode ? 'bg-slate-800 text-slate-100 hover:bg-slate-700' : 'bg-slate-200 text-slate-900 hover:bg-slate-300'}`}
-                        >
-                          <Plus size={16} className="text-amber-500" />
-                        </button>
-                      </div>
-                    </form>
-                  )}
-                </div>
               </div>
             </section>
+
+            <ServiceHistoryView
+              motorcycleId={activeBike.id}
+              refreshKey={historyRefreshKey}
+              onAddLog={() => handleOpenLogServiceModal(null)}
+              canAddLog={Boolean(activeBike)}
+            />
           </>
         ) : (
           <div className="text-center py-16 bg-slate-900/10 rounded-2xl border border-slate-900 text-slate-500 text-sm">
@@ -1165,6 +1143,36 @@ export default function GarageDashboard() {
           </div>
         )}
       </main>
+
+      <AddCustomTaskModal
+        isOpen={isAddTaskModalOpen}
+        motorcycleId={activeBike?.id ?? null}
+        currentOdometer={activeBike?.current_mileage ?? 0}
+        onClose={() => setIsAddTaskModalOpen(false)}
+        onTaskCreated={async () => {
+          if (!selectedBikeId) return;
+          await fetchTasksForMotorcycle(selectedBikeId);
+        }}
+        onError={(message) => setTaskErrors((prev) => [...prev, message])}
+      />
+
+      <LogServiceModal
+        isOpen={isLogServiceModalOpen}
+        taskName={taskToLog?.task_name ?? 'Maintenance Task'}
+        tasks={activeTasks.map((task) => ({ id: task.id, taskName: task.task_name }))}
+        initialTaskId={taskToLog?.id ?? activeTasks[0]?.id ?? null}
+        lockTaskSelection={Boolean(taskToLog)}
+        defaultDate={new Date().toISOString().split('T')[0]}
+        defaultOdometer={activeBike?.current_mileage ?? 0}
+        onClose={handleCloseLogServiceModal}
+        onSubmit={async (values) => {
+          const error = await handleTaskLogged(values);
+          if (error) return error;
+
+          handleCloseLogServiceModal();
+          return null;
+        }}
+      />
 
       {/* Add Bike Modal Overlay */}
       {isModalOpen && (
