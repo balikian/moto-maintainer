@@ -3,17 +3,20 @@
 import { useState } from 'react';
 import { ChevronDown, Clock3, Plus, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
-import type { ServiceLog, UnitSystem } from '@/lib/types';
+import type { Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
+import ExportMenu from './ExportMenu';
 import { ui } from './ui';
 
 type ServiceHistoryViewProps = {
+  bike: Motorcycle;
   logs: ServiceLog[];
   loading: boolean;
   unitSystem: UnitSystem;
   onAddLog: () => void;
   /** Resolves to an error message, or null on success (or if the user cancelled). */
   onDeleteLog: (log: ServiceLog) => Promise<string | null>;
+  onShare: () => void;
 };
 
 const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
@@ -37,7 +40,7 @@ function saveCollapsed(collapsed: boolean) {
   }
 }
 
-export default function ServiceHistoryView({ logs, loading, unitSystem, onAddLog, onDeleteLog }: ServiceHistoryViewProps) {
+export default function ServiceHistoryView({ bike, logs, loading, unitSystem, onAddLog, onDeleteLog, onShare }: ServiceHistoryViewProps) {
   const [collapsed, setCollapsed] = useState(readCollapsed);
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,10 +80,13 @@ export default function ServiceHistoryView({ logs, loading, unitSystem, onAddLog
             )}
           </button>
         </h2>
-        <button type="button" onClick={onAddLog} className={ui.chipButton}>
-          <Plus size={14} className="text-amber-500" />
-          Log Service
-        </button>
+        <div className="flex items-center gap-2">
+          <ExportMenu bike={bike} logs={logs} unitSystem={unitSystem} onShare={onShare} />
+          <button type="button" onClick={onAddLog} className={ui.chipButton}>
+            <Plus size={14} className="text-amber-500" />
+            Log Service
+          </button>
+        </div>
       </div>
 
       <div id="service-history-list" hidden={collapsed}>

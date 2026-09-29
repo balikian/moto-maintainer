@@ -21,6 +21,7 @@ import LoginCard from './components/LoginCard';
 import LogServiceModal, { type LogServiceValues } from './components/LogServiceModal';
 import MaintenanceChecklist from './components/MaintenanceChecklist';
 import ServiceHistoryView from './components/ServiceHistoryView';
+import ShareHistoryModal from './components/ShareHistoryModal';
 import { ui } from './components/ui';
 import { useAuthUser } from './hooks/useAuthUser';
 import { usePreferences } from './hooks/usePreferences';
@@ -33,6 +34,7 @@ type OpenDialog =
   | { type: 'addBike' }
   | { type: 'addTask' }
   | { type: 'logService'; task: MaintenanceTask | null }
+  | { type: 'share' }
   | null;
 
 export default function GarageDashboard() {
@@ -252,11 +254,13 @@ export default function GarageDashboard() {
             />
 
             <ServiceHistoryView
+              bike={activeBike}
               logs={logsQuery.data ?? []}
               loading={logsQuery.loading}
               unitSystem={unitSystem}
               onAddLog={() => setDialog({ type: 'logService', task: null })}
               onDeleteLog={handleDeleteLog}
+              onShare={() => setDialog({ type: 'share' })}
             />
           </>
         ) : (
@@ -292,6 +296,10 @@ export default function GarageDashboard() {
           onClose={() => setDialog(null)}
           onSubmit={handleLogService}
         />
+      )}
+
+      {dialog?.type === 'share' && activeBike && (
+        <ShareHistoryModal supabase={supabase} bike={activeBike} onClose={() => setDialog(null)} />
       )}
     </div>
   );
