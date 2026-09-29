@@ -19,6 +19,13 @@ describe('getTaskDueState', () => {
     assert.equal(state.milesRemaining, 4900);
   });
 
+  it('reports the share of the closest interval remaining', () => {
+    // 2,500 of 5,000 miles left (50%) vs. ~11 of 12 months left: mileage is closer.
+    assert.equal(getTaskDueState(task(), 12500, today).fractionRemaining, 0.5);
+    // 1,000 miles past due on a 5,000-mile interval.
+    assert.equal(getTaskDueState(task(), 16000, today).fractionRemaining, -0.2);
+  });
+
   it('is soon inside the last 25% of the mileage interval', () => {
     assert.equal(getTaskDueState(task(), 14000, today).status, 'Soon');
   });
@@ -61,7 +68,7 @@ describe('getTaskDueState', () => {
 
   it('is healthy with no intervals at all', () => {
     const state = getTaskDueState(task({ interval_mileage: 0, interval_months: 0 }), 99999, today);
-    assert.deepEqual(state, { status: 'Healthy', trigger: null, milesRemaining: null, daysRemaining: null });
+    assert.deepEqual(state, { status: 'Healthy', trigger: null, milesRemaining: null, daysRemaining: null, fractionRemaining: null });
   });
 });
 

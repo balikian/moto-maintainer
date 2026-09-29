@@ -32,6 +32,8 @@ export type TaskDueState = {
   trigger: 'mileage' | 'time' | null;
   milesRemaining: number | null;
   daysRemaining: number | null;
+  /** Share of the closest interval still left: 1 = just serviced, 0 = due now, negative = overdue. */
+  fractionRemaining: number | null;
 };
 
 // Fraction of the interval left at which a task turns "Soon" / "Urgent".
@@ -66,7 +68,7 @@ export function getTaskDueState(
   }
 
   if (milesRemaining === null && daysRemaining === null) {
-    return { status: 'Healthy', trigger: null, milesRemaining, daysRemaining };
+    return { status: 'Healthy', trigger: null, milesRemaining, daysRemaining, fractionRemaining: null };
   }
 
   const trigger = daysFraction < milesFraction ? 'time' : 'mileage';
@@ -77,5 +79,5 @@ export function getTaskDueState(
     : fraction <= SOON_FRACTION ? 'Soon'
     : 'Healthy';
 
-  return { status, trigger, milesRemaining, daysRemaining };
+  return { status, trigger, milesRemaining, daysRemaining, fractionRemaining: fraction };
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock3, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Clock3, Plus, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
 import type { ServiceLog, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
@@ -18,9 +18,36 @@ type ServiceHistoryViewProps = {
 
 const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
+// Remembered per browser; it's a view preference, not account data.
+const COLLAPSED_STORAGE_KEY = 'moto-maintain:history-collapsed';
+
+function readCollapsed(): boolean {
+  try {
+    return window.localStorage.getItem(COLLAPSED_STORAGE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function saveCollapsed(collapsed: boolean) {
+  try {
+    window.localStorage.setItem(COLLAPSED_STORAGE_KEY, String(collapsed));
+  } catch {
+    // Storage can be unavailable (private browsing); the toggle still works for this visit.
+  }
+}
+
 export default function ServiceHistoryView({ logs, loading, unitSystem, onAddLog, onDeleteLog }: ServiceHistoryViewProps) {
+  const [collapsed, setCollapsed] = useState(readCollapsed);
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const toggleCollapsed = () => {
+    setCollapsed((previous) => {
+      saveCollapsed(!previous);
+      return !previous;
+    });
+  };
 
   const handleDelete = async (log: ServiceLog) => {
     setDeletingLogId(log.id);
@@ -33,53 +60,83 @@ export default function ServiceHistoryView({ logs, loading, unitSystem, onAddLog
   return (
     <section>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className={ui.sectionTitle}>Service History</h2>
+        <h2>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            aria-expanded={!collapsed}
+            aria-controls="service-history-list"
+            className={`inline-flex items-center gap-1.5 hover:text-slate-700 dark:hover:text-slate-300 ${ui.sectionTitle}`}
+          >
+            <ChevronDown size={14} className={`transition-transform ${collapsed ? '-rotate-90' : ''}`} />
+            Service History
+            {!loading && (
+              <span className="rounded-md bg-slate-200 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                {logs.length}
+              </span>
+            )}
+          </button>
+        </h2>
         <button type="button" onClick={onAddLog} className={ui.chipButton}>
           <Plus size={14} className="text-amber-500" />
           Log Service
         </button>
       </div>
 
-      {loading ? (
-        <div className={ui.emptyState}>Loading service history…</div>
-      ) : logs.length === 0 ? (
-        <div className={ui.emptyState}>No service records logged yet for this bike.</div>
-      ) : (
-        <div className="space-y-3">
-          {logs.map((log) => (
-            <article key={log.id} className={`${ui.card} p-4`}>
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-2">
-                  <div className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                    <Clock3 size={13} className="text-amber-500" />
-                    {formatDisplayDate(log.performed_at)}
-                  </div>
-                  <h3 className="text-base font-semibold">{log.task_name}</h3>
-                  <p className={`text-sm ${ui.muted}`}>
-                    Odometer: {formatDistance(Number(log.odometer_at_service ?? 0), unitSystem)}
-                  </p>
-                  {log.cost !== null && Number.isFinite(Number(log.cost)) && (
-                    <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">
-                      Cost: {currencyFormatter.format(Number(log.cost))}
+      <div id="service-history-list" hidden={collapsed}>
+        {loading ? (
+          <div className={ui.emptyState}>Loading service history…</div>
+        ) : logs.length === 0 ? (
+          <div className={ui.emptyState}>No service records logged yet for this bike.</div>
+        ) : (
+          <div className="space-y-3">
+            {logs.map((log) => (
+              <article key={log.id} className={`${ui.card} p-4`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="inline-flex items-center gap-2 rounded-lg bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        <Clock3 size={13} className="text-amber-500" />
+                        {formatDisplayDate(log.performed_at)}
+                      </div>
+                      {/* Logs tied to a checklist task are routine; everything else is a one-off job. */}
+                      {log.task_id ? (
+                        <span className="rounded-md bg-sky-500/10 px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:text-sky-300">
+                          Routine
+                        </span>
+                      ) : (
+                        <span className="rounded-md bg-violet-500/10 px-2 py-0.5 text-[11px] font-semibold text-violet-700 dark:text-violet-300">
+                          One-off
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-base font-semibold">{log.task_name}</h3>
+                    <p className={`text-sm ${ui.muted}`}>
+                      Odometer: {formatDistance(Number(log.odometer_at_service ?? 0), unitSystem)}
                     </p>
-                  )}
-                  {log.notes && <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{log.notes}</p>}
+                    {log.cost !== null && Number.isFinite(Number(log.cost)) && (
+                      <p className="text-sm font-medium text-emerald-600 dark:text-emerald-300">
+                        Cost: {currencyFormatter.format(Number(log.cost))}
+                      </p>
+                    )}
+                    {log.notes && <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{log.notes}</p>}
+                  </div>
+  
+                  <button
+                    type="button"
+                    onClick={() => void handleDelete(log)}
+                    disabled={deletingLogId === log.id}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-rose-500/50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-rose-300"
+                  >
+                    <Trash2 size={12} />
+                    {deletingLogId === log.id ? 'Deleting…' : 'Delete'}
+                  </button>
                 </div>
-
-                <button
-                  type="button"
-                  onClick={() => void handleDelete(log)}
-                  disabled={deletingLogId === log.id}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-rose-500/50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-rose-300"
-                >
-                  <Trash2 size={12} />
-                  {deletingLogId === log.id ? 'Deleting…' : 'Delete'}
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
+              </article>
+            ))}
+          </div>
+        )}
+      </div>
 
       {error && <div className={`mt-3 ${ui.errorBox}`}>{error}</div>}
     </section>

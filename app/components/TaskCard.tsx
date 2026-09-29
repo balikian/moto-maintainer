@@ -19,10 +19,10 @@ type TaskCardProps = {
 };
 
 const STATUS_STYLES = {
-  Overdue: { badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: 'bg-rose-500/10 text-rose-500', Icon: AlertTriangle },
-  Urgent: { badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: 'bg-rose-500/10 text-rose-500', Icon: AlertTriangle },
-  Soon: { badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', icon: 'bg-amber-500/10 text-amber-500', Icon: Clock },
-  Healthy: { badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', icon: 'bg-emerald-500/10 text-emerald-500', Icon: CheckCircle },
+  Overdue: { badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: 'bg-rose-500/10 text-rose-500', bar: 'bg-rose-500', Icon: AlertTriangle },
+  Urgent: { badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: 'bg-rose-500/10 text-rose-500', bar: 'bg-rose-500', Icon: AlertTriangle },
+  Soon: { badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', icon: 'bg-amber-500/10 text-amber-500', bar: 'bg-amber-500', Icon: Clock },
+  Healthy: { badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', icon: 'bg-emerald-500/10 text-emerald-500', bar: 'bg-emerald-500', Icon: CheckCircle },
 } as const;
 
 const smallInputClass =
@@ -50,6 +50,10 @@ export default function TaskCard({ task, dueState, unitSystem, onLog, onSaveInte
 
   const style = STATUS_STYLES[dueState.status];
   const unitLabel = distanceUnitLabel(unitSystem);
+  // How much of the interval has been used up, capped at 100% once overdue.
+  const percentUsed = dueState.fractionRemaining === null
+    ? null
+    : Math.round(Math.min(1, Math.max(0, 1 - dueState.fractionRemaining)) * 100);
 
   const startEditing = () => {
     setError(null);
@@ -185,6 +189,18 @@ export default function TaskCard({ task, dueState, unitSystem, onLog, onSaveInte
           </div>
         </div>
       </div>
+      {percentUsed !== null && (
+        <div
+          className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
+          role="progressbar"
+          aria-label={`${task.task_name}: ${percentUsed}% of the ${dueState.trigger === 'time' ? 'time' : 'distance'} interval used`}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={percentUsed}
+        >
+          <div className={`h-full rounded-full transition-[width] ${style.bar}`} style={{ width: `${percentUsed}%` }} />
+        </div>
+      )}
       {error && <p className={`mt-3 ${ui.errorBox}`}>{error}</p>}
     </div>
   );
