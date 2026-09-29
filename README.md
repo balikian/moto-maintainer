@@ -1,46 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MOTO_MAINTAIN
 
-## Getting Started
+A digital garage for motorcycle maintenance. Add your bikes, track service
+tasks by mileage and time (whichever comes first), and keep a service history.
 
-First, run the development server:
+Built with Next.js (App Router), React, Tailwind CSS, and Supabase (auth + Postgres).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Getting started
+
+1. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+2. Create `.env.local` with your Supabase project's URL and publishable key
+   (Supabase dashboard → Project Settings → API):
+
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
+   # Optional; defaults to http://localhost:3000. Used for sign-in redirects.
+   NEXT_PUBLIC_SITE_URL=http://localhost:3000
+   ```
+
+   The app never needs the secret (service-role) key. Don't put it here.
+
+3. Apply the database migrations in `supabase/migrations/` (in order) using the
+   Supabase SQL Editor.
+
+4. Run the dev server and open [http://localhost:3000](http://localhost:3000):
+
+   ```bash
+   npm run dev
+   ```
+
+## Scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the dev server |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npm test` | Unit tests for the scheduling and date logic (`lib/**/*.test.ts`) |
+| `npm run sync:bikes` | Refresh the make/model list in `lib/data/motorcycles.json` from the NHTSA vPIC API |
+
+## How the code is organized
+
+```
+app/
+  page.tsx              The garage dashboard: loads data, wires up handlers
+  components/           UI pieces (header, task cards, modals, service history)
+  hooks/                Auth state, preferences, and a small data-loading hook
+  auth/callback/        OAuth / magic-link callback
+lib/
+  actions/              Server actions — every database write goes through here
+  maintenance.ts        Due-date logic (getTaskDueState) and default task schedules
+  dates.ts, units.ts    Calendar-day dates and mile/km conversion
+  data/                 Motorcycle catalog and per-model service schedules
+  supabase/             Browser and server Supabase clients
+supabase/migrations/    SQL for columns and row-level security policies
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+A few conventions:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Refresh motorcycle data
-
-The Add Bike modal reads from the bundled JSON file at `lib/data/motorcycles.json`. To refresh it from the public NHTSA vPIC API, run:
-
-```bash
-npm run sync:bikes
-```
-
-This updates the curated motorcycle make/model list used by the selector without changing the app logic.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Distances are stored in miles** and converted for display in `lib/units.ts`.
+- **Dates are stored as calendar days** (`YYYY-MM-DD`) and parsed in local time
+  by `lib/dates.ts`, never with `new Date('YYYY-MM-DD')`.
+- **Reads** go from the browser to Supabase; **writes** go through server actions.
+  Row-level security keeps both limited to the signed-in user's own rows.

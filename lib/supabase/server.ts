@@ -1,4 +1,3 @@
-"use server";
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
@@ -25,4 +24,14 @@ export async function createClient() {
       },
     }
   );
+}
+
+/** A server client plus the signed-in user (null when signed out). */
+export async function getSignedInClient() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return { supabase, user };
 }

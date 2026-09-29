@@ -1,15 +1,11 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
-import { createClient } from '../supabase/server';
+import { isIsoDate } from '../dates';
+import { getSignedInClient } from '../supabase/server';
+import { normalizeMileage } from '../units';
+import { SIGNED_OUT_ERROR, type ActionResult } from './result';
 
-
-type ActionResult<T = null> = {
-  data?: T;
-  error?: string;
-};
-
-type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+type SupabaseServerClient = Awaited<ReturnType<typeof getSignedInClient>>['supabase'];
 
 type CreateMaintenanceTaskInput = {
   motorcycleId: string;
@@ -21,308 +17,215 @@ type CreateMaintenanceTaskInput = {
   notes?: string;
 };
 
-async function insertServiceLogRecord(
-  supabase: SupabaseServerClient,
-  input: {
-    userId: string;
-    motorcycleId: string;
-    taskId: string | null;
-    taskName: string;
-    performedAt: string;
-    odometerAtService: number;
-    cost: number | null;
-    notes: string | null;
-  }
-): Promise<ActionResult> {
-  const { error } = await supabase.from('service_logs').insert({
-    user_id: input.userId,
-    motorcycle_id: input.motorcycleId,
-    task_id: input.taskId,
-    task_name: input.taskName,
-    performed_at: input.performedAt,
-    odometer_at_service: input.odometerAtService,
-    cost: input.cost,
-    notes: input.notes,
-  });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  return {};
-}
-
-type CompleteTaskActionInput = {
-  motorcycle_id: string;
-  task_id?: string | null;
-  task_name: string;
-  performed_at: string;
-  odometer_at_service: number;
-  cost?: number | null;
-  notes?: string | null;
-};
-
-type CompleteTaskActionResult = {
-  success: boolean;
-  error: string | null;
-};
-
-async function updateTaskWithFallbackColumns(
-  taskId: string,
-  odometer: number,
-  date: string
-): Promise<ActionResult> {
-  const supabase = await createClient();
-
-  const primaryAttempt = await supabase
-    .from('maintenance_tasks')
-    .update({
-      last_performed_odometer: odometer,
-      last_performed_date: date,
-    })
-    .eq('id', taskId);
-
-  if (!primaryAttempt.error) {
-    return {};
-  }
-
-  const fallbackAttempt = await supabase
-    .from('maintenance_tasks')
-    .update({
-      last_performed_mileage: odometer,
-      last_performed_date: date,
-    })
-    .eq('id', taskId);
-
-  if (fallbackAttempt.error) {
-    return { error: fallbackAttempt.error.message };
-  }
-
-  return {};
-}
-
-async function updateMotorcycleOdometerIfHigher(
-  motorcycleId: string,
-  loggedOdometer: number
-): Promise<ActionResult> {
-  const supabase = await createClient();
-
-  const currentReadAttempt = await supabase
-    .from('motorcycles')
-    .select('id,current_odometer')
-    .eq('id', motorcycleId)
-    .single();
-
-  if (!currentReadAttempt.error && currentReadAttempt.data) {
-    const current = Number(currentReadAttempt.data.current_odometer ?? 0);
-    if (loggedOdometer > current) {
-      const updateAttempt = await supabase
-        .from('motorcycles')
-        .update({ current_odometer: loggedOdometer })
-        .eq('id', motorcycleId);
-
-      if (updateAttempt.error) {
-        return { error: updateAttempt.error.message };
-      }
-    }
-
-    return {};
-  }
-
-  const fallbackReadAttempt = await supabase
-    .from('motorcycles')
-    .select('id,current_mileage')
-    .eq('id', motorcycleId)
-    .single();
-
-  if (fallbackReadAttempt.error || !fallbackReadAttempt.data) {
-    return {
-      error: fallbackReadAttempt.error?.message ?? 'Unable to load current odometer.',
-    };
-  }
-
-  const currentMileage = Number(fallbackReadAttempt.data.current_mileage ?? 0);
-  if (loggedOdometer > currentMileage) {
-    const fallbackUpdate = await supabase
-      .from('motorcycles')
-      .update({ current_mileage: loggedOdometer })
-      .eq('id', motorcycleId);
-
-    if (fallbackUpdate.error) {
-      return { error: fallbackUpdate.error.message };
-    }
-  }
-
-  return {};
-}
-
 export async function createMaintenanceTaskAction(
   input: CreateMaintenanceTaskInput
 ): Promise<ActionResult<{ id: string }>> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return { error: 'You must be signed in to add a custom task.' };
-  }
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
 
   const taskName = input.taskName.trim();
-  if (!taskName) {
-    return { error: 'Task name is required.' };
+  const intervalMileage = normalizeMileage(input.intervalMileage) ?? 0;
+  const intervalMonths = normalizeMileage(input.intervalMonths) ?? 0;
+  const baselineOdometer = normalizeMileage(input.baselineOdometer);
+
+  if (!input.motorcycleId) return { error: 'A motorcycle must be selected.' };
+  if (!taskName) return { error: 'Task name is required.' };
+  if (intervalMileage === 0 && intervalMonths === 0) {
+    return { error: 'Enter a mileage interval, a time interval, or both.' };
   }
+  if (baselineOdometer === null) return { error: 'Please enter a valid baseline odometer.' };
+  if (!isIsoDate(input.baselineDate)) return { error: 'Please enter a valid baseline date.' };
 
-  const intervalMileage = Math.max(0, Math.round(input.intervalMileage || 0));
-  const intervalMonths = Math.max(0, Math.round(input.intervalMonths || 0));
-  const baselineOdometer = Math.max(0, Math.round(input.baselineOdometer || 0));
-
-  if (!input.motorcycleId) {
-    return { error: 'A motorcycle must be selected.' };
-  }
-
-  const baseInsert = {
-    motorcycle_id: input.motorcycleId,
-    user_id: user.id,
-    task_name: taskName,
-    interval_mileage: intervalMileage,
-    interval_months: intervalMonths,
-    last_performed_date: input.baselineDate,
-    notes: input.notes?.trim() || null,
-    is_diy: true,
-  };
-
-  const primaryAttempt = await supabase
+  const { data, error } = await supabase
     .from('maintenance_tasks')
     .insert({
-      ...baseInsert,
-      last_performed_odometer: baselineOdometer,
+      motorcycle_id: input.motorcycleId,
+      user_id: user.id,
+      task_name: taskName,
+      interval_mileage: intervalMileage,
+      interval_months: intervalMonths,
+      last_performed_mileage: baselineOdometer,
+      last_performed_date: input.baselineDate,
+      notes: input.notes?.trim() || null,
+      is_diy: true,
     })
     .select('id')
     .single();
 
-  if (primaryAttempt.error) {
-    const fallbackAttempt = await supabase
-      .from('maintenance_tasks')
-      .insert({
-        ...baseInsert,
-        last_performed_mileage: baselineOdometer,
-      })
-      .select('id')
-      .single();
-
-    if (fallbackAttempt.error || !fallbackAttempt.data) {
-      return { error: fallbackAttempt.error?.message ?? 'Unable to create task.' };
-    }
-
-    revalidatePath('/');
-    return { data: { id: fallbackAttempt.data.id as string } };
-  }
-
-  if (!primaryAttempt.data) {
-    return { error: 'Unable to create task.' };
-  }
-
-  revalidatePath('/');
-  return { data: { id: primaryAttempt.data.id as string } };
+  if (error || !data) return { error: error?.message ?? 'Unable to create task.' };
+  return { data: { id: data.id as string } };
 }
 
-export async function completeTaskAction(
-  input: CompleteTaskActionInput
-): Promise<CompleteTaskActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+export async function updateTaskIntervalsAction(
+  taskId: string,
+  intervals: { intervalMileage: number; intervalMonths: number }
+): Promise<ActionResult> {
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
 
-  if (authError || !user) {
-    return { success: false, error: 'You must be signed in to log service.' };
+  const intervalMileage = normalizeMileage(intervals.intervalMileage);
+  const intervalMonths = normalizeMileage(intervals.intervalMonths);
+  if (intervalMileage === null || intervalMonths === null) {
+    return { error: 'Intervals must be whole, non-negative numbers.' };
   }
 
-  const motorcycleId = input.motorcycle_id;
-  const taskId = input.task_id ?? null;
-  const taskName = input.task_name.trim();
-  const performedAt = input.performed_at;
-  const normalizedOdometer = Math.max(0, Math.round(input.odometer_at_service || 0));
-  const normalizedCost =
-    typeof input.cost === 'number' && Number.isFinite(input.cost) ? Number(input.cost) : null;
-  const normalizedNotes = input.notes?.trim() || null;
+  const { data, error } = await supabase
+    .from('maintenance_tasks')
+    .update({ interval_mileage: intervalMileage, interval_months: intervalMonths })
+    .eq('id', taskId)
+    .select('id');
 
-  if (!motorcycleId) {
-    return { success: false, error: 'A motorcycle must be selected.' };
-  }
+  if (error) return { error: error.message };
+  if (!data?.length) return { error: 'Maintenance task not found.' };
+  return {};
+}
 
-  if (!taskName) {
-    return { success: false, error: 'Task name is required.' };
-  }
+export async function deleteTaskAction(taskId: string): Promise<ActionResult> {
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
 
-  if (!performedAt) {
-    return { success: false, error: 'Date performed is required.' };
-  }
+  // Keep past service records; just detach them from the task being removed.
+  const detach = await supabase.from('service_logs').update({ task_id: null }).eq('task_id', taskId);
+  if (detach.error) return { error: detach.error.message };
 
-  if (taskId) {
-    const taskLookup = await supabase
+  const { error } = await supabase.from('maintenance_tasks').delete().eq('id', taskId);
+  if (error) return { error: error.message };
+  return {};
+}
+
+type CompleteTaskActionInput = {
+  motorcycleId: string;
+  taskId: string | null;
+  taskName: string;
+  performedAt: string;
+  odometerAtService: number;
+  cost: number | null;
+  notes: string | null;
+};
+
+/** Records a service log, and moves the task's "last performed" forward if this is its newest service. */
+export async function completeTaskAction(input: CompleteTaskActionInput): Promise<ActionResult> {
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
+
+  const taskName = input.taskName.trim();
+  const odometer = normalizeMileage(input.odometerAtService);
+  const cost = input.cost !== null && Number.isFinite(input.cost) && input.cost >= 0 ? input.cost : null;
+
+  if (!input.motorcycleId) return { error: 'A motorcycle must be selected.' };
+  if (!taskName) return { error: 'Task name is required.' };
+  if (!isIsoDate(input.performedAt)) return { error: 'Please enter a valid date.' };
+  if (odometer === null) return { error: 'Please enter a valid odometer reading.' };
+
+  let task: { id: string; last_performed_date: string | null } | null = null;
+  if (input.taskId) {
+    const lookup = await supabase
       .from('maintenance_tasks')
-      .select('id,user_id,motorcycle_id')
-      .eq('id', taskId)
-      .single();
+      .select('id,last_performed_date')
+      .eq('id', input.taskId)
+      .eq('motorcycle_id', input.motorcycleId)
+      .maybeSingle();
 
-    if (taskLookup.error || !taskLookup.data) {
-      return { success: false, error: taskLookup.error?.message ?? 'Maintenance task not found.' };
-    }
-
-    if (taskLookup.data.user_id !== user.id || taskLookup.data.motorcycle_id !== motorcycleId) {
-      return { success: false, error: 'You are not authorized to update this task.' };
-    }
-
-    const taskUpdate = await updateTaskWithFallbackColumns(taskId, normalizedOdometer, performedAt);
-    if (taskUpdate.error) {
-      return { success: false, error: taskUpdate.error };
-    }
+    if (lookup.error) return { error: lookup.error.message };
+    if (!lookup.data) return { error: 'Maintenance task not found for this motorcycle.' };
+    task = lookup.data;
   }
 
-  const serviceLogInsert = await insertServiceLogRecord(supabase, {
-    userId: user.id,
-    motorcycleId,
-    taskId,
-    taskName,
-    performedAt,
-    odometerAtService: normalizedOdometer,
-    cost: normalizedCost,
-    notes: normalizedNotes,
+  const logInsert = await supabase.from('service_logs').insert({
+    user_id: user.id,
+    motorcycle_id: input.motorcycleId,
+    task_id: task?.id ?? null,
+    task_name: taskName,
+    performed_at: input.performedAt,
+    odometer_at_service: odometer,
+    cost,
+    notes: input.notes?.trim() || null,
   });
+  if (logInsert.error) return { error: logInsert.error.message };
 
-  if (serviceLogInsert.error) {
-    return { success: false, error: serviceLogInsert.error };
+  // Back-filling an older service shouldn't rewind the task's schedule.
+  const lastPerformed = task?.last_performed_date?.slice(0, 10) ?? '';
+  if (task && input.performedAt >= lastPerformed) {
+    const { error } = await supabase
+      .from('maintenance_tasks')
+      .update({ last_performed_mileage: odometer, last_performed_date: input.performedAt })
+      .eq('id', task.id);
+    if (error) return { error: error.message };
   }
 
-  const odometerUpdate = await updateMotorcycleOdometerIfHigher(motorcycleId, normalizedOdometer);
-  if (odometerUpdate.error) {
-    return { success: false, error: odometerUpdate.error };
-  }
+  const bumpOdometer = await supabase
+    .from('motorcycles')
+    .update({ current_mileage: odometer })
+    .eq('id', input.motorcycleId)
+    .lt('current_mileage', odometer);
+  if (bumpOdometer.error) return { error: bumpOdometer.error.message };
 
-  revalidatePath('/');
-  return { success: true, error: null };
+  return {};
 }
 
+/**
+ * Deletes a service log. If that log is what the task's "last performed" came
+ * from, the task falls back to its most recent remaining log.
+ */
 export async function deleteServiceLogAction(logId: string): Promise<ActionResult> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
 
-  if (authError || !user) {
-    return { error: 'You must be signed in to delete service records.' };
-  }
+  const lookup = await supabase
+    .from('service_logs')
+    .select('id,task_id,performed_at,odometer_at_service')
+    .eq('id', logId)
+    .maybeSingle();
+  if (lookup.error) return { error: lookup.error.message };
+  if (!lookup.data) return { error: 'Service record not found.' };
 
   const { error } = await supabase.from('service_logs').delete().eq('id', logId);
-  if (error) {
-    return { error: error.message };
-  }
+  if (error) return { error: error.message };
 
-  revalidatePath('/');
+  if (lookup.data.task_id) {
+    return rewindTaskIfNeeded(supabase, lookup.data.task_id, lookup.data);
+  }
+  return {};
+}
+
+async function rewindTaskIfNeeded(
+  supabase: SupabaseServerClient,
+  taskId: string,
+  deletedLog: { performed_at: string; odometer_at_service: number }
+): Promise<ActionResult> {
+  const taskLookup = await supabase
+    .from('maintenance_tasks')
+    .select('last_performed_date,last_performed_mileage')
+    .eq('id', taskId)
+    .maybeSingle();
+  if (taskLookup.error) return { error: taskLookup.error.message };
+
+  const task = taskLookup.data;
+  const cameFromDeletedLog =
+    task &&
+    task.last_performed_date?.slice(0, 10) === deletedLog.performed_at.slice(0, 10) &&
+    Number(task.last_performed_mileage) === Number(deletedLog.odometer_at_service);
+  if (!cameFromDeletedLog) return {};
+
+  const latest = await supabase
+    .from('service_logs')
+    .select('performed_at,odometer_at_service')
+    .eq('task_id', taskId)
+    .order('performed_at', { ascending: false })
+    .order('odometer_at_service', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (latest.error) return { error: latest.error.message };
+  // With no older logs left there's nothing to fall back to, so keep the current baseline.
+  if (!latest.data) return {};
+
+  const { error } = await supabase
+    .from('maintenance_tasks')
+    .update({
+      last_performed_mileage: latest.data.odometer_at_service,
+      last_performed_date: latest.data.performed_at.slice(0, 10),
+    })
+    .eq('id', taskId);
+  if (error) return { error: error.message };
   return {};
 }
