@@ -22,7 +22,7 @@ const ExtractedScheduleSchema = z.object({
 export type ExtractedTask = z.infer<typeof ExtractedTask>;
 export type ExtractedSchedule = z.infer<typeof ExtractedScheduleSchema>;
 
-const SYSTEM_PROMPT = `You read motorcycle owner's manual pages and extract the periodic maintenance schedule, so a rider's app can remind them when each job is due. A person reviews your result before it is saved, so accuracy matters more than completeness: never invent an interval that isn't printed on the pages.
+const SYSTEM_PROMPT = `You read images of motorcycle owner's manual pages and extract the periodic maintenance schedule, so a rider's app can remind them when each job is due. A person reviews your result before it is saved, so accuracy matters more than completeness: never invent an interval that isn't printed on the pages.
 
 How to read the schedule:
 - Include recurring items only. Break-in or first-service-only items (for example "after the first 1,000 km") are not recurring; mention them in notes instead.
@@ -64,8 +64,9 @@ function cleanTasks(tasks: ExtractedTask[]): ExtractedTask[] {
     .slice(0, MAX_TASKS);
 }
 
-export async function extractScheduleFromPdf(
-  pdfBase64: string,
+/** `pageImages` are base64 JPEGs of the selected manual pages, in page order. */
+export async function extractScheduleFromPages(
+  pageImages: string[],
   bike: { year: number; make: string; model: string }
 ): Promise<ExtractedSchedule> {
   const anthropic = getClient();
@@ -87,10 +88,13 @@ export async function extractScheduleFromPdf(
         {
           role: 'user',
           content: [
-            { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } },
+            ...pageImages.map((data) => ({
+              type: 'image' as const,
+              source: { type: 'base64' as const, media_type: 'image/jpeg' as const, data },
+            })),
             {
               type: 'text',
-              text: `These pages are from the owner's manual for a ${bike.year} ${bike.make} ${bike.model}. Extract its periodic maintenance schedule.`,
+              text: `These ${pageImages.length} images are selected pages, in order, from the owner's manual for a ${bike.year} ${bike.make} ${bike.model}. Extract its periodic maintenance schedule.`,
             },
           ],
         },

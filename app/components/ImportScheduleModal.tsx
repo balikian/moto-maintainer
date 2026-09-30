@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, type SubmitEvent } from 'react';
-import { PDFDocument } from 'pdf-lib';
 import { Plus, Sparkles, Trash2 } from 'lucide-react';
 import { applyModelScheduleAction, extractScheduleAction, saveModelScheduleAction } from '@/lib/actions/schedules';
 import { todayIsoDate } from '@/lib/dates';
 import { bikeTitle } from '@/lib/historyExport';
-import { formatPageList, parsePageSelection } from '@/lib/pageRanges';
+import { formatPageList } from '@/lib/pageRanges';
+import { renderPdfPages } from '@/lib/pdfPages';
 import type { ExtractedTask } from '@/lib/scheduleExtraction';
 import type { Motorcycle } from '@/lib/types';
 import Modal from './Modal';
@@ -28,25 +28,6 @@ type Stage =
 const cellInput =
   'w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
 
-/** Copies just the chosen pages into a new, much smaller PDF. */
-async function extractPages(file: File, selection: string) {
-  let source: PDFDocument;
-  try {
-    source = await PDFDocument.load(await file.arrayBuffer(), { ignoreEncryption: true });
-  } catch {
-    return { error: 'That file couldn’t be opened as a PDF.' } as const;
-  }
-
-  const parsed = parsePageSelection(selection, source.getPageCount());
-  if ('error' in parsed) return parsed;
-
-  const output = await PDFDocument.create();
-  const copied = await output.copyPages(source, parsed.pages.map((page) => page - 1));
-  copied.forEach((page) => output.addPage(page));
-  const bytes = await output.save();
-  return { pages: parsed.pages, blob: new Blob([bytes as BlobPart], { type: 'application/pdf' }) } as const;
-}
-
 export default function ImportScheduleModal({ bike, onClose, onImported }: ImportScheduleModalProps) {
   const [stage, setStage] = useState<Stage>({ name: 'select' });
   const [file, setFile] = useState<File | null>(null);
@@ -67,35 +48,41 @@ export default function ImportScheduleModal({ bike, onClose, onImported }: Impor
     }
 
     setError(null);
-    const excerpt = await extractPages(file, pageSelection);
-    if ('error' in excerpt) {
-      setError(excerpt.error ?? 'Couldn’t read those pages.');
-      return;
-    }
-
     setStage({ name: 'reading' });
-    const formData = new FormData();
-    formData.append('pdf', excerpt.blob, 'schedule-pages.pdf');
-    formData.append('year', String(bike.year));
-    formData.append('make', bike.make);
-    formData.append('model', bike.model);
+    try {
+      const excerpt = await renderPdfPages(file, pageSelection);
+      if ('error' in excerpt) {
+        setError(excerpt.error);
+        setStage({ name: 'select' });
+        return;
+      }
 
-    const result = await extractScheduleAction(formData);
-    if (result.error || !result.data) {
-      setError(result.error ?? 'Couldn’t read the schedule.');
-      setStage({ name: 'select' });
-      return;
-    }
-    if (!result.data.found_schedule || result.data.tasks.length === 0) {
-      setError(`No maintenance schedule found on those pages. ${result.data.notes}`.trim());
-      setStage({ name: 'select' });
-      return;
-    }
+      const formData = new FormData();
+      excerpt.images.forEach((image, index) => formData.append('page', image, `page-${excerpt.pages[index]}.jpg`));
+      formData.append('year', String(bike.year));
+      formData.append('make', bike.make);
+      formData.append('model', bike.model);
 
-    setTasks(result.data.tasks);
-    setSource(`${bike.year} owner's manual, pages ${formatPageList(excerpt.pages)}`);
-    setNotes(result.data.notes);
-    setStage({ name: 'review' });
+      const result = await extractScheduleAction(formData);
+      if (result.error || !result.data) {
+        setError(result.error ?? 'Couldn’t read the schedule.');
+        setStage({ name: 'select' });
+        return;
+      }
+      if (!result.data.found_schedule || result.data.tasks.length === 0) {
+        setError(`No maintenance schedule found on those pages. ${result.data.notes}`.trim());
+        setStage({ name: 'select' });
+        return;
+      }
+
+      setTasks(result.data.tasks);
+      setSource(`${bike.year} owner's manual, pages ${formatPageList(excerpt.pages)}`);
+      setNotes(result.data.notes);
+      setStage({ name: 'review' });
+    } catch {
+      setError('Something went wrong reading that file. Please try again, or try fewer pages.');
+      setStage({ name: 'select' });
+    }
   };
 
   const updateTask = (index: number, changes: Partial<ExtractedTask>) => {

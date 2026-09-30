@@ -1,20 +1,25 @@
 'use server';
 
-import { PDFDocument } from 'pdf-lib';
 import { isIsoDate } from '../dates';
 import { getDefaultTasks } from '../maintenance';
 import { fetchModelSchedule } from '../modelData';
 import { MAX_IMPORT_PAGES } from '../pageRanges';
-import { extractScheduleFromPdf, ScheduleExtractionError, type ExtractedSchedule, type ExtractedTask } from '../scheduleExtraction';
+import { extractScheduleFromPages, ScheduleExtractionError, type ExtractedSchedule, type ExtractedTask } from '../scheduleExtraction';
 import { getSignedInClient } from '../supabase/server';
 import type { Motorcycle, ReviewStatus } from '../types';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
 
-const MAX_PDF_BYTES = 8 * 1024 * 1024;
+// Stays under the 10 MB server-action body limit in next.config.ts.
+const MAX_UPLOAD_BYTES = 9 * 1024 * 1024;
+
+function isJpeg(bytes: Uint8Array): boolean {
+  return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+}
 
 /**
  * Reads the maintenance schedule from a few owner's-manual pages. The browser
- * sends only the pages the rider picked, so this stays small and cheap.
+ * renders only the pages the rider picked as JPEG images (see lib/pdfPages.ts),
+ * so this stays small and cheap, and works for locked PDFs.
  * Admin-only for now, since every call is billed to the app's Anthropic key.
  */
 export async function extractScheduleAction(formData: FormData): Promise<ActionResult<ExtractedSchedule>> {
@@ -24,27 +29,28 @@ export async function extractScheduleAction(formData: FormData): Promise<ActionR
   const { data: isAdmin } = await supabase.rpc('is_app_admin');
   if (!isAdmin) return { error: 'Importing schedules from manuals is limited to admins for now.' };
 
-  const file = formData.get('pdf');
+  const pages = formData.getAll('page').filter((entry): entry is File => entry instanceof File);
   const bike = {
     year: Number(formData.get('year')),
     make: String(formData.get('make') ?? '').trim(),
     model: String(formData.get('model') ?? '').trim(),
   };
-  if (!(file instanceof File)) return { error: 'No PDF was uploaded.' };
-  if (file.size > MAX_PDF_BYTES) return { error: 'Those pages are too large to send. Try fewer pages.' };
+  if (pages.length === 0) return { error: 'No pages were uploaded.' };
+  if (pages.length > MAX_IMPORT_PAGES) return { error: `Please send at most ${MAX_IMPORT_PAGES} pages.` };
+  if (pages.reduce((total, page) => total + page.size, 0) > MAX_UPLOAD_BYTES) {
+    return { error: 'Those pages are too large to send. Try fewer pages.' };
+  }
   if (!bike.make || !bike.model || !bike.year) return { error: 'This bike is missing its make, model, or year.' };
 
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  let pageCount: number;
-  try {
-    pageCount = (await PDFDocument.load(bytes, { ignoreEncryption: true })).getPageCount();
-  } catch {
-    return { error: 'That file isn’t a readable PDF.' };
+  const images: string[] = [];
+  for (const page of pages) {
+    const bytes = new Uint8Array(await page.arrayBuffer());
+    if (!isJpeg(bytes)) return { error: 'The uploaded pages weren’t valid images.' };
+    images.push(Buffer.from(bytes).toString('base64'));
   }
-  if (pageCount > MAX_IMPORT_PAGES) return { error: `Please send at most ${MAX_IMPORT_PAGES} pages.` };
 
   try {
-    const schedule = await extractScheduleFromPdf(Buffer.from(bytes).toString('base64'), bike);
+    const schedule = await extractScheduleFromPages(images, bike);
     return { data: schedule };
   } catch (error) {
     if (error instanceof ScheduleExtractionError) return { error: error.message };

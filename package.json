@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "sync:bikes": "tsx scripts/sync-motorcycle-data.ts",
-    "test": "tsx --test lib/**/*.test.ts"
+    "test": "tsx --test lib/**/*.test.ts",
+    "postinstall": "node scripts/copy-pdf-worker.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.130.0",
@@ -16,7 +17,7 @@
     "@supabase/supabase-js": "^2.110.5",
     "lucide-react": "^1.48.0",
     "next": "16.2.9",
-    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^6.3.289",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zod": "^4.6.5"
