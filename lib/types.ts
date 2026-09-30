@@ -29,6 +29,40 @@ export interface MaintenanceTask {
   created_at?: string;
 }
 
+export type ReviewStatus = 'pending' | 'approved' | 'rejected';
+
+/** Shared reference data, matched to a bike by make, model, and model-year range. */
+export interface ModelEntry {
+  id: string;
+  make: string;
+  model: string;
+  year_from: number;
+  year_to: number;
+  status: ReviewStatus;
+  submitted_by: string | null;
+  created_at: string;
+}
+
+export interface BikeManual extends ModelEntry {
+  url: string;
+  label: string;
+}
+
+export interface ScheduleTask {
+  task_name: string;
+  interval_distance: number;
+  /** The unit the manufacturer's schedule uses; converted to miles when tasks are created. */
+  distance_unit: 'mi' | 'km';
+  interval_months: number;
+  is_diy: boolean;
+  sort_order: number;
+}
+
+export interface ModelSchedule extends ModelEntry {
+  source: string | null;
+  model_schedule_tasks: ScheduleTask[];
+}
+
 export interface ServiceLog {
   id: string;
   motorcycle_id: string;

@@ -73,26 +73,39 @@ describe('getTaskDueState', () => {
 });
 
 describe('default tasks', () => {
-  it('uses the model schedule when the bike is known', () => {
-    const tasks = getDefaultTasks({ year: 2024, make: 'Yamaha', model: 'Tenere 700' });
-    assert.ok(tasks.some((t) => t.task_name === 'Spark Plugs Replacement'));
+  const nordenSchedule = {
+    model_schedule_tasks: [
+      { task_name: 'Valve Clearance Check', interval_distance: 30000, distance_unit: 'km' as const, interval_months: 0, is_diy: false, sort_order: 2 },
+      { task_name: 'Engine Oil & Filter', interval_distance: 15000, distance_unit: 'km' as const, interval_months: 12, is_diy: true, sort_order: 1 },
+    ],
+  };
+
+  it('uses the manufacturer schedule, in order, converted to miles', () => {
+    assert.deepEqual(getDefaultTasks(nordenSchedule), [
+      { task_name: 'Engine Oil & Filter', interval_mileage: 9321, interval_months: 12, is_diy: true },
+      { task_name: 'Valve Clearance Check', interval_mileage: 18641, interval_months: 0, is_diy: false },
+    ]);
   });
 
-  it('falls back to the generic schedule for unknown bikes', () => {
-    assert.equal(getDefaultTasks({ year: 2010, make: 'Honda', model: 'CB500' }), GENERIC_MAINTENANCE_TASKS);
+  it('keeps mile-based schedules as they are', () => {
+    const schedule = { model_schedule_tasks: [{ ...nordenSchedule.model_schedule_tasks[1], interval_distance: 6000, distance_unit: 'mi' as const }] };
+    assert.equal(getDefaultTasks(schedule)[0].interval_mileage, 6000);
+  });
+
+  it('falls back to the generic schedule when there is none', () => {
+    assert.equal(getDefaultTasks(null), GENERIC_MAINTENANCE_TASKS);
+    assert.equal(getDefaultTasks({ model_schedule_tasks: [] }), GENERIC_MAINTENANCE_TASKS);
   });
 
   it('finds a default by task name, case-insensitively', () => {
-    const found = findDefaultTask({ year: 2024, make: 'Yamaha', model: 'Tenere 700' }, ' engine oil & filter ');
-    assert.equal(found?.interval_mileage, 6000);
+    assert.equal(findDefaultTask(nordenSchedule, ' engine oil & filter ')?.interval_mileage, 9321);
   });
 
-  it('falls back to the generic default when the model schedule lacks that task', () => {
-    const found = findDefaultTask({ year: 2024, make: 'Yamaha', model: 'Tenere 700' }, 'Valve Clearance Check');
-    assert.equal(found?.interval_mileage, 15000);
+  it('falls back to the generic default when the schedule lacks that task', () => {
+    assert.equal(findDefaultTask(nordenSchedule, 'Chain Clean & Tension')?.interval_mileage, 500);
   });
 
   it('returns null for custom tasks', () => {
-    assert.equal(findDefaultTask({ year: 2024, make: 'Yamaha', model: 'Tenere 700' }, 'Fork seals'), null);
+    assert.equal(findDefaultTask(nordenSchedule, 'Fork seals'), null);
   });
 });

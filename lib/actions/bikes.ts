@@ -2,6 +2,7 @@
 
 import { isIsoDate } from '../dates';
 import { getDefaultTasks } from '../maintenance';
+import { fetchModelSchedule } from '../modelData';
 import { getSignedInClient } from '../supabase/server';
 import type { Motorcycle } from '../types';
 import { normalizeMileage } from '../units';
@@ -48,8 +49,12 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
     return { error: error?.message ?? 'Unable to add this motorcycle right now.' };
   }
 
+  // The manufacturer's schedule if we have one for this model, else generic tasks.
+  // A lookup failure shouldn't block adding the bike, so it falls back too.
+  const schedule = await fetchModelSchedule(supabase, { year, make, model });
+
   const { error: seedError } = await supabase.from('maintenance_tasks').insert(
-    getDefaultTasks({ year, make, model }).map((task) => ({
+    getDefaultTasks(schedule.data).map((task) => ({
       ...task,
       motorcycle_id: bike.id,
       user_id: user.id,

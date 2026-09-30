@@ -1,27 +1,42 @@
-import { BIKE_SCHEDULES } from './data/bikeSchedules';
 import { addMonths, daysBetween, parseIsoDate } from './dates';
-import type { MaintenanceTask, Motorcycle } from './types';
+import type { MaintenanceTask, ModelSchedule } from './types';
+import { fromDisplayDistance } from './units';
 
 export type TaskDefaults = Pick<MaintenanceTask, 'task_name' | 'interval_mileage' | 'interval_months' | 'is_diy'>;
 
+/** Used for bikes that don't have a manufacturer schedule in model_schedules yet. */
 export const GENERIC_MAINTENANCE_TASKS: TaskDefaults[] = [
   { task_name: 'Engine Oil & Filter', interval_mileage: 5000, interval_months: 12, is_diy: true },
   { task_name: 'Chain Clean & Tension', interval_mileage: 500, interval_months: 1, is_diy: true },
   { task_name: 'Valve Clearance Check', interval_mileage: 15000, interval_months: 24, is_diy: false },
 ];
 
-type BikeIdentity = Pick<Motorcycle, 'year' | 'make' | 'model'>;
+/**
+ * The tasks a bike starts with: its manufacturer schedule (converted to miles)
+ * if there is one, otherwise the generic defaults.
+ */
+export function getDefaultTasks(schedule: Pick<ModelSchedule, 'model_schedule_tasks'> | null): TaskDefaults[] {
+  const tasks = schedule?.model_schedule_tasks ?? [];
+  if (tasks.length === 0) return GENERIC_MAINTENANCE_TASKS;
 
-/** The tasks a newly added bike starts with: its model schedule if we know it, otherwise generic defaults. */
-export function getDefaultTasks(bike: BikeIdentity): TaskDefaults[] {
-  return BIKE_SCHEDULES[bike.year]?.[bike.make]?.[bike.model] ?? GENERIC_MAINTENANCE_TASKS;
+  return [...tasks]
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((task) => ({
+      task_name: task.task_name,
+      interval_mileage: Math.round(fromDisplayDistance(task.interval_distance, task.distance_unit === 'km' ? 'metric' : 'imperial')),
+      interval_months: task.interval_months,
+      is_diy: task.is_diy,
+    }));
 }
 
 /** The default interval for one task by name, used by "Reset to default". */
-export function findDefaultTask(bike: BikeIdentity, taskName: string): TaskDefaults | null {
+export function findDefaultTask(
+  schedule: Pick<ModelSchedule, 'model_schedule_tasks'> | null,
+  taskName: string
+): TaskDefaults | null {
   const name = taskName.trim().toLowerCase();
   const matches = (task: TaskDefaults) => task.task_name.toLowerCase() === name;
-  return getDefaultTasks(bike).find(matches) ?? GENERIC_MAINTENANCE_TASKS.find(matches) ?? null;
+  return getDefaultTasks(schedule).find(matches) ?? GENERIC_MAINTENANCE_TASKS.find(matches) ?? null;
 }
 
 export type TaskStatus = 'Healthy' | 'Soon' | 'Urgent' | 'Overdue';

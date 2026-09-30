@@ -12,6 +12,7 @@ type GarageHeaderProps = {
   activeBike: Motorcycle | null;
   unitSystem: UnitSystem;
   theme: Theme;
+  isAdmin: boolean;
   onSelectBike: (bikeId: string) => void;
   onAddBike: () => void;
   onRemoveBike: (bike: Motorcycle) => void;
@@ -32,6 +33,7 @@ export default function GarageHeader(props: GarageHeaderProps) {
           avatarUrl={props.avatarUrl}
           unitSystem={props.unitSystem}
           theme={props.theme}
+          isAdmin={props.isAdmin}
           onToggleUnits={props.onToggleUnits}
           onToggleTheme={props.onToggleTheme}
         />

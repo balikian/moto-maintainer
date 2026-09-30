@@ -10,6 +10,7 @@ type UserMenuProps = {
   avatarUrl: string | null;
   unitSystem: UnitSystem;
   theme: Theme;
+  isAdmin: boolean;
   onToggleUnits: () => void;
   onToggleTheme: () => void;
 };
@@ -17,7 +18,7 @@ type UserMenuProps = {
 const menuItemClass =
   'w-full rounded-xl bg-slate-100 px-3 py-2 text-left text-sm transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700';
 
-export default function UserMenu({ avatarUrl, unitSystem, theme, onToggleUnits, onToggleTheme }: UserMenuProps) {
+export default function UserMenu({ avatarUrl, unitSystem, theme, isAdmin, onToggleUnits, onToggleTheme }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -63,6 +64,11 @@ export default function UserMenu({ avatarUrl, unitSystem, theme, onToggleUnits, 
             >
               {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             </button>
+            {isAdmin && (
+              <a href="/admin" className={`block ${menuItemClass}`}>
+                Review submissions
+              </a>
+            )}
             <div className="my-2 border-t border-slate-200 dark:border-slate-800" />
             <form action={logout}>
               <button

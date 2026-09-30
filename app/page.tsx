@@ -11,10 +11,12 @@ import {
 } from '@/lib/actions/tasks';
 import { todayIsoDate } from '@/lib/dates';
 import { findDefaultTask } from '@/lib/maintenance';
+import { fetchModelSchedule } from '@/lib/modelData';
 import { createClient } from '@/lib/supabase/client';
 import type { MaintenanceTask, Motorcycle, ServiceLog } from '@/lib/types';
 import AddBikeModal, { type NewBikeValues } from './components/AddBikeModal';
 import AddCustomTaskModal, { type NewTaskValues } from './components/AddCustomTaskModal';
+import BikeManualPanel from './components/BikeManualPanel';
 import ErrorList from './components/ErrorList';
 import GarageHeader from './components/GarageHeader';
 import LoginCard from './components/LoginCard';
@@ -71,6 +73,10 @@ export default function GarageDashboard() {
       .order('performed_at', { ascending: false })
       .order('created_at', { ascending: false })
   );
+
+  // Admins see a link to the review page. The page itself re-checks on the server.
+  const adminQuery = useSupabaseQuery<boolean>(userId, () => supabase.rpc('is_app_admin'));
+  const isAdmin = adminQuery.data === true;
 
   const loadErrors = [bikesQuery.error, tasksQuery.error, logsQuery.error]
     .filter((message): message is string => Boolean(message))
@@ -133,7 +139,9 @@ export default function GarageDashboard() {
 
   const handleResetTask = async (task: MaintenanceTask) => {
     if (!activeBike) return;
-    const defaults = findDefaultTask(activeBike, task.task_name);
+    // If the schedule can't be loaded, fall back to the generic defaults.
+    const schedule = await fetchModelSchedule(supabase, activeBike);
+    const defaults = findDefaultTask(schedule.data, task.task_name);
     if (!defaults) {
       reportError(`"${task.task_name}" is a custom task, so it has no default interval to reset to.`);
       return;
@@ -221,6 +229,7 @@ export default function GarageDashboard() {
         activeBike={activeBike}
         unitSystem={unitSystem}
         theme={theme}
+        isAdmin={isAdmin}
         onSelectBike={setSelectedBikeId}
         onAddBike={() => setDialog({ type: 'addBike' })}
         onRemoveBike={(bike) => void handleRemoveBike(bike)}
@@ -241,6 +250,8 @@ export default function GarageDashboard() {
 
         {activeBike ? (
           <>
+            <BikeManualPanel supabase={supabase} bike={activeBike} currentUserId={user.id} />
+
             <MaintenanceChecklist
               bike={activeBike}
               tasks={tasks}
