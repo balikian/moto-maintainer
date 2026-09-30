@@ -21,9 +21,12 @@ Built with Next.js (App Router), React, Tailwind CSS, and Supabase (auth + Postg
    NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
    # Optional; defaults to http://localhost:3000. Used for sign-in redirects.
    NEXT_PUBLIC_SITE_URL=http://localhost:3000
+   # Optional; enables "Import from manual" (reads maintenance schedules with Claude).
+   # Server-only: never prefix it with NEXT_PUBLIC_.
+   ANTHROPIC_API_KEY=sk-ant-...
    ```
 
-   The app never needs the secret (service-role) key. Don't put it here.
+   The app never needs the Supabase secret (service-role) key. Don't put it here.
 
 3. Apply the database migrations in `supabase/migrations/` (in order) using the
    Supabase SQL Editor.

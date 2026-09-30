@@ -2,19 +2,25 @@
 
 import { useState, type SubmitEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BookOpen, ExternalLink, Plus, Search, X } from 'lucide-react';
+import { BookOpen, ExternalLink, ListChecks, Plus, Search, Sparkles, X } from 'lucide-react';
 import { deleteManualAction, submitManualAction } from '@/lib/actions/modelData';
+import { applyModelScheduleAction } from '@/lib/actions/schedules';
 import { manualPortalFor, manualSearchUrl } from '@/lib/data/manualPortals';
+import { todayIsoDate } from '@/lib/dates';
 import { bikeTitle } from '@/lib/historyExport';
-import { fetchManuals, isHttpUrl } from '@/lib/modelData';
-import type { BikeManual, Motorcycle } from '@/lib/types';
+import { fetchManuals, fetchModelSchedule, isHttpUrl } from '@/lib/modelData';
+import type { BikeManual, ModelSchedule, Motorcycle } from '@/lib/types';
 import { useSupabaseQuery } from '../hooks/useSupabaseQuery';
+import ImportScheduleModal from './ImportScheduleModal';
 import { ui } from './ui';
 
 type BikeManualPanelProps = {
   supabase: SupabaseClient;
   bike: Motorcycle;
   currentUserId: string;
+  isAdmin: boolean;
+  /** Called after the bike's checklist changed, so the page can reload its tasks. */
+  onTasksChanged: () => void;
 };
 
 const linkButtonClass =
@@ -24,9 +30,12 @@ function yearsLabel(manual: BikeManual): string {
   return manual.year_from === manual.year_to ? String(manual.year_from) : `${manual.year_from}–${manual.year_to}`;
 }
 
-export default function BikeManualPanel({ supabase, bike, currentUserId }: BikeManualPanelProps) {
+export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin, onTasksChanged }: BikeManualPanelProps) {
   const lookupKey = `${bike.id}|${bike.year}|${bike.make}|${bike.model}`;
   const manuals = useSupabaseQuery<BikeManual[]>(lookupKey, () => fetchManuals(supabase, bike));
+  const schedule = useSupabaseQuery<ModelSchedule | null>(lookupKey, () => fetchModelSchedule(supabase, bike));
+  const [importOpen, setImportOpen] = useState(false);
+  const [applying, setApplying] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [url, setUrl] = useState('');
   const [saving, setSaving] = useState(false);
@@ -61,6 +70,22 @@ export default function BikeManualPanel({ supabase, bike, currentUserId }: BikeM
         : 'Thanks! You can use this link now; it will be shared with other riders once it is reviewed.',
     });
     manuals.reload();
+  };
+
+  const handleApplySchedule = async () => {
+    if (!window.confirm('Update your checklist from the manufacturer schedule? Matching tasks get its intervals, missing ones are added, and your other tasks are kept.')) {
+      return;
+    }
+    setApplying(true);
+    setMessage(null);
+    const result = await applyModelScheduleAction(bike.id, todayIsoDate());
+    setApplying(false);
+    if (result.error || !result.data) {
+      setMessage({ tone: 'error', text: result.error ?? 'Couldn’t update your checklist.' });
+      return;
+    }
+    setMessage({ tone: 'info', text: `Checklist updated: ${result.data.updated} tasks updated, ${result.data.added} added.` });
+    onTasksChanged();
   };
 
   const handleRemove = async (manual: BikeManual) => {
@@ -175,7 +200,62 @@ export default function BikeManualPanel({ supabase, bike, currentUserId }: BikeM
         </div>
       )}
 
-      {(message || manuals.error) && (
+      <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-800">
+        <h3 className={`inline-flex items-center gap-1.5 ${ui.sectionTitle}`}>
+          <ListChecks size={14} className="text-amber-500" />
+          Manufacturer Schedule
+        </h3>
+
+        {schedule.loading ? (
+          <p className={`mt-2 text-sm ${ui.muted}`}>Checking for a schedule…</p>
+        ) : schedule.data ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="text-sm">
+              {schedule.data.model_schedule_tasks.length} tasks
+              {schedule.data.source && <span className={ui.muted}> · {schedule.data.source}</span>}
+            </span>
+            {schedule.data.status === 'pending' && (
+              <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                Waiting for review
+              </span>
+            )}
+            <button type="button" onClick={() => void handleApplySchedule()} disabled={applying} className={linkButtonClass}>
+              {applying ? 'Updating…' : 'Apply to my checklist'}
+            </button>
+            {isAdmin && (
+              <button type="button" onClick={() => setImportOpen(true)} className={`text-xs font-semibold ${ui.muted} hover:text-amber-600`}>
+                Re-import
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <p className={`text-sm ${ui.muted}`}>
+              No manufacturer schedule for this bike yet{isAdmin ? '.' : ', so your checklist uses general defaults.'}
+            </p>
+            {isAdmin && (
+              <button type="button" onClick={() => setImportOpen(true)} className={`${ui.primaryButton} px-3 py-1.5 text-xs`}>
+                <Sparkles size={14} /> Import from manual
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {importOpen && (
+        <ImportScheduleModal
+          bike={bike}
+          onClose={() => setImportOpen(false)}
+          onImported={(summary) => {
+            setImportOpen(false);
+            setMessage({ tone: 'info', text: summary });
+            schedule.reload();
+            onTasksChanged();
+          }}
+        />
+      )}
+
+      {(message || manuals.error || schedule.error) && (
         <p
           className={`mt-3 ${
             message?.tone === 'info'
@@ -183,7 +263,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId }: BikeM
               : ui.errorBox
           }`}
         >
-          {message?.text ?? `Couldn't load manuals: ${manuals.error}`}
+          {message?.text ?? `Couldn't load manual information: ${manuals.error ?? schedule.error}`}
         </p>
       )}
     </section>

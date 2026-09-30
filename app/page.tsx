@@ -260,7 +260,13 @@ export default function GarageDashboard() {
 
         {activeBike ? (
           <>
-            <BikeManualPanel supabase={supabase} bike={activeBike} currentUserId={user.id} />
+            <BikeManualPanel
+              supabase={supabase}
+              bike={activeBike}
+              currentUserId={user.id}
+              isAdmin={isAdmin}
+              onTasksChanged={tasksQuery.reload}
+            />
 
             <MaintenanceChecklist
               bike={activeBike}
