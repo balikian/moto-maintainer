@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { findDefaultTask, getDefaultTasks, getTaskDueState, GENERIC_MAINTENANCE_TASKS } from './maintenance';
+import { findDefaultTask, getDefaultTasks, getTaskDueState, GENERIC_MAINTENANCE_TASKS, groupTasksByUrgency } from './maintenance';
 
 const today = new Date(2026, 8, 29); // Sep 29, 2026
 
@@ -107,5 +107,30 @@ describe('default tasks', () => {
 
   it('returns null for custom tasks', () => {
     assert.equal(findDefaultTask(nordenSchedule, 'Fork seals'), null);
+  });
+});
+
+describe('groupTasksByUrgency', () => {
+  // Bike at 14,000 mi; all tasks last done at 10,000 mi on Sep 1, 2026 unless noted.
+  const named = (task_name: string, overrides: Partial<Parameters<typeof getTaskDueState>[0]> = {}) => ({ task_name, ...task(overrides) });
+  const names = (entries: { task: { task_name: string } }[]) => entries.map((entry) => entry.task.task_name);
+
+  const tasks = [
+    named('Healthy far', { interval_mileage: 20000 }),                 // 80% left
+    named('Soon', { interval_mileage: 5000 }),                         // 20% left
+    named('Overdue', { interval_mileage: 3000 }),                      // past due
+    named('Healthy near', { interval_mileage: 8000 }),                 // 50% left
+    named('Urgent', { interval_mileage: 4300 }),                       // ~7% left
+    named('No interval', { interval_mileage: 0, interval_months: 0 }),
+  ];
+
+  it('puts tasks needing attention first, most due first', () => {
+    const { needsAttention } = groupTasksByUrgency(tasks, 14000, today);
+    assert.deepEqual(names(needsAttention), ['Overdue', 'Urgent', 'Soon']);
+  });
+
+  it('sorts healthy tasks by what is coming up next, with no-interval tasks last', () => {
+    const { healthy } = groupTasksByUrgency(tasks, 14000, today);
+    assert.deepEqual(names(healthy), ['Healthy near', 'Healthy far', 'No interval']);
   });
 });

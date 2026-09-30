@@ -96,3 +96,30 @@ export function getTaskDueState(
 
   return { status, trigger, milesRemaining, daysRemaining, fractionRemaining: fraction };
 }
+
+const STATUS_RANK: Record<TaskStatus, number> = { Overdue: 0, Urgent: 1, Soon: 2, Healthy: 3 };
+
+/**
+ * Splits a bike's tasks into the ones that need attention (overdue, urgent,
+ * or soon) and the healthy ones, each sorted most-due first: by status, then
+ * by the share of the interval left. Tasks without intervals go last.
+ */
+export function groupTasksByUrgency<T extends Parameters<typeof getTaskDueState>[0] & { task_name: string }>(
+  tasks: T[],
+  currentMileage: number,
+  today: Date
+): { needsAttention: { task: T; dueState: TaskDueState }[]; healthy: { task: T; dueState: TaskDueState }[] } {
+  const sorted = tasks
+    .map((task) => ({ task, dueState: getTaskDueState(task, currentMileage, today) }))
+    .sort(
+      (a, b) =>
+        STATUS_RANK[a.dueState.status] - STATUS_RANK[b.dueState.status] ||
+        (a.dueState.fractionRemaining ?? Number.POSITIVE_INFINITY) - (b.dueState.fractionRemaining ?? Number.POSITIVE_INFINITY) ||
+        a.task.task_name.localeCompare(b.task.task_name)
+    );
+
+  return {
+    needsAttention: sorted.filter((entry) => entry.dueState.status !== 'Healthy'),
+    healthy: sorted.filter((entry) => entry.dueState.status === 'Healthy'),
+  };
+}

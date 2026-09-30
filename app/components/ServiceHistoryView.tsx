@@ -5,6 +5,7 @@ import { ChevronDown, Clock3, Plus, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
 import type { Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
+import { useStoredToggle } from '../hooks/useStoredToggle';
 import ExportMenu from './ExportMenu';
 import { ui } from './ui';
 
@@ -21,36 +22,10 @@ type ServiceHistoryViewProps = {
 
 const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-// Remembered per browser; it's a view preference, not account data.
-const COLLAPSED_STORAGE_KEY = 'moto-maintain:history-collapsed';
-
-function readCollapsed(): boolean {
-  try {
-    return window.localStorage.getItem(COLLAPSED_STORAGE_KEY) === 'true';
-  } catch {
-    return false;
-  }
-}
-
-function saveCollapsed(collapsed: boolean) {
-  try {
-    window.localStorage.setItem(COLLAPSED_STORAGE_KEY, String(collapsed));
-  } catch {
-    // Storage can be unavailable (private browsing); the toggle still works for this visit.
-  }
-}
-
 export default function ServiceHistoryView({ bike, logs, loading, unitSystem, onAddLog, onDeleteLog, onShare }: ServiceHistoryViewProps) {
-  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const [collapsed, toggleCollapsed] = useStoredToggle('moto-maintain:history-collapsed', false);
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const toggleCollapsed = () => {
-    setCollapsed((previous) => {
-      saveCollapsed(!previous);
-      return !previous;
-    });
-  };
 
   const handleDelete = async (log: ServiceLog) => {
     setDeletingLogId(log.id);
