@@ -30,7 +30,8 @@ How to read the schedule:
 - For "whichever comes first" items, fill in both the distance and the months. If only one applies, set the other to 0.
 - Use the distance unit the table is laid out in. If it shows both kilometers and miles, use whichever is listed first.
 - Keep task names short and rider-friendly, close to the manual's wording.
-- is_diy is true for routine owner jobs (oil and filter, chain, tires, lights, fluid levels) and false for jobs the manual assigns to a dealer or workshop, or that need special tools (for example valve clearance or throttle body synchronization).
+- is_diy answers: could a typical home mechanic with ordinary hand tools do this job? Judge from the job itself. Manufacturers mark most scheduled work with workshop symbols or "have this done by an authorized dealer" wording for liability and warranty reasons, so don't let those symbols or that wording decide it. Brake fluid changes, brake pad and disc checks, chain work, air filters, spark plugs, coolant and fork dust boots are DIY. Set is_diy to false only for jobs that need dealer diagnostic software, special equipment or specialist skill, such as valve clearance, fuel pressure checks, or suspension internals.
+- Dealer-only steps that aren't maintenance a rider tracks (reading out fault memory with the dealer diagnostics tool, programming sensors, resetting the service display, entering proof of service in a dealer portal, the final test ride) should not be separate tasks. Fold them into a single "Dealer service inspection" task (is_diy false) at the shortest recurring interval they appear at.
 - Use notes for anything the reviewer should know: severe-use or off-road variations, footnotes you couldn't fold into an interval, or items you weren't sure about.
 
 If the pages don't contain a periodic maintenance schedule, set found_schedule to false, return no tasks, and say what the pages contain instead.`;
