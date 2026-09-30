@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bike as BikeIcon, ChevronDown, Plus, Trash2 } from 'lucide-react';
+import { Bike as BikeIcon, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
 import { ui } from './ui';
@@ -12,10 +12,14 @@ type BikeSwitcherProps = {
   unitSystem: UnitSystem;
   onSelect: (bikeId: string) => void;
   onAdd: () => void;
+  onEdit: (bike: Motorcycle) => void;
   onRemove: (bike: Motorcycle) => void;
 };
 
-export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, onAdd, onRemove }: BikeSwitcherProps) {
+const rowButtonClass =
+  'rounded-md border border-slate-300 p-1.5 text-slate-500 transition-colors dark:border-slate-700';
+
+export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, onAdd, onEdit, onRemove }: BikeSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const select = (bikeId: string) => {
@@ -78,9 +82,22 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
                         onClick={(event) => {
                           event.stopPropagation();
                           setIsOpen(false);
+                          onEdit(bike);
+                        }}
+                        className={`${rowButtonClass} hover:border-amber-500/40 hover:text-amber-500`}
+                        title="Edit bike"
+                        aria-label={`Edit ${bike.year} ${bike.make} ${bike.model}`}
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setIsOpen(false);
                           onRemove(bike);
                         }}
-                        className="rounded-md border border-slate-300 p-1.5 text-slate-500 transition-colors hover:border-rose-500/40 hover:text-rose-500 dark:border-slate-700 dark:hover:text-rose-400"
+                        className={`${rowButtonClass} hover:border-rose-500/40 hover:text-rose-500 dark:hover:text-rose-400`}
                         title="Remove bike"
                         aria-label={`Remove ${bike.year} ${bike.make} ${bike.model}`}
                       >

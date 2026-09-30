@@ -15,6 +15,7 @@ type GarageHeaderProps = {
   isAdmin: boolean;
   onSelectBike: (bikeId: string) => void;
   onAddBike: () => void;
+  onEditBike: (bike: Motorcycle) => void;
   onRemoveBike: (bike: Motorcycle) => void;
   onUpdateOdometer: (miles: number) => Promise<string | null>;
   onToggleUnits: () => void;
@@ -46,6 +47,7 @@ export default function GarageHeader(props: GarageHeaderProps) {
           unitSystem={props.unitSystem}
           onSelect={props.onSelectBike}
           onAdd={props.onAddBike}
+          onEdit={props.onEditBike}
           onRemove={props.onRemoveBike}
         />
         <OdometerControl

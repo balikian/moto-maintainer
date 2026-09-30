@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { addBikeAction, deleteBikeAction, updateOdometerAction } from '@/lib/actions/bikes';
+import { addBikeAction, deleteBikeAction, updateBikeAction, updateOdometerAction } from '@/lib/actions/bikes';
 import {
   completeTaskAction,
   createMaintenanceTaskAction,
@@ -14,7 +14,7 @@ import { findDefaultTask } from '@/lib/maintenance';
 import { fetchModelSchedule } from '@/lib/modelData';
 import { createClient } from '@/lib/supabase/client';
 import type { MaintenanceTask, Motorcycle, ServiceLog } from '@/lib/types';
-import AddBikeModal, { type NewBikeValues } from './components/AddBikeModal';
+import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
 import AddCustomTaskModal, { type NewTaskValues } from './components/AddCustomTaskModal';
 import BikeManualPanel from './components/BikeManualPanel';
 import ErrorList from './components/ErrorList';
@@ -34,6 +34,7 @@ import { useSupabaseQuery } from './hooks/useSupabaseQuery';
 
 type OpenDialog =
   | { type: 'addBike' }
+  | { type: 'editBike'; bike: Motorcycle }
   | { type: 'addTask' }
   | { type: 'logService'; task: MaintenanceTask | null }
   | { type: 'share' }
@@ -84,13 +85,21 @@ export default function GarageDashboard() {
 
   // --- Bikes ---------------------------------------------------------------
 
-  const handleAddBike = async (values: NewBikeValues) => {
+  const handleAddBike = async (values: BikeFormValues) => {
     const result = await addBikeAction({ ...values, today: todayIsoDate() });
     if (!result.data) return result.error ?? 'Unable to add this motorcycle right now.';
 
     // The bike was saved even if seeding its default tasks failed.
     if (result.error) reportError(result.error);
     setSelectedBikeId(result.data.id);
+    setDialog(null);
+    bikesQuery.reload();
+    return null;
+  };
+
+  const handleEditBike = async (bike: Motorcycle, values: BikeFormValues) => {
+    const result = await updateBikeAction(bike.id, { year: values.year, make: values.make, model: values.model });
+    if (result.error) return result.error;
     setDialog(null);
     bikesQuery.reload();
     return null;
@@ -232,6 +241,7 @@ export default function GarageDashboard() {
         isAdmin={isAdmin}
         onSelectBike={setSelectedBikeId}
         onAddBike={() => setDialog({ type: 'addBike' })}
+        onEditBike={(bike) => setDialog({ type: 'editBike', bike })}
         onRemoveBike={(bike) => void handleRemoveBike(bike)}
         onUpdateOdometer={handleUpdateOdometer}
         onToggleUnits={() => void updatePreferences({ unitSystem: unitSystem === 'imperial' ? 'metric' : 'imperial' })}
@@ -286,7 +296,16 @@ export default function GarageDashboard() {
       </main>
 
       {dialog?.type === 'addBike' && (
-        <AddBikeModal unitSystem={unitSystem} onClose={() => setDialog(null)} onSubmit={handleAddBike} />
+        <BikeFormModal unitSystem={unitSystem} onClose={() => setDialog(null)} onSubmit={handleAddBike} />
+      )}
+
+      {dialog?.type === 'editBike' && (
+        <BikeFormModal
+          bike={dialog.bike}
+          unitSystem={unitSystem}
+          onClose={() => setDialog(null)}
+          onSubmit={(values) => handleEditBike(dialog.bike, values)}
+        />
       )}
 
       {dialog?.type === 'addTask' && activeBike && (

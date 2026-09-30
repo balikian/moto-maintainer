@@ -73,6 +73,32 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
   return { data: bike as Motorcycle };
 }
 
+/** Changes a bike's year, make, or model. Its tasks and service history are left as they are. */
+export async function updateBikeAction(
+  bikeId: string,
+  input: { year: number; make: string; model: string }
+): Promise<ActionResult> {
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
+
+  const make = input.make.trim();
+  const model = input.model.trim();
+  const year = Math.round(input.year);
+  if (!make || !model || !year) {
+    return { error: 'Please choose a year, make, and model.' };
+  }
+
+  const { data, error } = await supabase
+    .from('motorcycles')
+    .update({ year, make, model })
+    .eq('id', bikeId)
+    .select('id');
+
+  if (error) return { error: error.message };
+  if (!data?.length) return { error: 'Motorcycle not found.' };
+  return {};
+}
+
 export async function updateOdometerAction(bikeId: string, mileage: number): Promise<ActionResult> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
