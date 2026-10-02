@@ -63,6 +63,29 @@ export async function deleteManualAction(manualId: string): Promise<ActionResult
 }
 
 /**
+ * Approves or rejects a make/model riders typed in, from the admin page. The
+ * admin can fix its spelling while approving.
+ */
+export async function reviewCustomModelAction(formData: FormData): Promise<void> {
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return;
+
+  const id = String(formData.get('id') ?? '');
+  const decision = formData.get('decision') === 'approve' ? 'approved' : 'rejected';
+  const changes: Record<string, string> = { status: decision, reviewed_at: new Date().toISOString() };
+  if (decision === 'approved') {
+    const make = String(formData.get('make') ?? '').trim();
+    const model = String(formData.get('model') ?? '').trim();
+    if (make) changes.make = make;
+    if (model) changes.model = model;
+  }
+
+  // Non-admins are refused by row-level security, so this is a no-op for them.
+  await supabase.from('custom_models').update(changes).eq('id', id);
+  revalidatePath('/admin');
+}
+
+/**
  * Approves or rejects a submitted manual link from the admin page. The admin
  * can also correct the model name and widen the year range while approving.
  */

@@ -12,7 +12,10 @@ import Modal from './Modal';
 import { ui } from './ui';
 
 type ImportScheduleModalProps = {
-  bike: Motorcycle;
+  /** The bike or model to import for. Without an id (from the admin page) there's no checklist to update. */
+  bike: Pick<Motorcycle, 'year' | 'make' | 'model'> & { id?: string };
+  /** Model years the schedule should cover; defaults to the bike's year. */
+  years?: { from: number; to: number };
   onClose: () => void;
   /** Called after a schedule is saved (and applied, if chosen) with a summary for the rider. */
   onImported: (summary: string) => void;
@@ -27,15 +30,15 @@ type Stage =
 const cellInput =
   'w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
 
-export default function ImportScheduleModal({ bike, onClose, onImported }: ImportScheduleModalProps) {
+export default function ImportScheduleModal({ bike, years, onClose, onImported }: ImportScheduleModalProps) {
   const [stage, setStage] = useState<Stage>({ name: 'select' });
   const [file, setFile] = useState<File | null>(null);
   const [pageSelection, setPageSelection] = useState('');
   const [tasks, setTasks] = useState<ExtractedTask[]>([]);
-  const [yearFrom, setYearFrom] = useState(String(bike.year));
-  const [yearTo, setYearTo] = useState(String(bike.year));
+  const [yearFrom, setYearFrom] = useState(String(years?.from ?? bike.year));
+  const [yearTo, setYearTo] = useState(String(years?.to ?? bike.year));
   const [source, setSource] = useState('');
-  const [applyToBike, setApplyToBike] = useState(true);
+  const [applyToBike, setApplyToBike] = useState(Boolean(bike.id));
   const [notes, setNotes] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -110,7 +113,7 @@ export default function ImportScheduleModal({ bike, onClose, onImported }: Impor
       ? `Saved the ${bikeTitle(bike)} schedule for everyone with this bike.`
       : 'Saved your schedule; it will be shared once it’s reviewed.';
 
-    if (applyToBike) {
+    if (applyToBike && bike.id) {
       const applied = await applyModelScheduleAction(bike.id);
       if (applied.error || !applied.data) {
         setError(`The schedule was saved, but updating your tasks failed: ${applied.error}`);
@@ -286,10 +289,16 @@ export default function ImportScheduleModal({ bike, onClose, onImported }: Impor
             Widen the years if the same schedule applies to other model years; it will be used for all of them.
           </p>
 
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={applyToBike} onChange={(e) => setApplyToBike(e.target.checked)} className="h-4 w-4 accent-amber-500" />
-            Also update my bike&apos;s checklist with this schedule
-          </label>
+          {bike.id ? (
+            <label className="flex items-center gap-2 text-sm">
+              <input type="checkbox" checked={applyToBike} onChange={(e) => setApplyToBike(e.target.checked)} className="h-4 w-4 accent-amber-500" />
+              Also update my bike&apos;s checklist with this schedule
+            </label>
+          ) : (
+            <p className={`text-sm ${ui.muted}`}>
+              Riders with this bike will see a prompt to apply the schedule to their checklist.
+            </p>
+          )}
 
           {error && <div className={ui.errorBox}>{error}</div>}
 

@@ -22,10 +22,11 @@ Run Node commands in **PowerShell**: it has Node 22. Git Bash on this machine re
 - `app/page.tsx`: the dashboard. Loads data and wires handlers to the components.
 - `app/components/`: UI. Shared Tailwind class strings live in `ui.ts`; modals use `Modal.tsx`.
 - `app/hooks/`: `useSupabaseQuery` (keyed loading with `reload()`), `useAuthUser`, `usePreferences` (units and theme, saved to `profiles`), `useStoredToggle` (collapse state in localStorage).
-- `app/history/[bikeId]`: owner-only printable history. `app/share/[token]`: public read-only shared history. `app/admin`: admin review of submitted manual links.
+- `app/history/[bikeId]`: owner-only printable history. `app/share/[token]`: public read-only shared history. `app/admin`: admin page: import schedules for bikes that have a manual but no schedule, and review submitted manual links and new makes/models.
 - `lib/actions/`: server actions. Every database write goes through these, and each one checks the signed-in user.
 - `lib/maintenance.ts`: due-state logic (`getTaskDueState`), urgency sorting, and default task schedules.
 - `lib/modelData.ts`: lookups in the shared per-model tables (`bike_manuals`, `model_schedules`).
+- `lib/bikeCatalog.ts`: the make/model dropdown lists: `lib/data/motorcycles.json` plus approved rider-added names from `custom_models`.
 - `lib/scheduleExtraction.ts`: server-only Claude call that reads a maintenance schedule from manual page images.
 - `supabase/migrations/`: SQL for the schema and row-level security.
 

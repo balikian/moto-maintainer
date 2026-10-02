@@ -1,5 +1,6 @@
 'use server';
 
+import { BASE_CATALOG, isInCatalog } from '../bikeCatalog';
 import { fromNewBaseline, getDefaultTasks } from '../maintenance';
 import { fetchModelSchedule } from '../modelData';
 import { getSignedInClient } from '../supabase/server';
@@ -9,6 +10,22 @@ import { SIGNED_OUT_ERROR, type ActionResult } from './result';
 
 // Row-level security in Supabase limits every query here to the signed-in
 // user's own rows (see supabase/migrations).
+
+/**
+ * Suggests a make/model the rider typed in for the shared bike list. An admin
+ * approves it before others see it. Best effort: it never blocks saving the
+ * bike, and a duplicate of an existing suggestion is simply skipped.
+ */
+async function suggestCustomModel(supabase: Awaited<ReturnType<typeof getSignedInClient>>['supabase'], make: string, model: string) {
+  if (isInCatalog(BASE_CATALOG, make, model)) return;
+  const { data: isAdmin } = await supabase.rpc('is_app_admin');
+  await supabase.from('custom_models').insert({
+    make,
+    model,
+    status: isAdmin ? 'approved' : 'pending',
+    reviewed_at: isAdmin ? new Date().toISOString() : null,
+  });
+}
 
 type AddBikeInput = {
   year: number;
@@ -64,6 +81,7 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
     };
   }
 
+  await suggestCustomModel(supabase, make, model);
   return { data: bike as Motorcycle };
 }
 
@@ -90,6 +108,7 @@ export async function updateBikeAction(
 
   if (error) return { error: error.message };
   if (!data?.length) return { error: 'Motorcycle not found.' };
+  await suggestCustomModel(supabase, make, model);
   return {};
 }
 

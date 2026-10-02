@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState, type SubmitEvent } from 'react';
-import motorcyclesData from '@/lib/data/motorcycles.json';
+import { BASE_CATALOG, mergeCatalog, type BikeCatalog, type CustomModel } from '@/lib/bikeCatalog';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance } from '@/lib/units';
 import Modal from './Modal';
@@ -12,6 +12,8 @@ export type BikeFormValues = { year: number; make: string; model: string; curren
 type BikeFormModalProps = {
   /** The bike being edited; omit to add a new bike. */
   bike?: Motorcycle;
+  /** Approved makes/models riders added, shown alongside the built-in list. */
+  customModels: CustomModel[];
   unitSystem: UnitSystem;
   onClose: () => void;
   /** Receives the odometer in miles; resolves to an error message, or null on success. */
@@ -21,29 +23,28 @@ type BikeFormModalProps = {
 // Option value for "Other / Not Listed". Can't collide with a real make or model name.
 const OTHER = '__other__';
 
-const motorcycleRegistry = motorcyclesData as Record<string, { years: number[]; models: string[] }>;
-const MAKES = Object.keys(motorcycleRegistry).sort((a, b) => a.localeCompare(b));
-
 const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
 
 /** Maps a saved bike onto the dropdowns, using "Other" + a text box for names not in the list. */
-function initialSelection(bike?: Motorcycle) {
+function initialSelection(catalog: BikeCatalog, bike?: Motorcycle) {
   if (!bike) return { make: '', model: '', customMake: '', customModel: '' };
 
-  const knownMake = MAKES.find((make) => sameName(make, bike.make));
+  const knownMake = Object.keys(catalog).find((make) => sameName(make, bike.make));
   if (!knownMake) return { make: OTHER, model: '', customMake: bike.make, customModel: bike.model };
 
-  const models = motorcycleRegistry[knownMake]?.models ?? [];
+  const models = catalog[knownMake]?.models ?? [];
   const knownModel = models.find((model) => sameName(model, bike.model));
   if (knownModel) return { make: knownMake, model: knownModel, customMake: '', customModel: '' };
 
   return { make: knownMake, model: models.length > 0 ? OTHER : '', customMake: '', customModel: bike.model };
 }
 
-export default function BikeFormModal({ bike, unitSystem, onClose, onSubmit }: BikeFormModalProps) {
+export default function BikeFormModal({ bike, customModels, unitSystem, onClose, onSubmit }: BikeFormModalProps) {
   const isEditing = Boolean(bike);
   const currentYear = new Date().getFullYear();
-  const [initial] = useState(() => initialSelection(bike));
+  const catalog = useMemo(() => mergeCatalog(BASE_CATALOG, customModels), [customModels]);
+  const makes = useMemo(() => Object.keys(catalog).sort((a, b) => a.localeCompare(b)), [catalog]);
+  const [initial] = useState(() => initialSelection(catalog, bike));
   const [year, setYear] = useState(bike?.year ?? currentYear);
   const [make, setMake] = useState(initial.make);
   const [model, setModel] = useState(initial.model);
@@ -57,7 +58,7 @@ export default function BikeFormModal({ bike, unitSystem, onClose, onSubmit }: B
     () => Array.from({ length: currentYear + 2 - 1970 }, (_, index) => currentYear + 1 - index),
     [currentYear]
   );
-  const models = make && make !== OTHER ? motorcycleRegistry[make]?.models ?? [] : [];
+  const models = make && make !== OTHER ? catalog[make]?.models ?? [] : [];
 
   // A custom model name is needed for a custom make, a make with no known
   // models, or when the user picks "Other" from the model list.
@@ -119,7 +120,7 @@ export default function BikeFormModal({ bike, unitSystem, onClose, onSubmit }: B
           <label htmlFor="bike-make" className={ui.label}>Make / Manufacturer</label>
           <select id="bike-make" required value={make} onChange={(event) => handleMakeChange(event.target.value)} className={ui.input}>
             <option value="">Select a make</option>
-            {MAKES.map((option) => (
+            {makes.map((option) => (
               <option key={option} value={option}>{option}</option>
             ))}
             <option value={OTHER}>Other / Not Listed</option>

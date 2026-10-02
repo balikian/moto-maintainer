@@ -53,6 +53,20 @@ export function baselineFromLogs(
     : fromNewBaseline(bikeYear);
 }
 
+/**
+ * Whether a bike's checklist already uses this schedule: true if any task has
+ * the same name as one of the schedule's. A bike still on the generic
+ * defaults shares none, so the rider can be offered the schedule.
+ */
+export function scheduleOverlapsTasks(
+  schedule: Pick<ModelSchedule, 'model_schedule_tasks'>,
+  tasks: Pick<MaintenanceTask, 'task_name'>[]
+): boolean {
+  const key = (name: string) => name.replace(/\s+/g, ' ').trim().toLowerCase();
+  const names = new Set(tasks.map((task) => key(task.task_name)));
+  return schedule.model_schedule_tasks.some((task) => names.has(key(task.task_name)));
+}
+
 /** The default interval for one task by name, used by "Reset to default". */
 export function findDefaultTask(
   schedule: Pick<ModelSchedule, 'model_schedule_tasks'> | null,

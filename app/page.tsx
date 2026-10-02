@@ -9,10 +9,11 @@ import {
   deleteTaskAction,
   updateTaskIntervalsAction,
 } from '@/lib/actions/tasks';
-import { findDefaultTask } from '@/lib/maintenance';
+import type { CustomModel } from '@/lib/bikeCatalog';
+import { findDefaultTask, scheduleOverlapsTasks } from '@/lib/maintenance';
 import { fetchModelSchedule } from '@/lib/modelData';
 import { createClient } from '@/lib/supabase/client';
-import type { MaintenanceTask, Motorcycle, ServiceLog } from '@/lib/types';
+import type { MaintenanceTask, ModelSchedule, Motorcycle, ServiceLog } from '@/lib/types';
 import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
 import AddCustomTaskModal, { type NewTaskValues } from './components/AddCustomTaskModal';
 import BikeManualPanel from './components/BikeManualPanel';
@@ -30,6 +31,8 @@ import { useSupabaseQuery } from './hooks/useSupabaseQuery';
 
 // Reads go straight from the browser to Supabase; writes go through the server
 // actions in lib/actions. Row-level security keeps both scoped to the user.
+
+const NO_CUSTOM_MODELS: CustomModel[] = [];
 
 type OpenDialog =
   | { type: 'addBike' }
@@ -79,6 +82,18 @@ export default function GarageDashboard() {
   // Admins see a link to the review page. The page itself re-checks on the server.
   const adminQuery = useSupabaseQuery<boolean>(userId, () => supabase.rpc('is_app_admin'));
   const isAdmin = adminQuery.data === true;
+
+  // Makes/models riders added; approved ones (and your own) join the bike form's lists.
+  const customModelsQuery = useSupabaseQuery<CustomModel[]>(userId, () =>
+    supabase.from('custom_models').select('make,model').neq('status', 'rejected')
+  );
+  const customModels = customModelsQuery.data ?? NO_CUSTOM_MODELS;
+
+  // The bike's manufacturer schedule, to point out one that hasn't been applied yet.
+  const scheduleKey = activeBike ? `${activeBike.id}|${activeBike.year}|${activeBike.make}|${activeBike.model}` : null;
+  const scheduleQuery = useSupabaseQuery<ModelSchedule | null>(scheduleKey, () => fetchModelSchedule(supabase, activeBike!));
+  const unappliedSchedule =
+    scheduleQuery.data && !tasksQuery.loading && !scheduleOverlapsTasks(scheduleQuery.data, tasks) ? scheduleQuery.data : null;
 
   const loadErrors = [bikesQuery.error, tasksQuery.error, logsQuery.error]
     .filter((message): message is string => Boolean(message))
@@ -253,6 +268,18 @@ export default function GarageDashboard() {
 
         {activeBike ? (
           <>
+            {unappliedSchedule && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200">
+                <span>
+                  The manufacturer&apos;s maintenance schedule for your {activeBike.make} {activeBike.model} is available (
+                  {unappliedSchedule.model_schedule_tasks.length} tasks). Your checklist doesn&apos;t use it yet.
+                </span>
+                <button type="button" onClick={() => setDialog({ type: 'manual' })} className={`${ui.primaryButton} px-3 py-1.5 text-xs`}>
+                  Review &amp; apply
+                </button>
+              </div>
+            )}
+
             <MaintenanceChecklist
               bike={activeBike}
               tasks={tasks}
@@ -289,12 +316,13 @@ export default function GarageDashboard() {
       </main>
 
       {dialog?.type === 'addBike' && (
-        <BikeFormModal unitSystem={unitSystem} onClose={() => setDialog(null)} onSubmit={handleAddBike} />
+        <BikeFormModal customModels={customModels} unitSystem={unitSystem} onClose={() => setDialog(null)} onSubmit={handleAddBike} />
       )}
 
       {dialog?.type === 'editBike' && (
         <BikeFormModal
           bike={dialog.bike}
+          customModels={customModels}
           unitSystem={unitSystem}
           onClose={() => setDialog(null)}
           onSubmit={(values) => handleEditBike(dialog.bike, values)}

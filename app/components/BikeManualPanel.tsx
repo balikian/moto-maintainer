@@ -8,7 +8,7 @@ import { applyModelScheduleAction } from '@/lib/actions/schedules';
 import { manualPortalFor, manualSearchUrl } from '@/lib/data/manualPortals';
 import { bikeTitle } from '@/lib/historyExport';
 import { fetchManuals, fetchModelSchedule, isHttpUrl } from '@/lib/modelData';
-import type { BikeManual, ModelSchedule, Motorcycle } from '@/lib/types';
+import type { BikeManual, ModelEntry, ModelSchedule, Motorcycle } from '@/lib/types';
 import { useSupabaseQuery } from '../hooks/useSupabaseQuery';
 import ConfirmPopover from './ConfirmPopover';
 import ImportScheduleModal from './ImportScheduleModal';
@@ -28,8 +28,8 @@ type BikeManualPanelProps = {
 const linkButtonClass =
   'inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-amber-500/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200';
 
-function yearsLabel(manual: BikeManual): string {
-  return manual.year_from === manual.year_to ? String(manual.year_from) : `${manual.year_from}–${manual.year_to}`;
+function yearsLabel(entry: Pick<ModelEntry, 'year_from' | 'year_to'>): string {
+  return entry.year_from === entry.year_to ? String(entry.year_from) : `${entry.year_from}–${entry.year_to}`;
 }
 
 export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin, onTasksChanged, onClose }: BikeManualPanelProps) {
@@ -214,8 +214,8 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
         ) : schedule.data ? (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <span className="text-sm">
-              {schedule.data.model_schedule_tasks.length} tasks
-              {schedule.data.source && <span className={ui.muted}> · {schedule.data.source}</span>}
+              {schedule.data.model_schedule_tasks.length} tasks · covers {yearsLabel(schedule.data)} models
+              {schedule.data.source && <span className={ui.muted}> · from the {schedule.data.source}</span>}
             </span>
             {schedule.data.status === 'pending' && (
               <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
@@ -244,7 +244,12 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
         ) : (
           <div className="mt-2 flex flex-wrap items-center gap-2">
             <p className={`text-sm ${ui.muted}`}>
-              No manufacturer schedule for this bike yet{isAdmin ? '.' : ', so your checklist uses general defaults.'}
+              No manufacturer schedule for the {bike.year} {bike.model} yet
+              {isAdmin
+                ? '.'
+                : list.length > 0
+                  ? '. Once the manual is reviewed, an admin imports its schedule and you’ll be offered it here and on your checklist. Until then your checklist uses general defaults.'
+                  : ', so your checklist uses general defaults. Add a link to the owner’s manual above so an admin can import its schedule.'}
             </p>
             {isAdmin && (
               <button type="button" onClick={() => setImportOpen(true)} className={`${ui.primaryButton} px-3 py-1.5 text-xs`}>

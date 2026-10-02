@@ -8,6 +8,7 @@ import {
   getTaskDueState,
   GENERIC_MAINTENANCE_TASKS,
   groupTasksByUrgency,
+  scheduleOverlapsTasks,
 } from './maintenance';
 
 const today = new Date(2026, 8, 29); // Sep 29, 2026
@@ -165,5 +166,21 @@ describe('task baselines', () => {
 
   it('falls back to new when there are no logs', () => {
     assert.deepEqual(baselineFromLogs([], 2023), fromNewBaseline(2023));
+  });
+});
+
+describe('scheduleOverlapsTasks', () => {
+  const schedule = {
+    model_schedule_tasks: [
+      { task_name: 'Replace engine oil and oil filter', interval_distance: 15000, distance_unit: 'km' as const, interval_months: 12, is_diy: true, sort_order: 0 },
+    ],
+  };
+
+  it('is false for a bike still on the generic defaults', () => {
+    assert.equal(scheduleOverlapsTasks(schedule, GENERIC_MAINTENANCE_TASKS), false);
+  });
+
+  it('is true once any schedule task is on the checklist', () => {
+    assert.equal(scheduleOverlapsTasks(schedule, [{ task_name: 'replace engine oil and  oil filter' }]), true);
   });
 });
