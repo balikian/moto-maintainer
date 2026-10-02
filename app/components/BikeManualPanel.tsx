@@ -8,6 +8,7 @@ import { applyModelScheduleAction } from '@/lib/actions/schedules';
 import { manualPortalFor, manualSearchUrl } from '@/lib/data/manualPortals';
 import { bikeTitle } from '@/lib/historyExport';
 import { fetchManuals, fetchModelSchedule, isHttpUrl } from '@/lib/modelData';
+import { applySummary } from '@/lib/scheduleImport';
 import type { BikeManual, ModelEntry, ModelSchedule, Motorcycle } from '@/lib/types';
 import { useSupabaseQuery } from '../hooks/useSupabaseQuery';
 import ConfirmPopover from './ConfirmPopover';
@@ -83,7 +84,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
       setMessage({ tone: 'error', text: result.error ?? 'Couldn’t update your checklist.' });
       return;
     }
-    setMessage({ tone: 'info', text: `Checklist updated: ${result.data.updated} tasks updated, ${result.data.added} added.` });
+    setMessage({ tone: 'info', text: `Checklist updated: ${applySummary(result.data)}.` });
     onTasksChanged();
   };
 
@@ -223,7 +224,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
               </span>
             )}
             <ConfirmPopover
-              message="Update your checklist from this schedule? Matching tasks get its intervals, missing ones are added, and your other tasks are kept."
+              message="Update your checklist from this schedule? Matching tasks get its intervals and missing ones are added. Starter tasks it replaces are removed unless you logged service for them. Tasks you added yourself are kept."
               confirmLabel="Update checklist"
               destructive={false}
               align="left"

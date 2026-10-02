@@ -1,4 +1,4 @@
-import { baselineFromLogs, type TaskBaseline, type TaskDefaults } from './maintenance';
+import { baselineFromLogs, isGenericTaskName, type TaskBaseline, type TaskDefaults } from './maintenance';
 import { MAX_IMPORT_PAGES } from './pageRanges';
 import type { ExtractedTask } from './scheduleExtraction';
 
@@ -49,17 +49,22 @@ export type ScheduleApplyPlan = {
   updates: (Omit<TaskDefaults, 'task_name'> & { id: string })[];
   /** New tasks, counted from their latest matching service log or else from new. */
   additions: (TaskDefaults & TaskBaseline & { relinkLogIds: string[] })[];
+  /** Ids of generic starter tasks to delete: not in the schedule and never logged. */
+  removals: string[];
 };
 
 /**
  * Works out how to bring a bike's checklist in line with its schedule: tasks
  * with the same name (ignoring case and spacing) get the schedule's intervals,
- * missing ones are added, and nothing is removed. If the schedule lists a name
- * twice, the first one wins.
+ * missing ones are added, and the rider's own tasks are kept. If the schedule
+ * lists a name twice, the first one wins.
  *
  * A task that was deleted and comes back picks up where its service records
  * left off: service logs with its name that aren't tied to a task set its
  * baseline and get linked to it again.
+ *
+ * Generic starter tasks the schedule doesn't keep are removed if no service
+ * was ever logged for them; logged ones and the rider's own tasks stay.
  */
 export function planScheduleApply(
   scheduleTasks: TaskDefaults[],
@@ -79,7 +84,7 @@ export function planScheduleApply(
     if (!existingByName.has(key)) existingByName.set(key, task.id);
   }
 
-  const plan: ScheduleApplyPlan = { updates: [], additions: [] };
+  const plan: ScheduleApplyPlan = { updates: [], additions: [], removals: [] };
   const seen = new Set<string>();
   for (const task of scheduleTasks) {
     const key = nameKey(task.task_name);
@@ -99,5 +104,18 @@ export function planScheduleApply(
       });
     }
   }
+
+  // Generic starter tasks the schedule replaces: not in the schedule and never logged.
+  const loggedTaskIds = new Set(logs.flatMap((log) => (log.task_id ? [log.task_id] : [])));
+  plan.removals = existingTasks
+    .filter((task) => isGenericTaskName(task.task_name) && !seen.has(nameKey(task.task_name)) && !loggedTaskIds.has(task.id))
+    .map((task) => task.id);
   return plan;
+}
+
+/** e.g. "3 updated, 30 added, 9 starter tasks removed", for the rider after Apply. */
+export function applySummary({ updated, added, removed }: { updated: number; added: number; removed: number }): string {
+  const parts = [`${updated} updated`, `${added} added`];
+  if (removed > 0) parts.push(`${removed} starter task${removed === 1 ? '' : 's'} removed`);
+  return parts.join(', ');
 }

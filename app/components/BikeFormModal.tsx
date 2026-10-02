@@ -2,12 +2,50 @@
 
 import { useMemo, useState, type SubmitEvent } from 'react';
 import { BASE_CATALOG, mergeCatalog, type BikeCatalog, type CustomModel } from '@/lib/bikeCatalog';
+import { DEFAULT_BIKE_SETUP, type BikeSetup } from '@/lib/maintenance';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance } from '@/lib/units';
 import Modal from './Modal';
 import { ui } from './ui';
 
-export type BikeFormValues = { year: number; make: string; model: string; currentMileage: number };
+export type BikeFormValues = { year: number; make: string; model: string; currentMileage: number; setup: BikeSetup };
+
+/** A row of segmented buttons, for short either/or choices. */
+function ChoiceRow<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <span className="text-sm">{label}</span>
+      <div role="radiogroup" aria-label={label} className="inline-flex rounded-xl border border-slate-300 p-0.5 dark:border-slate-700">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={value === option.value}
+            onClick={() => onChange(option.value)}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+              value === option.value
+                ? 'bg-amber-500 text-slate-950'
+                : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+            }`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 type BikeFormModalProps = {
   /** The bike being edited; omit to add a new bike. */
@@ -51,6 +89,7 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
   const [customMake, setCustomMake] = useState(initial.customMake);
   const [customModel, setCustomModel] = useState(initial.customModel);
   const [odometer, setOdometer] = useState('');
+  const [setup, setSetup] = useState<BikeSetup>(DEFAULT_BIKE_SETUP);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,7 +130,7 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
 
     setSaving(true);
     setError(null);
-    const submitError = await onSubmit({ year, make: resolvedMake, model: resolvedModel, currentMileage: miles });
+    const submitError = await onSubmit({ year, make: resolvedMake, model: resolvedModel, currentMileage: miles, setup });
     setSaving(false);
     if (submitError) setError(submitError);
   };
@@ -189,6 +228,34 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
               className={ui.input}
             />
           </div>
+        )}
+
+        {!isEditing && (
+          <fieldset className="space-y-3">
+            <legend className={ui.label}>Starter checklist</legend>
+            <ChoiceRow
+              label="Final drive"
+              value={setup.finalDrive}
+              options={[
+                { value: 'chain', label: 'Chain' },
+                { value: 'belt', label: 'Belt' },
+                { value: 'shaft', label: 'Shaft' },
+              ]}
+              onChange={(finalDrive) => setSetup({ ...setup, finalDrive })}
+            />
+            <ChoiceRow
+              label="Engine cooling"
+              value={setup.cooling}
+              options={[
+                { value: 'liquid', label: 'Liquid' },
+                { value: 'air', label: 'Air / oil' },
+              ]}
+              onChange={(cooling) => setSetup({ ...setup, cooling })}
+            />
+            <p className={`text-xs ${ui.muted}`}>
+              Picks the right starter tasks. If we have the manufacturer&apos;s schedule for this bike, that&apos;s used instead.
+            </p>
+          </fieldset>
         )}
 
         {error && <div className={ui.errorBox}>{error}</div>}

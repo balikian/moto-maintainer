@@ -6,7 +6,9 @@ import {
   fromNewBaseline,
   getDefaultTasks,
   getTaskDueState,
-  GENERIC_MAINTENANCE_TASKS,
+  DEFAULT_BIKE_SETUP,
+  genericTasksFor,
+  isGenericTaskName,
   groupTasksByUrgency,
   scheduleOverlapsTasks,
 } from './maintenance';
@@ -102,8 +104,8 @@ describe('default tasks', () => {
   });
 
   it('falls back to the generic schedule when there is none', () => {
-    assert.equal(getDefaultTasks(null), GENERIC_MAINTENANCE_TASKS);
-    assert.equal(getDefaultTasks({ model_schedule_tasks: [] }), GENERIC_MAINTENANCE_TASKS);
+    assert.deepEqual(getDefaultTasks(null), genericTasksFor(DEFAULT_BIKE_SETUP));
+    assert.deepEqual(getDefaultTasks({ model_schedule_tasks: [] }, { finalDrive: 'shaft', cooling: 'air' }), genericTasksFor({ finalDrive: 'shaft', cooling: 'air' }));
   });
 
   it('finds a default by task name, case-insensitively', () => {
@@ -177,10 +179,54 @@ describe('scheduleOverlapsTasks', () => {
   };
 
   it('is false for a bike still on the generic defaults', () => {
-    assert.equal(scheduleOverlapsTasks(schedule, GENERIC_MAINTENANCE_TASKS), false);
+    assert.equal(scheduleOverlapsTasks(schedule, genericTasksFor(DEFAULT_BIKE_SETUP)), false);
+  });
+
+  it("doesn't count a generic name the schedule happens to share", () => {
+    const withCoolant = {
+      model_schedule_tasks: [{ ...schedule.model_schedule_tasks[0], task_name: 'Replace coolant', interval_distance: 0, interval_months: 48 }],
+    };
+    assert.equal(scheduleOverlapsTasks(withCoolant, genericTasksFor(DEFAULT_BIKE_SETUP)), false);
   });
 
   it('is true once any schedule task is on the checklist', () => {
     assert.equal(scheduleOverlapsTasks(schedule, [{ task_name: 'replace engine oil and  oil filter' }]), true);
+  });
+});
+
+describe('generic starter tasks', () => {
+  const names = (setup: Parameters<typeof genericTasksFor>[0]) => genericTasksFor(setup).map((task) => task.task_name);
+
+  it('a chain-driven, liquid-cooled bike gets chain and coolant tasks', () => {
+    const tasks = names({ finalDrive: 'chain', cooling: 'liquid' });
+    assert.equal(tasks.length, 12);
+    assert.ok(tasks.includes('Clean, lube and adjust chain'));
+    assert.ok(tasks.includes('Replace coolant'));
+    assert.ok(!tasks.includes('Check drive belt'));
+    assert.ok(!tasks.includes('Replace final drive oil'));
+  });
+
+  it('a shaft-driven, air-cooled bike gets final drive oil and no chain or coolant', () => {
+    const tasks = names({ finalDrive: 'shaft', cooling: 'air' });
+    assert.equal(tasks.length, 11);
+    assert.ok(tasks.includes('Replace final drive oil'));
+    assert.ok(!tasks.includes('Clean, lube and adjust chain'));
+    assert.ok(!tasks.includes('Replace coolant'));
+  });
+
+  it('a belt-driven bike gets a belt check', () => {
+    assert.ok(names({ finalDrive: 'belt', cooling: 'air' }).includes('Check drive belt'));
+  });
+
+  it('recognises current and older generic names, but not custom or manufacturer ones', () => {
+    assert.equal(isGenericTaskName(' replace  COOLANT'), true);
+    assert.equal(isGenericTaskName('Replace final drive oil'), true);
+    assert.equal(isGenericTaskName('Engine Oil & Filter'), true);
+    assert.equal(isGenericTaskName('Replace engine oil and oil filter, clean oil screens'), false);
+    assert.equal(isGenericTaskName('Wash the bike'), false);
+  });
+
+  it('can reset a new generic task to its default', () => {
+    assert.equal(findDefaultTask(null, 'Replace coolant')?.interval_months, 24);
   });
 });

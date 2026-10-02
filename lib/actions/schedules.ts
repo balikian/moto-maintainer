@@ -115,11 +115,12 @@ export async function saveModelScheduleAction(
 /**
  * Brings a bike's checklist in line with its manufacturer schedule: tasks with
  * the same name get the schedule's intervals, missing ones are added (counted
- * from their last logged service, or from new), and anything else is kept.
+ * from their last logged service, or from new), generic starter tasks it
+ * replaces are removed if never logged, and the rider's own tasks are kept.
  */
 export async function applyModelScheduleAction(
   bikeId: string
-): Promise<ActionResult<{ updated: number; added: number }>> {
+): Promise<ActionResult<{ updated: number; added: number; removed: number }>> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
 
@@ -178,5 +179,10 @@ export async function applyModelScheduleAction(
     }
   }
 
-  return { data: { updated: plan.updates.length, added: plan.additions.length } };
+  if (plan.removals.length > 0) {
+    const { error } = await supabase.from('maintenance_tasks').delete().in('id', plan.removals);
+    if (error) return { error: error.message };
+  }
+
+  return { data: { updated: plan.updates.length, added: plan.additions.length, removed: plan.removals.length } };
 }

@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import { getDefaultTasks } from './maintenance';
 import { MAX_IMPORT_PAGES } from './pageRanges';
 import type { ExtractedTask } from './scheduleExtraction';
-import { cleanTasks, MAX_EXTRACTED_TASKS, MAX_UPLOAD_BYTES, planScheduleApply, validatePageImages } from './scheduleImport';
+import { applySummary, cleanTasks, MAX_EXTRACTED_TASKS, MAX_UPLOAD_BYTES, planScheduleApply, validatePageImages } from './scheduleImport';
 
 const jpeg = (size = 1000) => {
   const bytes = new Uint8Array(size);
@@ -127,6 +127,22 @@ describe('planScheduleApply', () => {
     assert.deepEqual(task.relinkLogIds.sort(), ['l1', 'l2']);
   });
 
+  it('removes generic starter tasks the schedule replaces, unless they were logged', () => {
+    const existing = [
+      { id: 'oil', task_name: 'Replace engine oil and filter' },
+      { id: 'old-chain', task_name: 'Chain Clean & Tension' },
+      { id: 'coolant', task_name: 'Replace coolant' },
+      { id: 'logged', task_name: 'Check brake pads and discs' },
+      { id: 'mine', task_name: 'Wash the bike' },
+    ];
+    const plan = planScheduleApply([scheduleTask('Replace coolant', 0, 48)], existing, {
+      bikeYear: 2024,
+      logs: [log('l1', 'Check brake pads and discs', '2026-05-01', 3000, 'logged')],
+    });
+    assert.deepEqual(plan.removals, ['oil', 'old-chain']);
+    assert.deepEqual(plan.updates.map((task) => task.id), ['coolant']);
+  });
+
   it('leaves the baseline of existing tasks alone', () => {
     const plan = planScheduleApply([scheduleTask('Oil change')], [{ id: 'a', task_name: 'Oil change' }], {
       bikeYear: 2024,
@@ -191,5 +207,12 @@ describe('planScheduleApply', () => {
         { task_name: 'Coolant', interval_mileage: 0, interval_months: 48 },
       ]
     );
+  });
+});
+
+describe('applySummary', () => {
+  it('mentions removed starter tasks only when there are some', () => {
+    assert.equal(applySummary({ updated: 2, added: 30, removed: 0 }), '2 updated, 30 added');
+    assert.equal(applySummary({ updated: 0, added: 5, removed: 1 }), '0 updated, 5 added, 1 starter task removed');
   });
 });

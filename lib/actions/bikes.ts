@@ -1,7 +1,7 @@
 'use server';
 
 import { BASE_CATALOG, isInCatalog } from '../bikeCatalog';
-import { fromNewBaseline, getDefaultTasks } from '../maintenance';
+import { DEFAULT_BIKE_SETUP, fromNewBaseline, getDefaultTasks, type BikeSetup } from '../maintenance';
 import { fetchModelSchedule } from '../modelData';
 import { getSignedInClient } from '../supabase/server';
 import type { Motorcycle } from '../types';
@@ -32,6 +32,8 @@ type AddBikeInput = {
   make: string;
   model: string;
   currentMileage: number;
+  /** Picks the generic starter tasks when there's no manufacturer schedule. */
+  setup?: BikeSetup;
 };
 
 export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<Motorcycle>> {
@@ -42,6 +44,11 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
   const model = input.model.trim();
   const year = Math.round(input.year);
   const currentMileage = normalizeMileage(input.currentMileage);
+  const finalDrive = input.setup?.finalDrive;
+  const setup: BikeSetup = {
+    finalDrive: finalDrive === 'belt' || finalDrive === 'shaft' ? finalDrive : DEFAULT_BIKE_SETUP.finalDrive,
+    cooling: input.setup?.cooling === 'air' ? 'air' : DEFAULT_BIKE_SETUP.cooling,
+  };
 
   if (!make || !model || !year) {
     return { error: 'Please choose a year, make, and model.' };
@@ -66,7 +73,7 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
   const schedule = await fetchModelSchedule(supabase, { year, make, model });
 
   const { error: seedError } = await supabase.from('maintenance_tasks').insert(
-    getDefaultTasks(schedule.data).map((task) => ({
+    getDefaultTasks(schedule.data, setup).map((task) => ({
       ...task,
       motorcycle_id: bike.id,
       user_id: user.id,

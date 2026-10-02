@@ -4,20 +4,80 @@ import { fromDisplayDistance } from './units';
 
 export type TaskDefaults = Pick<MaintenanceTask, 'task_name' | 'interval_mileage' | 'interval_months' | 'is_diy'>;
 
-/** Used for bikes that don't have a manufacturer schedule in model_schedules yet. */
-export const GENERIC_MAINTENANCE_TASKS: TaskDefaults[] = [
+export type FinalDrive = 'chain' | 'belt' | 'shaft';
+export type Cooling = 'liquid' | 'air';
+/** What decides which generic tasks a bike needs. Asked when a bike is added. */
+export type BikeSetup = { finalDrive: FinalDrive; cooling: Cooling };
+
+export const DEFAULT_BIKE_SETUP: BikeSetup = { finalDrive: 'chain', cooling: 'liquid' };
+
+type GenericTask = TaskDefaults & { only?: Partial<BikeSetup> };
+
+/**
+ * Starter tasks for bikes without a manufacturer schedule yet. Intervals are
+ * on the cautious side of what most owner's manuals list; riders can edit
+ * them, and importing the real schedule replaces the ones never logged.
+ */
+const GENERIC_TASKS: GenericTask[] = [
+  { task_name: 'Replace engine oil and filter', interval_mileage: 4000, interval_months: 12, is_diy: true },
+  { task_name: 'Check tire pressure and tread', interval_mileage: 0, interval_months: 1, is_diy: true },
+  { task_name: 'Check brake pads and discs', interval_mileage: 4000, interval_months: 12, is_diy: true },
+  { task_name: 'Replace brake fluid', interval_mileage: 0, interval_months: 24, is_diy: true },
+  { task_name: 'Lubricate and adjust cables and controls', interval_mileage: 4000, interval_months: 12, is_diy: true },
+  { task_name: 'Check battery and terminals', interval_mileage: 0, interval_months: 12, is_diy: true },
+  { task_name: 'Replace air filter', interval_mileage: 8000, interval_months: 24, is_diy: true },
+  { task_name: 'Replace spark plugs', interval_mileage: 12000, interval_months: 0, is_diy: true },
+  { task_name: 'Check steering and wheel bearings', interval_mileage: 8000, interval_months: 24, is_diy: true },
+  { task_name: 'Check valve clearance', interval_mileage: 15000, interval_months: 0, is_diy: false },
+  { task_name: 'Clean, lube and adjust chain', interval_mileage: 500, interval_months: 1, is_diy: true, only: { finalDrive: 'chain' } },
+  { task_name: 'Check drive belt', interval_mileage: 5000, interval_months: 12, is_diy: true, only: { finalDrive: 'belt' } },
+  { task_name: 'Replace final drive oil', interval_mileage: 12000, interval_months: 24, is_diy: true, only: { finalDrive: 'shaft' } },
+  { task_name: 'Replace coolant', interval_mileage: 0, interval_months: 24, is_diy: true, only: { cooling: 'liquid' } },
+];
+
+/** The starter tasks from before the list was expanded, still on older bikes' checklists. */
+const LEGACY_GENERIC_TASKS: TaskDefaults[] = [
   { task_name: 'Engine Oil & Filter', interval_mileage: 5000, interval_months: 12, is_diy: true },
   { task_name: 'Chain Clean & Tension', interval_mileage: 500, interval_months: 1, is_diy: true },
   { task_name: 'Valve Clearance Check', interval_mileage: 15000, interval_months: 24, is_diy: false },
 ];
 
+const toDefaults = ({ task_name, interval_mileage, interval_months, is_diy }: GenericTask): TaskDefaults => ({
+  task_name,
+  interval_mileage,
+  interval_months,
+  is_diy,
+});
+
+/** The generic starter tasks that apply to a bike with this drive and cooling. */
+export function genericTasksFor(setup: BikeSetup): TaskDefaults[] {
+  return GENERIC_TASKS.filter(
+    ({ only }) =>
+      (!only?.finalDrive || only.finalDrive === setup.finalDrive) && (!only?.cooling || only.cooling === setup.cooling)
+  ).map(toDefaults);
+}
+
+/** Every generic task, whatever the bike's setup, plus the older ones. Used to recognise them by name. */
+const ALL_GENERIC_TASKS: TaskDefaults[] = [...GENERIC_TASKS.map(toDefaults), ...LEGACY_GENERIC_TASKS];
+
+const nameKey = (name: string) => name.replace(/\s+/g, ' ').trim().toLowerCase();
+const GENERIC_NAMES = new Set(ALL_GENERIC_TASKS.map((task) => nameKey(task.task_name)));
+
+/** True for a generic starter task (current or older), as opposed to a manufacturer's or rider's task. */
+export function isGenericTaskName(name: string): boolean {
+  return GENERIC_NAMES.has(nameKey(name));
+}
+
 /**
  * The tasks a bike starts with: its manufacturer schedule (converted to miles)
- * if there is one, otherwise the generic defaults.
+ * if there is one, otherwise the generic tasks for its setup.
  */
-export function getDefaultTasks(schedule: Pick<ModelSchedule, 'model_schedule_tasks'> | null): TaskDefaults[] {
+export function getDefaultTasks(
+  schedule: Pick<ModelSchedule, 'model_schedule_tasks'> | null,
+  setup: BikeSetup = DEFAULT_BIKE_SETUP
+): TaskDefaults[] {
   const tasks = schedule?.model_schedule_tasks ?? [];
-  if (tasks.length === 0) return GENERIC_MAINTENANCE_TASKS;
+  if (tasks.length === 0) return genericTasksFor(setup);
 
   return [...tasks]
     .sort((a, b) => a.sort_order - b.sort_order)
@@ -55,16 +115,16 @@ export function baselineFromLogs(
 
 /**
  * Whether a bike's checklist already uses this schedule: true if any task has
- * the same name as one of the schedule's. A bike still on the generic
- * defaults shares none, so the rider can be offered the schedule.
+ * the same name as one of the schedule's, other than a generic name. A bike
+ * still on the generic tasks shares none, so the rider can be offered it.
  */
 export function scheduleOverlapsTasks(
   schedule: Pick<ModelSchedule, 'model_schedule_tasks'>,
   tasks: Pick<MaintenanceTask, 'task_name'>[]
 ): boolean {
-  const key = (name: string) => name.replace(/\s+/g, ' ').trim().toLowerCase();
-  const names = new Set(tasks.map((task) => key(task.task_name)));
-  return schedule.model_schedule_tasks.some((task) => names.has(key(task.task_name)));
+  // Generic names like "Replace coolant" can match a manufacturer's task word for word, so they don't count.
+  const names = new Set(tasks.map((task) => nameKey(task.task_name)));
+  return schedule.model_schedule_tasks.some((task) => names.has(nameKey(task.task_name)) && !GENERIC_NAMES.has(nameKey(task.task_name)));
 }
 
 /** The default interval for one task by name, used by "Reset to default". */
@@ -72,9 +132,10 @@ export function findDefaultTask(
   schedule: Pick<ModelSchedule, 'model_schedule_tasks'> | null,
   taskName: string
 ): TaskDefaults | null {
-  const name = taskName.trim().toLowerCase();
-  const matches = (task: TaskDefaults) => task.task_name.toLowerCase() === name;
-  return getDefaultTasks(schedule).find(matches) ?? GENERIC_MAINTENANCE_TASKS.find(matches) ?? null;
+  const name = nameKey(taskName);
+  const matches = (task: TaskDefaults) => nameKey(task.task_name) === name;
+  const fromSchedule = schedule?.model_schedule_tasks.length ? getDefaultTasks(schedule).find(matches) : undefined;
+  return fromSchedule ?? ALL_GENERIC_TASKS.find(matches) ?? null;
 }
 
 export type TaskStatus = 'Healthy' | 'Soon' | 'Urgent' | 'Overdue';

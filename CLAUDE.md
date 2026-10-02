@@ -24,7 +24,7 @@ Run Node commands in **PowerShell**: it has Node 22. Git Bash on this machine re
 - `app/hooks/`: `useSupabaseQuery` (keyed loading with `reload()`), `useAuthUser`, `usePreferences` (units and theme, saved to `profiles`), `useStoredToggle` (collapse state in localStorage).
 - `app/history/[bikeId]`: owner-only printable history. `app/share/[token]`: public read-only shared history. `app/admin`: admin page: import schedules for bikes that have a manual but no schedule, and review submitted manual links and new makes/models.
 - `lib/actions/`: server actions. Every database write goes through these, and each one checks the signed-in user.
-- `lib/maintenance.ts`: due-state logic (`getTaskDueState`), urgency sorting, and default task schedules.
+- `lib/maintenance.ts`: due-state logic (`getTaskDueState`), urgency sorting, and default tasks: the manufacturer schedule if there is one, else generic starter tasks picked by final drive and cooling (`genericTasksFor`). Applying a schedule removes starter tasks that were never logged.
 - `lib/modelData.ts`: lookups in the shared per-model tables (`bike_manuals`, `model_schedules`).
 - `lib/bikeCatalog.ts`: the make/model dropdown lists: `lib/data/motorcycles.json` plus approved rider-added names from `custom_models`.
 - `lib/scheduleExtraction.ts`: server-only Claude call that reads a maintenance schedule from manual page images.

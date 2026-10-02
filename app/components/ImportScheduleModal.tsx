@@ -5,6 +5,7 @@ import { Plus, Sparkles, Trash2 } from 'lucide-react';
 import { applyModelScheduleAction, extractScheduleAction, saveModelScheduleAction } from '@/lib/actions/schedules';
 import { bikeTitle } from '@/lib/historyExport';
 import { formatPageList } from '@/lib/pageRanges';
+import { applySummary } from '@/lib/scheduleImport';
 import { renderPdfPages } from '@/lib/pdfPages';
 import type { ExtractedTask } from '@/lib/scheduleExtraction';
 import type { Motorcycle } from '@/lib/types';
@@ -120,7 +121,7 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
         setStage({ name: 'review' });
         return;
       }
-      summary += ` Your checklist: ${applied.data.updated} updated, ${applied.data.added} added.`;
+      summary += ` Your checklist: ${applySummary(applied.data)}.`;
     }
 
     onImported(summary);
