@@ -24,6 +24,12 @@ describe('parsePageSelection', () => {
     assert.ok('error' in parsePageSelection(`1-${MAX_IMPORT_PAGES + 1}`, 500));
     assert.ok('error' in parsePageSelection('1-400', 500));
   });
+
+  it('explains what went wrong for a blank box or a whole-manual range', () => {
+    assert.match((parsePageSelection('', 190) as { error: string }).error, /Enter the page numbers/);
+    assert.match((parsePageSelection('1-200', 190) as { error: string }).error, /only has 190 pages/);
+    assert.match((parsePageSelection('1-200', 400) as { error: string }).error, /at most 20 pages/);
+  });
 });
 
 describe('formatPageList', () => {

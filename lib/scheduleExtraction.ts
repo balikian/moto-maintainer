@@ -1,6 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod';
+import { cleanTasks } from './scheduleImport';
 
 // Reads a maintenance schedule out of owner's-manual pages with Claude.
 // Server-only: it uses ANTHROPIC_API_KEY, which must never reach the browser.
@@ -36,8 +37,6 @@ How to read the schedule:
 
 If the pages don't contain a periodic maintenance schedule, set found_schedule to false, return no tasks, and say what the pages contain instead.`;
 
-const MAX_TASKS = 80;
-
 export class ScheduleExtractionError extends Error {}
 
 let client: Anthropic | null = null;
@@ -49,20 +48,6 @@ function getClient(): Anthropic {
   // Reads ANTHROPIC_API_KEY from the environment.
   client ??= new Anthropic();
   return client;
-}
-
-/** Trims names, rounds numbers, and drops empty or nonsensical rows. */
-function cleanTasks(tasks: ExtractedTask[]): ExtractedTask[] {
-  return tasks
-    .map((task) => ({
-      task_name: task.task_name.replace(/\s+/g, ' ').trim().slice(0, 120),
-      interval_distance: Number.isFinite(task.interval_distance) ? Math.max(0, Math.round(task.interval_distance)) : 0,
-      distance_unit: task.distance_unit,
-      interval_months: Number.isFinite(task.interval_months) ? Math.max(0, Math.round(task.interval_months)) : 0,
-      is_diy: task.is_diy,
-    }))
-    .filter((task) => task.task_name && (task.interval_distance > 0 || task.interval_months > 0))
-    .slice(0, MAX_TASKS);
 }
 
 /** `pageImages` are base64 JPEGs of the selected manual pages, in page order. */

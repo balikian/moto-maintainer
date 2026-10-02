@@ -3,18 +3,11 @@
 import { isIsoDate } from '../dates';
 import { getDefaultTasks } from '../maintenance';
 import { fetchModelSchedule } from '../modelData';
-import { MAX_IMPORT_PAGES } from '../pageRanges';
 import { extractScheduleFromPages, ScheduleExtractionError, type ExtractedSchedule, type ExtractedTask } from '../scheduleExtraction';
+import { planScheduleApply, validatePageImages } from '../scheduleImport';
 import { getSignedInClient } from '../supabase/server';
 import type { Motorcycle, ReviewStatus } from '../types';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
-
-// Stays under the 10 MB server-action body limit in next.config.ts.
-const MAX_UPLOAD_BYTES = 9 * 1024 * 1024;
-
-function isJpeg(bytes: Uint8Array): boolean {
-  return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
-}
 
 /**
  * Reads the maintenance schedule from a few owner's-manual pages. The browser
@@ -35,19 +28,13 @@ export async function extractScheduleAction(formData: FormData): Promise<ActionR
     make: String(formData.get('make') ?? '').trim(),
     model: String(formData.get('model') ?? '').trim(),
   };
-  if (pages.length === 0) return { error: 'No pages were uploaded.' };
-  if (pages.length > MAX_IMPORT_PAGES) return { error: `Please send at most ${MAX_IMPORT_PAGES} pages.` };
-  if (pages.reduce((total, page) => total + page.size, 0) > MAX_UPLOAD_BYTES) {
-    return { error: 'Those pages are too large to send. Try fewer pages.' };
-  }
   if (!bike.make || !bike.model || !bike.year) return { error: 'This bike is missing its make, model, or year.' };
 
-  const images: string[] = [];
-  for (const page of pages) {
-    const bytes = new Uint8Array(await page.arrayBuffer());
-    if (!isJpeg(bytes)) return { error: 'The uploaded pages weren’t valid images.' };
-    images.push(Buffer.from(bytes).toString('base64'));
-  }
+  // The request body is already capped at 10 MB, so reading every page is safe.
+  const pageBytes = await Promise.all(pages.map(async (page) => new Uint8Array(await page.arrayBuffer())));
+  const invalid = validatePageImages(pageBytes);
+  if (invalid) return { error: invalid };
+  const images = pageBytes.map((bytes) => Buffer.from(bytes).toString('base64'));
 
   try {
     const schedule = await extractScheduleFromPages(images, bike);
@@ -150,36 +137,25 @@ export async function applyModelScheduleAction(
 
   const existing = await supabase.from('maintenance_tasks').select('id,task_name').eq('motorcycle_id', bike.id);
   if (existing.error) return { error: existing.error.message };
-  const existingByName = new Map(
-    (existing.data ?? []).map((task) => [String(task.task_name).trim().toLowerCase(), task.id as string])
-  );
+  const plan = planScheduleApply(getDefaultTasks(schedule.data), existing.data ?? []);
 
-  let updated = 0;
-  const toAdd = [];
-  for (const task of getDefaultTasks(schedule.data)) {
-    const existingId = existingByName.get(task.task_name.trim().toLowerCase());
-    if (existingId) {
-      const { error } = await supabase
-        .from('maintenance_tasks')
-        .update({ interval_mileage: task.interval_mileage, interval_months: task.interval_months, is_diy: task.is_diy })
-        .eq('id', existingId);
-      if (error) return { error: error.message };
-      updated += 1;
-    } else {
-      toAdd.push({
+  for (const { id, ...intervals } of plan.updates) {
+    const { error } = await supabase.from('maintenance_tasks').update(intervals).eq('id', id);
+    if (error) return { error: error.message };
+  }
+
+  if (plan.additions.length > 0) {
+    const { error } = await supabase.from('maintenance_tasks').insert(
+      plan.additions.map((task) => ({
         ...task,
         motorcycle_id: bike.id,
         user_id: user.id,
         last_performed_mileage: bike.current_mileage,
         last_performed_date: today,
-      });
-    }
-  }
-
-  if (toAdd.length > 0) {
-    const { error } = await supabase.from('maintenance_tasks').insert(toAdd);
+      }))
+    );
     if (error) return { error: error.message };
   }
 
-  return { data: { updated, added: toAdd.length } };
+  return { data: { updated: plan.updates.length, added: plan.additions.length } };
 }
