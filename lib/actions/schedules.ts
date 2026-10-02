@@ -1,10 +1,9 @@
 'use server';
 
-import { isIsoDate } from '../dates';
 import { getDefaultTasks } from '../maintenance';
 import { fetchModelSchedule } from '../modelData';
 import { extractScheduleFromPages, ScheduleExtractionError, type ExtractedSchedule, type ExtractedTask } from '../scheduleExtraction';
-import { planScheduleApply, validatePageImages } from '../scheduleImport';
+import { nameKey, planScheduleApply, validatePageImages } from '../scheduleImport';
 import { getSignedInClient } from '../supabase/server';
 import type { Motorcycle, ReviewStatus } from '../types';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
@@ -116,15 +115,13 @@ export async function saveModelScheduleAction(
 /**
  * Brings a bike's checklist in line with its manufacturer schedule: tasks with
  * the same name get the schedule's intervals, missing ones are added (counted
- * from the bike's current odometer and today), and anything else is kept.
+ * from their last logged service, or from new), and anything else is kept.
  */
 export async function applyModelScheduleAction(
-  bikeId: string,
-  today: string
+  bikeId: string
 ): Promise<ActionResult<{ updated: number; added: number }>> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
-  if (!isIsoDate(today)) return { error: 'Invalid date.' };
 
   const bikeLookup = await supabase.from('motorcycles').select('*').eq('id', bikeId).maybeSingle();
   if (bikeLookup.error) return { error: bikeLookup.error.message };
@@ -137,7 +134,16 @@ export async function applyModelScheduleAction(
 
   const existing = await supabase.from('maintenance_tasks').select('id,task_name').eq('motorcycle_id', bike.id);
   if (existing.error) return { error: existing.error.message };
-  const plan = planScheduleApply(getDefaultTasks(schedule.data), existing.data ?? []);
+  const logs = await supabase
+    .from('service_logs')
+    .select('id,task_id,task_name,performed_at,odometer_at_service')
+    .eq('motorcycle_id', bike.id);
+  if (logs.error) return { error: logs.error.message };
+
+  const plan = planScheduleApply(getDefaultTasks(schedule.data), existing.data ?? [], {
+    bikeYear: bike.year,
+    logs: logs.data ?? [],
+  });
 
   for (const { id, ...intervals } of plan.updates) {
     const { error } = await supabase.from('maintenance_tasks').update(intervals).eq('id', id);
@@ -145,16 +151,31 @@ export async function applyModelScheduleAction(
   }
 
   if (plan.additions.length > 0) {
-    const { error } = await supabase.from('maintenance_tasks').insert(
-      plan.additions.map((task) => ({
-        ...task,
-        motorcycle_id: bike.id,
-        user_id: user.id,
-        last_performed_mileage: bike.current_mileage,
-        last_performed_date: today,
-      }))
-    );
-    if (error) return { error: error.message };
+    const inserted = await supabase
+      .from('maintenance_tasks')
+      .insert(
+        plan.additions.map((task) => ({
+          task_name: task.task_name,
+          interval_mileage: task.interval_mileage,
+          interval_months: task.interval_months,
+          is_diy: task.is_diy,
+          last_performed_mileage: task.last_performed_mileage,
+          last_performed_date: task.last_performed_date,
+          motorcycle_id: bike.id,
+          user_id: user.id,
+        }))
+      )
+      .select('id,task_name');
+    if (inserted.error) return { error: inserted.error.message };
+
+    // Reconnect earlier service records to their re-added task (names are unique within the plan).
+    const newIdByName = new Map((inserted.data ?? []).map((row) => [nameKey(row.task_name), row.id as string]));
+    for (const task of plan.additions) {
+      const newId = newIdByName.get(nameKey(task.task_name));
+      if (!newId || task.relinkLogIds.length === 0) continue;
+      const { error } = await supabase.from('service_logs').update({ task_id: newId }).in('id', task.relinkLogIds);
+      if (error) return { error: error.message };
+    }
   }
 
   return { data: { updated: plan.updates.length, added: plan.additions.length } };

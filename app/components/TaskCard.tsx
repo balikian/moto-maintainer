@@ -5,11 +5,14 @@ import { AlertTriangle, Check, CheckCircle, Clock, Pencil, RotateCcw, Trash2, Wr
 import type { TaskDueState } from '@/lib/maintenance';
 import type { MaintenanceTask, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, formatDistance, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
+import ConfirmPopover from './ConfirmPopover';
 import { ui } from './ui';
 
 type TaskCardProps = {
   task: MaintenanceTask;
   dueState: TaskDueState;
+  /** True until a service is logged for this task, so its countdown runs from new. */
+  neverLogged: boolean;
   unitSystem: UnitSystem;
   onLog: () => void;
   /** Receives the interval in miles; resolves to an error message, or null on success. */
@@ -43,7 +46,7 @@ function badgeText({ trigger, milesRemaining, daysRemaining }: TaskDueState, uni
   return 'No interval set';
 }
 
-export default function TaskCard({ task, dueState, unitSystem, onLog, onSaveIntervals, onReset, onDelete }: TaskCardProps) {
+export default function TaskCard({ task, dueState, neverLogged, unitSystem, onLog, onSaveIntervals, onReset, onDelete }: TaskCardProps) {
   const [draft, setDraft] = useState<{ distance: string; months: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +96,7 @@ export default function TaskCard({ task, dueState, unitSystem, onLog, onSaveInte
             <h4 className="text-sm font-bold md:text-base">{task.task_name}</h4>
             <p className={`mt-0.5 flex items-center gap-1.5 text-xs ${ui.muted}`}>
               <Wrench size={12} /> {task.is_diy ? 'Self-Maintain' : 'Shop Service'}
+              {neverLogged && <span title="No service logged yet, so this counts from when the bike was new">· Not logged yet</span>}
             </p>
           </div>
         </div>
@@ -176,15 +180,24 @@ export default function TaskCard({ task, dueState, unitSystem, onLog, onSaveInte
               >
                 <RotateCcw size={12} />
               </button>
-              <button
-                type="button"
-                onClick={onDelete}
-                className={`${iconButtonClass} hover:text-rose-500`}
-                title="Delete task"
-                aria-label="Delete task"
+              <ConfirmPopover
+                message={`Delete "${task.task_name}"? Its past service records are kept.`}
+                confirmLabel="Delete task"
+                onConfirm={onDelete}
               >
-                <Trash2 size={12} />
-              </button>
+                {(open, popoverProps) => (
+                  <button
+                    type="button"
+                    onClick={open}
+                    {...popoverProps}
+                    className={`${iconButtonClass} hover:text-rose-500`}
+                    title="Delete task"
+                    aria-label="Delete task"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                )}
+              </ConfirmPopover>
             </div>
           </div>
         </div>

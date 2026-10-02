@@ -1,4 +1,4 @@
-import type { TaskDefaults } from './maintenance';
+import { baselineFromLogs, type TaskBaseline, type TaskDefaults } from './maintenance';
 import { MAX_IMPORT_PAGES } from './pageRanges';
 import type { ExtractedTask } from './scheduleExtraction';
 
@@ -40,11 +40,15 @@ export function cleanTasks(tasks: ExtractedTask[]): ExtractedTask[] {
     .slice(0, MAX_EXTRACTED_TASKS);
 }
 
-const nameKey = (name: string) => name.replace(/\s+/g, ' ').trim().toLowerCase();
+/** How task names are compared: ignoring case and extra spaces. */
+export const nameKey = (name: string) => name.replace(/\s+/g, ' ').trim().toLowerCase();
+
+type LogForApply = { id: string; task_id: string | null; task_name: string; performed_at: string; odometer_at_service: number };
 
 export type ScheduleApplyPlan = {
   updates: (Omit<TaskDefaults, 'task_name'> & { id: string })[];
-  additions: TaskDefaults[];
+  /** New tasks, counted from their latest matching service log or else from new. */
+  additions: (TaskDefaults & TaskBaseline & { relinkLogIds: string[] })[];
 };
 
 /**
@@ -52,11 +56,23 @@ export type ScheduleApplyPlan = {
  * with the same name (ignoring case and spacing) get the schedule's intervals,
  * missing ones are added, and nothing is removed. If the schedule lists a name
  * twice, the first one wins.
+ *
+ * A task that was deleted and comes back picks up where its service records
+ * left off: service logs with its name that aren't tied to a task set its
+ * baseline and get linked to it again.
  */
 export function planScheduleApply(
   scheduleTasks: TaskDefaults[],
-  existingTasks: { id: string; task_name: string }[]
+  existingTasks: { id: string; task_name: string }[],
+  { bikeYear, logs }: { bikeYear: number; logs: LogForApply[] }
 ): ScheduleApplyPlan {
+  const orphanLogsByName = new Map<string, LogForApply[]>();
+  for (const log of logs) {
+    if (log.task_id) continue;
+    const key = nameKey(log.task_name);
+    orphanLogsByName.set(key, [...(orphanLogsByName.get(key) ?? []), log]);
+  }
+
   const existingByName = new Map<string, string>();
   for (const task of existingTasks) {
     const key = nameKey(task.task_name);
@@ -73,7 +89,15 @@ export function planScheduleApply(
     const existingId = existingByName.get(key);
     const { task_name, ...intervals } = task;
     if (existingId) plan.updates.push({ id: existingId, ...intervals });
-    else plan.additions.push({ ...intervals, task_name: task_name.trim() });
+    else {
+      const matchingLogs = orphanLogsByName.get(key) ?? [];
+      plan.additions.push({
+        ...intervals,
+        task_name: task_name.trim(),
+        ...baselineFromLogs(matchingLogs, bikeYear),
+        relinkLogIds: matchingLogs.map((log) => log.id),
+      });
+    }
   }
   return plan;
 }

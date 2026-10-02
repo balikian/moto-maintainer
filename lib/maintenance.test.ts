@@ -1,6 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { findDefaultTask, getDefaultTasks, getTaskDueState, GENERIC_MAINTENANCE_TASKS, groupTasksByUrgency } from './maintenance';
+import {
+  baselineFromLogs,
+  findDefaultTask,
+  fromNewBaseline,
+  getDefaultTasks,
+  getTaskDueState,
+  GENERIC_MAINTENANCE_TASKS,
+  groupTasksByUrgency,
+} from './maintenance';
 
 const today = new Date(2026, 8, 29); // Sep 29, 2026
 
@@ -132,5 +140,30 @@ describe('groupTasksByUrgency', () => {
   it('sorts healthy tasks by what is coming up next, with no-interval tasks last', () => {
     const { healthy } = groupTasksByUrgency(tasks, 14000, today);
     assert.deepEqual(names(healthy), ['Healthy near', 'Healthy far', 'No interval']);
+  });
+});
+
+describe('task baselines', () => {
+  it('counts from new: 0 miles and the start of the model year', () => {
+    assert.deepEqual(fromNewBaseline(2024), { last_performed_mileage: 0, last_performed_date: '2024-01-01' });
+  });
+
+  it('a used bike with no service logged shows work as due', () => {
+    // A 2020 bike bought with 20,000 miles: the 15,000-mile service is overdue until it's logged.
+    const state = getTaskDueState({ interval_mileage: 15000, interval_months: 12, ...fromNewBaseline(2020) }, 20000, today);
+    assert.equal(state.status, 'Overdue');
+  });
+
+  it('uses the latest log, by date and then odometer', () => {
+    const logs = [
+      { performed_at: '2026-01-05', odometer_at_service: 4000 },
+      { performed_at: '2026-05-20T00:00:00Z', odometer_at_service: 7000 },
+      { performed_at: '2026-05-20', odometer_at_service: 6900 },
+    ];
+    assert.deepEqual(baselineFromLogs(logs, 2024), { last_performed_mileage: 7000, last_performed_date: '2026-05-20' });
+  });
+
+  it('falls back to new when there are no logs', () => {
+    assert.deepEqual(baselineFromLogs([], 2023), fromNewBaseline(2023));
   });
 });

@@ -29,6 +29,30 @@ export function getDefaultTasks(schedule: Pick<ModelSchedule, 'model_schedule_ta
     }));
 }
 
+export type TaskBaseline = Pick<MaintenanceTask, 'last_performed_mileage' | 'last_performed_date'>;
+
+/**
+ * Where a task's countdown starts before any service is logged for it: we
+ * assume the work hasn't been done since the bike was new, so it counts from
+ * 0 miles and the start of the model year.
+ */
+export function fromNewBaseline(bikeYear: number): TaskBaseline {
+  return { last_performed_mileage: 0, last_performed_date: `${String(bikeYear).padStart(4, '0')}-01-01` };
+}
+
+/** The most recent of these service logs as a task's baseline, or from new if there are none. */
+export function baselineFromLogs(
+  logs: { performed_at: string; odometer_at_service: number }[],
+  bikeYear: number
+): TaskBaseline {
+  const latest = [...logs].sort(
+    (a, b) => b.performed_at.slice(0, 10).localeCompare(a.performed_at.slice(0, 10)) || b.odometer_at_service - a.odometer_at_service
+  )[0];
+  return latest
+    ? { last_performed_mileage: Number(latest.odometer_at_service), last_performed_date: latest.performed_at.slice(0, 10) }
+    : fromNewBaseline(bikeYear);
+}
+
 /** The default interval for one task by name, used by "Reset to default". */
 export function findDefaultTask(
   schedule: Pick<ModelSchedule, 'model_schedule_tasks'> | null,

@@ -1,6 +1,7 @@
 'use server';
 
 import { isIsoDate } from '../dates';
+import { baselineFromLogs } from '../maintenance';
 import { getSignedInClient } from '../supabase/server';
 import { normalizeMileage } from '../units';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
@@ -195,7 +196,7 @@ async function rewindTaskIfNeeded(
 ): Promise<ActionResult> {
   const taskLookup = await supabase
     .from('maintenance_tasks')
-    .select('last_performed_date,last_performed_mileage')
+    .select('last_performed_date,last_performed_mileage,motorcycle_id')
     .eq('id', taskId)
     .maybeSingle();
   if (taskLookup.error) return { error: taskLookup.error.message };
@@ -207,24 +208,17 @@ async function rewindTaskIfNeeded(
     Number(task.last_performed_mileage) === Number(deletedLog.odometer_at_service);
   if (!cameFromDeletedLog) return {};
 
-  const latest = await supabase
-    .from('service_logs')
-    .select('performed_at,odometer_at_service')
-    .eq('task_id', taskId)
-    .order('performed_at', { ascending: false })
-    .order('odometer_at_service', { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (latest.error) return { error: latest.error.message };
-  // With no older logs left there's nothing to fall back to, so keep the current baseline.
-  if (!latest.data) return {};
+  const remaining = await supabase.from('service_logs').select('performed_at,odometer_at_service').eq('task_id', taskId);
+  if (remaining.error) return { error: remaining.error.message };
+
+  // With no logs left, the task counts from when the bike was new again.
+  const bike = await supabase.from('motorcycles').select('year').eq('id', task.motorcycle_id).maybeSingle();
+  if (bike.error) return { error: bike.error.message };
+  if (!bike.data) return {};
 
   const { error } = await supabase
     .from('maintenance_tasks')
-    .update({
-      last_performed_mileage: latest.data.odometer_at_service,
-      last_performed_date: latest.data.performed_at.slice(0, 10),
-    })
+    .update(baselineFromLogs(remaining.data ?? [], Number(bike.data.year)))
     .eq('id', taskId);
   if (error) return { error: error.message };
   return {};

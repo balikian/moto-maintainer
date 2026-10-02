@@ -9,7 +9,6 @@ import {
   deleteTaskAction,
   updateTaskIntervalsAction,
 } from '@/lib/actions/tasks';
-import { todayIsoDate } from '@/lib/dates';
 import { findDefaultTask } from '@/lib/maintenance';
 import { fetchModelSchedule } from '@/lib/modelData';
 import { createClient } from '@/lib/supabase/client';
@@ -38,6 +37,7 @@ type OpenDialog =
   | { type: 'addTask' }
   | { type: 'logService'; task: MaintenanceTask | null }
   | { type: 'share' }
+  | { type: 'manual' }
   | null;
 
 export default function GarageDashboard() {
@@ -74,6 +74,7 @@ export default function GarageDashboard() {
       .order('performed_at', { ascending: false })
       .order('created_at', { ascending: false })
   );
+  const loggedTaskIds = new Set((logsQuery.data ?? []).flatMap((log) => (log.task_id ? [log.task_id] : [])));
 
   // Admins see a link to the review page. The page itself re-checks on the server.
   const adminQuery = useSupabaseQuery<boolean>(userId, () => supabase.rpc('is_app_admin'));
@@ -86,7 +87,7 @@ export default function GarageDashboard() {
   // --- Bikes ---------------------------------------------------------------
 
   const handleAddBike = async (values: BikeFormValues) => {
-    const result = await addBikeAction({ ...values, today: todayIsoDate() });
+    const result = await addBikeAction(values);
     if (!result.data) return result.error ?? 'Unable to add this motorcycle right now.';
 
     // The bike was saved even if seeding its default tasks failed.
@@ -107,10 +108,6 @@ export default function GarageDashboard() {
 
   const handleRemoveBike = async (bike: Motorcycle) => {
     const name = `${bike.year} ${bike.make} ${bike.model}`;
-    if (!window.confirm(`Remove the ${name} from your garage? This deletes its maintenance tasks and service history.`)) {
-      return;
-    }
-
     const result = await deleteBikeAction(bike.id);
     if (result.error) {
       reportError(`Unable to remove ${name}: ${result.error}`);
@@ -168,8 +165,6 @@ export default function GarageDashboard() {
   };
 
   const handleDeleteTask = async (task: MaintenanceTask) => {
-    if (!window.confirm(`Delete "${task.task_name}"? Its past service records will be kept.`)) return;
-
     const result = await deleteTaskAction(task.id);
     if (result.error) {
       reportError(`Unable to delete ${task.task_name}: ${result.error}`);
@@ -202,8 +197,6 @@ export default function GarageDashboard() {
   };
 
   const handleDeleteLog = async (log: ServiceLog) => {
-    if (!window.confirm(`Delete the "${log.task_name}" service record?`)) return null;
-
     const result = await deleteServiceLogAction(log.id);
     if (result.error) return result.error;
     tasksQuery.reload();
@@ -260,20 +253,14 @@ export default function GarageDashboard() {
 
         {activeBike ? (
           <>
-            <BikeManualPanel
-              supabase={supabase}
-              bike={activeBike}
-              currentUserId={user.id}
-              isAdmin={isAdmin}
-              onTasksChanged={tasksQuery.reload}
-            />
-
             <MaintenanceChecklist
               bike={activeBike}
               tasks={tasks}
+              loggedTaskIds={loggedTaskIds}
               loading={tasksQuery.loading}
               unitSystem={unitSystem}
               onAddTask={() => setDialog({ type: 'addTask' })}
+              onOpenManual={() => setDialog({ type: 'manual' })}
               onLogTask={(task) => setDialog({ type: 'logService', task })}
               onSaveIntervals={handleSaveIntervals}
               onResetTask={(task) => void handleResetTask(task)}
@@ -331,6 +318,20 @@ export default function GarageDashboard() {
           defaultOdometer={activeBike.current_mileage}
           onClose={() => setDialog(null)}
           onSubmit={handleLogService}
+        />
+      )}
+
+      {dialog?.type === 'manual' && activeBike && (
+        <BikeManualPanel
+          supabase={supabase}
+          bike={activeBike}
+          currentUserId={user.id}
+          isAdmin={isAdmin}
+          onTasksChanged={() => {
+            tasksQuery.reload();
+            logsQuery.reload();
+          }}
+          onClose={() => setDialog(null)}
         />
       )}
 

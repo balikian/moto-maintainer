@@ -96,9 +96,48 @@ const scheduleTask = (task_name: string, interval_mileage = 6214, interval_month
   is_diy,
 });
 
+const noLogs = { bikeYear: 2024, logs: [] };
+
+const log = (id: string, task_name: string, performed_at: string, odometer_at_service: number, task_id: string | null = null) => ({
+  id,
+  task_id,
+  task_name,
+  performed_at,
+  odometer_at_service,
+});
+
 describe('planScheduleApply', () => {
+  it('counts new tasks from when the bike was new if nothing was logged', () => {
+    const [task] = planScheduleApply([scheduleTask('Oil change')], [], noLogs).additions;
+    assert.equal(task.last_performed_mileage, 0);
+    assert.equal(task.last_performed_date, '2024-01-01');
+    assert.deepEqual(task.relinkLogIds, []);
+  });
+
+  it('a deleted task that comes back picks up from its latest service record', () => {
+    const logs = [
+      log('l1', 'Oil change', '2025-03-01', 1000),
+      log('l2', 'oil  change', '2026-06-15', 8000),
+      log('l3', 'Oil change', '2026-01-10', 5000, 'some-other-task'),
+      log('l4', 'Chain lube', '2026-07-01', 8500),
+    ];
+    const [task] = planScheduleApply([scheduleTask('Oil change')], [], { bikeYear: 2024, logs }).additions;
+    assert.equal(task.last_performed_mileage, 8000);
+    assert.equal(task.last_performed_date, '2026-06-15');
+    assert.deepEqual(task.relinkLogIds.sort(), ['l1', 'l2']);
+  });
+
+  it('leaves the baseline of existing tasks alone', () => {
+    const plan = planScheduleApply([scheduleTask('Oil change')], [{ id: 'a', task_name: 'Oil change' }], {
+      bikeYear: 2024,
+      logs: [log('l1', 'Oil change', '2026-06-15', 8000)],
+    });
+    assert.equal(plan.updates.length, 1);
+    assert.equal('last_performed_mileage' in plan.updates[0], false);
+  });
+
   it('adds every task to an empty checklist', () => {
-    const plan = planScheduleApply([scheduleTask('Oil change'), scheduleTask('Spark plugs')], []);
+    const plan = planScheduleApply([scheduleTask('Oil change'), scheduleTask('Spark plugs')], [], noLogs);
     assert.deepEqual(plan.updates, []);
     assert.deepEqual(plan.additions.map((task) => task.task_name), ['Oil change', 'Spark plugs']);
   });
@@ -106,7 +145,8 @@ describe('planScheduleApply', () => {
   it('updates matching tasks, ignoring case and spacing', () => {
     const plan = planScheduleApply(
       [scheduleTask('Oil change', 6214, 12, true), scheduleTask('Valve clearance', 18641, 0, false)],
-      [{ id: 'a', task_name: '  oil   CHANGE ' }]
+      [{ id: 'a', task_name: '  oil   CHANGE ' }],
+      noLogs
     );
     assert.deepEqual(plan.updates, [{ id: 'a', interval_mileage: 6214, interval_months: 12, is_diy: true }]);
     assert.deepEqual(plan.additions.map((task) => task.task_name), ['Valve clearance']);
@@ -116,22 +156,22 @@ describe('planScheduleApply', () => {
     const plan = planScheduleApply([scheduleTask('Oil change')], [
       { id: 'a', task_name: 'Oil change' },
       { id: 'b', task_name: 'Wash the bike' },
-    ]);
+    ], noLogs);
     assert.deepEqual(plan.updates.map((task) => task.id), ['a']);
     assert.deepEqual(plan.additions, []);
   });
 
   it('applying the same schedule twice only updates the second time', () => {
     const schedule = [scheduleTask('Oil change'), scheduleTask('Chain - clean and lube')];
-    const first = planScheduleApply(schedule, []);
+    const first = planScheduleApply(schedule, [], noLogs);
     const afterFirst = first.additions.map((task, i) => ({ id: `new-${i}`, task_name: task.task_name }));
-    const second = planScheduleApply(schedule, afterFirst);
+    const second = planScheduleApply(schedule, afterFirst, noLogs);
     assert.equal(second.additions.length, 0);
     assert.equal(second.updates.length, 2);
   });
 
   it('uses the first entry when the schedule repeats a name', () => {
-    const plan = planScheduleApply([scheduleTask('Oil change', 6000), scheduleTask('oil change', 3000)], []);
+    const plan = planScheduleApply([scheduleTask('Oil change', 6000), scheduleTask('oil change', 3000)], [], noLogs);
     assert.equal(plan.additions.length, 1);
     assert.equal(plan.additions[0].interval_mileage, 6000);
   });
@@ -143,7 +183,7 @@ describe('planScheduleApply', () => {
         { task_name: 'Coolant', interval_distance: 0, distance_unit: 'km', interval_months: 48, is_diy: true, sort_order: 1 },
       ],
     });
-    const plan = planScheduleApply(defaults, []);
+    const plan = planScheduleApply(defaults, [], noLogs);
     assert.deepEqual(
       plan.additions.map(({ task_name, interval_mileage, interval_months }) => ({ task_name, interval_mileage, interval_months })),
       [

@@ -3,7 +3,6 @@
 import { useState, type SubmitEvent } from 'react';
 import { Plus, Sparkles, Trash2 } from 'lucide-react';
 import { applyModelScheduleAction, extractScheduleAction, saveModelScheduleAction } from '@/lib/actions/schedules';
-import { todayIsoDate } from '@/lib/dates';
 import { bikeTitle } from '@/lib/historyExport';
 import { formatPageList } from '@/lib/pageRanges';
 import { renderPdfPages } from '@/lib/pdfPages';
@@ -112,7 +111,7 @@ export default function ImportScheduleModal({ bike, onClose, onImported }: Impor
       : 'Saved your schedule; it will be shared once it’s reviewed.';
 
     if (applyToBike) {
-      const applied = await applyModelScheduleAction(bike.id, todayIsoDate());
+      const applied = await applyModelScheduleAction(bike.id);
       if (applied.error || !applied.data) {
         setError(`The schedule was saved, but updating your tasks failed: ${applied.error}`);
         setStage({ name: 'review' });
@@ -167,7 +166,7 @@ export default function ImportScheduleModal({ bike, onClose, onImported }: Impor
 
           {error && <div className={ui.errorBox}>{error}</div>}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <button type="button" onClick={onClose} disabled={stage.name === 'reading'} className={ui.secondaryButton}>
               Cancel
             </button>
@@ -190,79 +189,71 @@ export default function ImportScheduleModal({ bike, onClose, onImported }: Impor
             </div>
           )}
 
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[34rem] text-sm">
-              <thead>
-                <tr className="text-left text-[11px] uppercase tracking-wide text-slate-500">
-                  <th className="pb-2 pr-2 font-semibold">Task</th>
-                  <th className="w-24 pb-2 pr-2 font-semibold">Every</th>
-                  <th className="w-20 pb-2 pr-2 font-semibold">Unit</th>
-                  <th className="w-20 pb-2 pr-2 font-semibold">Months</th>
-                  <th className="w-12 pb-2 pr-2 font-semibold">DIY</th>
-                  <th className="w-8 pb-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {tasks.map((task, index) => (
-                  <tr key={index} className="border-t border-slate-200 dark:border-slate-800">
-                    <td className="py-1.5 pr-2">
-                      <input value={task.task_name} onChange={(e) => updateTask(index, { task_name: e.target.value })} className={cellInput} aria-label="Task name" />
-                    </td>
-                    <td className="py-1.5 pr-2">
-                      <input
-                        type="number"
-                        min="0"
-                        value={task.interval_distance}
-                        onChange={(e) => updateTask(index, { interval_distance: Number(e.target.value) })}
-                        className={cellInput}
-                        aria-label="Distance interval"
-                      />
-                    </td>
-                    <td className="py-1.5 pr-2">
-                      <select
-                        value={task.distance_unit}
-                        onChange={(e) => updateTask(index, { distance_unit: e.target.value === 'km' ? 'km' : 'mi' })}
-                        className={cellInput}
-                        aria-label="Distance unit"
-                      >
-                        <option value="km">km</option>
-                        <option value="mi">mi</option>
-                      </select>
-                    </td>
-                    <td className="py-1.5 pr-2">
-                      <input
-                        type="number"
-                        min="0"
-                        value={task.interval_months}
-                        onChange={(e) => updateTask(index, { interval_months: Number(e.target.value) })}
-                        className={cellInput}
-                        aria-label="Months interval"
-                      />
-                    </td>
-                    <td className="py-1.5 pr-2 text-center">
-                      <input
-                        type="checkbox"
-                        checked={task.is_diy}
-                        onChange={(e) => updateTask(index, { is_diy: e.target.checked })}
-                        className="h-4 w-4 accent-amber-500"
-                        aria-label="Do it yourself"
-                      />
-                    </td>
-                    <td className="py-1.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => setTasks((previous) => previous.filter((_, i) => i !== index))}
-                        className="rounded p-1 text-slate-400 hover:text-rose-500"
-                        aria-label="Remove task"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {/* One block per task: the full name on top (wrapping, never cut off), its intervals below. */}
+          <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+            {tasks.map((task, index) => (
+              <li key={index} className="grid gap-2 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+                <textarea
+                  rows={1}
+                  value={task.task_name}
+                  onChange={(e) => updateTask(index, { task_name: e.target.value.replace(/\n/g, ' ') })}
+                  className={`${cellInput} field-sizing-content min-h-8 resize-none`}
+                  aria-label="Task name"
+                  placeholder="Task name"
+                />
+                <div className={`flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs ${ui.muted}`}>
+                  <span>Every</span>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={task.interval_distance}
+                    onChange={(e) => updateTask(index, { interval_distance: Number(e.target.value) })}
+                    className={`${cellInput} w-20`}
+                    aria-label="Distance interval"
+                  />
+                  <select
+                    value={task.distance_unit}
+                    onChange={(e) => updateTask(index, { distance_unit: e.target.value === 'km' ? 'km' : 'mi' })}
+                    className={`${cellInput} w-16`}
+                    aria-label="Distance unit"
+                  >
+                    <option value="km">km</option>
+                    <option value="mi">mi</option>
+                  </select>
+                  <span>or</span>
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    value={task.interval_months}
+                    onChange={(e) => updateTask(index, { interval_months: Number(e.target.value) })}
+                    className={`${cellInput} w-14`}
+                    aria-label="Months interval"
+                  />
+                  <span>mo</span>
+                  <label className="ml-1 inline-flex items-center gap-1.5">
+                    <input
+                      type="checkbox"
+                      checked={task.is_diy}
+                      onChange={(e) => updateTask(index, { is_diy: e.target.checked })}
+                      className="h-4 w-4 accent-amber-500"
+                    />
+                    DIY
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setTasks((previous) => previous.filter((_, i) => i !== index))}
+                    className="ml-auto rounded p-1.5 text-slate-400 hover:text-rose-500"
+                    aria-label={`Remove ${task.task_name || 'this task'}`}
+                    title="Remove task"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
 
           <button
             type="button"
@@ -277,16 +268,16 @@ export default function ImportScheduleModal({ bike, onClose, onImported }: Impor
             <Plus size={12} className="mr-0.5 inline" /> Add a row
           </button>
 
-          <div className="grid gap-3 sm:grid-cols-[auto_auto_1fr]">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-[auto_auto_1fr]">
             <div>
               <label htmlFor="schedule-year-from" className={ui.label}>From year</label>
-              <input id="schedule-year-from" type="number" value={yearFrom} onChange={(e) => setYearFrom(e.target.value)} className={`${ui.input} w-28`} />
+              <input id="schedule-year-from" type="number" value={yearFrom} onChange={(e) => setYearFrom(e.target.value)} className={`${ui.input} sm:w-28`} />
             </div>
             <div>
               <label htmlFor="schedule-year-to" className={ui.label}>To year</label>
-              <input id="schedule-year-to" type="number" value={yearTo} onChange={(e) => setYearTo(e.target.value)} className={`${ui.input} w-28`} />
+              <input id="schedule-year-to" type="number" value={yearTo} onChange={(e) => setYearTo(e.target.value)} className={`${ui.input} sm:w-28`} />
             </div>
-            <div>
+            <div className="col-span-2 sm:col-span-1">
               <label htmlFor="schedule-source" className={ui.label}>Source</label>
               <input id="schedule-source" value={source} onChange={(e) => setSource(e.target.value)} className={ui.input} />
             </div>
@@ -302,7 +293,7 @@ export default function ImportScheduleModal({ bike, onClose, onImported }: Impor
 
           {error && <div className={ui.errorBox}>{error}</div>}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
             <button
               type="button"
               onClick={() => {

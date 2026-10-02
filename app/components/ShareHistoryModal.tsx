@@ -7,6 +7,7 @@ import { createShareLinkAction, revokeShareLinkAction } from '@/lib/actions/shar
 import { bikeTitle } from '@/lib/historyExport';
 import type { Motorcycle } from '@/lib/types';
 import { useSupabaseQuery } from '../hooks/useSupabaseQuery';
+import ConfirmPopover from './ConfirmPopover';
 import Modal from './Modal';
 import { ui } from './ui';
 
@@ -113,18 +114,24 @@ export default function ShareHistoryModal({ supabase, bike, onClose }: ShareHist
             </div>
 
             <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  if (window.confirm('Turn off this link? Anyone who has it will no longer be able to view the history.')) {
-                    void runAction(() => revokeShareLinkAction(bike.id));
-                  }
-                }}
-                className="text-sm font-semibold text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+              <ConfirmPopover
+                message="Turn off this link? Anyone who has it will no longer be able to view the history."
+                confirmLabel="Turn off"
+                align="left"
+                onConfirm={() => void runAction(() => revokeShareLinkAction(bike.id))}
               >
-                Turn off link
-              </button>
+                {(open, popoverProps) => (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={open}
+                    {...popoverProps}
+                    className="text-sm font-semibold text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                  >
+                    Turn off link
+                  </button>
+                )}
+              </ConfirmPopover>
             </div>
           </>
         ) : (

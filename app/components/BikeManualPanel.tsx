@@ -6,12 +6,13 @@ import { BookOpen, ExternalLink, ListChecks, Plus, Search, Sparkles, X } from 'l
 import { deleteManualAction, submitManualAction } from '@/lib/actions/modelData';
 import { applyModelScheduleAction } from '@/lib/actions/schedules';
 import { manualPortalFor, manualSearchUrl } from '@/lib/data/manualPortals';
-import { todayIsoDate } from '@/lib/dates';
 import { bikeTitle } from '@/lib/historyExport';
 import { fetchManuals, fetchModelSchedule, isHttpUrl } from '@/lib/modelData';
 import type { BikeManual, ModelSchedule, Motorcycle } from '@/lib/types';
 import { useSupabaseQuery } from '../hooks/useSupabaseQuery';
+import ConfirmPopover from './ConfirmPopover';
 import ImportScheduleModal from './ImportScheduleModal';
+import Modal from './Modal';
 import { ui } from './ui';
 
 type BikeManualPanelProps = {
@@ -21,6 +22,7 @@ type BikeManualPanelProps = {
   isAdmin: boolean;
   /** Called after the bike's checklist changed, so the page can reload its tasks. */
   onTasksChanged: () => void;
+  onClose: () => void;
 };
 
 const linkButtonClass =
@@ -30,7 +32,7 @@ function yearsLabel(manual: BikeManual): string {
   return manual.year_from === manual.year_to ? String(manual.year_from) : `${manual.year_from}–${manual.year_to}`;
 }
 
-export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin, onTasksChanged }: BikeManualPanelProps) {
+export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin, onTasksChanged, onClose }: BikeManualPanelProps) {
   const lookupKey = `${bike.id}|${bike.year}|${bike.make}|${bike.model}`;
   const manuals = useSupabaseQuery<BikeManual[]>(lookupKey, () => fetchManuals(supabase, bike));
   const schedule = useSupabaseQuery<ModelSchedule | null>(lookupKey, () => fetchModelSchedule(supabase, bike));
@@ -73,12 +75,9 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
   };
 
   const handleApplySchedule = async () => {
-    if (!window.confirm('Update your checklist from the manufacturer schedule? Matching tasks get its intervals, missing ones are added, and your other tasks are kept.')) {
-      return;
-    }
     setApplying(true);
     setMessage(null);
-    const result = await applyModelScheduleAction(bike.id, todayIsoDate());
+    const result = await applyModelScheduleAction(bike.id);
     setApplying(false);
     if (result.error || !result.data) {
       setMessage({ tone: 'error', text: result.error ?? 'Couldn’t update your checklist.' });
@@ -89,7 +88,6 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
   };
 
   const handleRemove = async (manual: BikeManual) => {
-    if (!window.confirm('Remove this manual link?')) return;
     const result = await deleteManualAction(manual.id);
     if (result.error) {
       setMessage({ tone: 'error', text: result.error });
@@ -99,7 +97,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
   };
 
   return (
-    <section className={`${ui.card} p-4`}>
+    <Modal title="Manual & Schedule" description={bikeTitle(bike)} size="lg" onClose={onClose}>
       <div className="flex items-center justify-between gap-3">
         <h2 className={`inline-flex items-center gap-1.5 ${ui.sectionTitle}`}>
           <BookOpen size={14} className="text-amber-500" />
@@ -134,15 +132,20 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
                       Waiting for review
                     </span>
                     {manual.submitted_by === currentUserId && (
-                      <button
-                        type="button"
-                        onClick={() => void handleRemove(manual)}
-                        className="rounded p-1 text-slate-400 hover:text-rose-500"
-                        aria-label="Remove this link"
-                        title="Remove this link"
-                      >
-                        <X size={14} />
-                      </button>
+                      <ConfirmPopover message="Remove this manual link?" confirmLabel="Remove" onConfirm={() => void handleRemove(manual)}>
+                        {(open, popoverProps) => (
+                          <button
+                            type="button"
+                            onClick={open}
+                            {...popoverProps}
+                            className="rounded p-1 text-slate-400 hover:text-rose-500"
+                            aria-label="Remove this link"
+                            title="Remove this link"
+                          >
+                            <X size={14} />
+                          </button>
+                        )}
+                      </ConfirmPopover>
                     )}
                   </>
                 )}
@@ -219,9 +222,19 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
                 Waiting for review
               </span>
             )}
-            <button type="button" onClick={() => void handleApplySchedule()} disabled={applying} className={linkButtonClass}>
-              {applying ? 'Updating…' : 'Apply to my checklist'}
-            </button>
+            <ConfirmPopover
+              message="Update your checklist from this schedule? Matching tasks get its intervals, missing ones are added, and your other tasks are kept."
+              confirmLabel="Update checklist"
+              destructive={false}
+              align="left"
+              onConfirm={() => void handleApplySchedule()}
+            >
+              {(open, popoverProps) => (
+                <button type="button" onClick={open} {...popoverProps} disabled={applying} className={linkButtonClass}>
+                  {applying ? 'Updating…' : 'Apply to my checklist'}
+                </button>
+              )}
+            </ConfirmPopover>
             {isAdmin && (
               <button type="button" onClick={() => setImportOpen(true)} className={`text-xs font-semibold ${ui.muted} hover:text-amber-600`}>
                 Re-import
@@ -266,6 +279,6 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
           {message?.text ?? `Couldn't load manual information: ${manuals.error ?? schedule.error}`}
         </p>
       )}
-    </section>
+    </Modal>
   );
 }

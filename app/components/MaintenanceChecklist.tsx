@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, ChevronDown, Plus } from 'lucide-react';
+import { BookOpen, CheckCircle, ChevronDown, Plus } from 'lucide-react';
 import { groupTasksByUrgency, type TaskDueState } from '@/lib/maintenance';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
 import { useStoredToggle } from '../hooks/useStoredToggle';
@@ -10,9 +10,12 @@ import { ui } from './ui';
 type MaintenanceChecklistProps = {
   bike: Motorcycle;
   tasks: MaintenanceTask[];
+  /** Ids of tasks that have at least one service logged. */
+  loggedTaskIds: Set<string>;
   loading: boolean;
   unitSystem: UnitSystem;
   onAddTask: () => void;
+  onOpenManual: () => void;
   onLogTask: (task: MaintenanceTask) => void;
   onSaveIntervals: (task: MaintenanceTask, intervals: { intervalMileage: number; intervalMonths: number }) => Promise<string | null>;
   onResetTask: (task: MaintenanceTask) => void;
@@ -26,9 +29,11 @@ type MaintenanceChecklistProps = {
 export default function MaintenanceChecklist({
   bike,
   tasks,
+  loggedTaskIds,
   loading,
   unitSystem,
   onAddTask,
+  onOpenManual,
   onLogTask,
   onSaveIntervals,
   onResetTask,
@@ -42,6 +47,7 @@ export default function MaintenanceChecklist({
       key={task.id}
       task={task}
       dueState={dueState}
+      neverLogged={!loggedTaskIds.has(task.id)}
       unitSystem={unitSystem}
       onLog={() => onLogTask(task)}
       onSaveIntervals={(intervals) => onSaveIntervals(task, intervals)}
@@ -52,12 +58,18 @@ export default function MaintenanceChecklist({
 
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between gap-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h2 className={ui.sectionTitle}>Maintenance Checklist</h2>
-        <button type="button" onClick={onAddTask} className={ui.chipButton}>
-          <Plus size={14} className="text-amber-500" />
-          Add Task
-        </button>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={onOpenManual} className={ui.chipButton}>
+            <BookOpen size={14} className="text-amber-500" />
+            Manual &amp; schedule
+          </button>
+          <button type="button" onClick={onAddTask} className={ui.chipButton}>
+            <Plus size={14} className="text-amber-500" />
+            Add Task
+          </button>
+        </div>
       </div>
 
       {loading ? (

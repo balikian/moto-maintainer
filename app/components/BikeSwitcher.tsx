@@ -21,15 +21,22 @@ const rowButtonClass =
 
 export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, onAdd, onEdit, onRemove }: BikeSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
+  // The bike whose row is asking "remove this bike?"; shown inline, since the list scrolls.
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
 
   const select = (bikeId: string) => {
     onSelect(bikeId);
     setIsOpen(false);
   };
 
+  const toggleOpen = () => {
+    setIsOpen((previous) => !previous);
+    setConfirmingId(null);
+  };
+
   return (
     <div className="relative">
-      <button type="button" onClick={() => setIsOpen((previous) => !previous)} className={`py-2 ${ui.chipButton}`} aria-expanded={isOpen}>
+      <button type="button" onClick={toggleOpen} className={`py-2 ${ui.chipButton}`} aria-expanded={isOpen}>
         <BikeIcon size={14} className="text-amber-500" />
         {activeBike ? (
           <>
@@ -50,6 +57,32 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
             {bikes.length > 0 ? (
               bikes.map((bike) => {
                 const isSelected = bike.id === activeBike?.id;
+                if (confirmingId === bike.id) {
+                  return (
+                    <div key={bike.id} role="alertdialog" aria-label="Confirm removing this bike" className="border-l-2 border-rose-500 bg-rose-500/5 px-3 py-2.5">
+                      <p className="text-sm">
+                        Remove the {bike.year} {bike.make} {bike.model}? This deletes its tasks and service history.
+                      </p>
+                      <div className="mt-2 flex justify-end gap-2">
+                        <button type="button" onClick={() => setConfirmingId(null)} className={`${ui.secondaryButton} px-3 py-1.5 text-xs`}>
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          autoFocus
+                          onClick={() => {
+                            setConfirmingId(null);
+                            setIsOpen(false);
+                            onRemove(bike);
+                          }}
+                          className="inline-flex items-center justify-center rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-rose-500"
+                        >
+                          Remove bike
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <div
                     key={bike.id}
@@ -94,8 +127,7 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          setIsOpen(false);
-                          onRemove(bike);
+                          setConfirmingId(bike.id);
                         }}
                         className={`${rowButtonClass} hover:border-rose-500/40 hover:text-rose-500 dark:hover:text-rose-400`}
                         title="Remove bike"

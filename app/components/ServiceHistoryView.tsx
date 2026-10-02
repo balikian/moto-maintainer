@@ -6,6 +6,7 @@ import { formatDisplayDate } from '@/lib/dates';
 import type { Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
 import { useStoredToggle } from '../hooks/useStoredToggle';
+import ConfirmPopover from './ConfirmPopover';
 import ExportMenu from './ExportMenu';
 import { ui } from './ui';
 
@@ -15,7 +16,7 @@ type ServiceHistoryViewProps = {
   loading: boolean;
   unitSystem: UnitSystem;
   onAddLog: () => void;
-  /** Resolves to an error message, or null on success (or if the user cancelled). */
+  /** Resolves to an error message, or null on success. */
   onDeleteLog: (log: ServiceLog) => Promise<string | null>;
   onShare: () => void;
 };
@@ -103,15 +104,24 @@ export default function ServiceHistoryView({ bike, logs, loading, unitSystem, on
                     {log.notes && <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{log.notes}</p>}
                   </div>
   
-                  <button
-                    type="button"
-                    onClick={() => void handleDelete(log)}
-                    disabled={deletingLogId === log.id}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-rose-500/50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-rose-300"
+                  <ConfirmPopover
+                    message={`Delete the "${log.task_name}" service record?`}
+                    confirmLabel="Delete record"
+                    onConfirm={() => void handleDelete(log)}
                   >
-                    <Trash2 size={12} />
-                    {deletingLogId === log.id ? 'Deleting…' : 'Delete'}
-                  </button>
+                    {(open, popoverProps) => (
+                      <button
+                        type="button"
+                        onClick={open}
+                        {...popoverProps}
+                        disabled={deletingLogId === log.id}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition-colors hover:border-rose-500/50 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-rose-300"
+                      >
+                        <Trash2 size={12} />
+                        {deletingLogId === log.id ? 'Deleting…' : 'Delete'}
+                      </button>
+                    )}
+                  </ConfirmPopover>
                 </div>
               </article>
             ))}
