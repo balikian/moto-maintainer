@@ -4,6 +4,7 @@ import { getDefaultTasks } from '../maintenance';
 import { fetchModelSchedule, literalPattern } from '../modelData';
 import { extractScheduleFromPages, ScheduleExtractionError, type ExtractedSchedule, type ExtractedTask } from '../scheduleExtraction';
 import { nameKey, planScheduleApply, validatePageImages } from '../scheduleImport';
+import { taskCategory } from '../taskCategories';
 import { getSignedInClient } from '../supabase/server';
 import type { Motorcycle, ReviewStatus } from '../types';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
@@ -76,6 +77,7 @@ export async function saveModelScheduleAction(
       distance_unit: task.distance_unit === 'km' ? 'km' : 'mi',
       interval_months: Math.max(0, Math.round(Number(task.interval_months) || 0)),
       is_diy: Boolean(task.is_diy),
+      category: taskCategory(task),
       sort_order: index,
     }))
     .filter((task) => task.task_name && (task.interval_distance > 0 || task.interval_months > 0));
@@ -175,6 +177,7 @@ export async function applyModelScheduleAction(
           interval_mileage: task.interval_mileage,
           interval_months: task.interval_months,
           is_diy: task.is_diy,
+          category: task.category,
           last_performed_mileage: task.last_performed_mileage,
           last_performed_date: task.last_performed_date,
           motorcycle_id: bike.id,

@@ -1,3 +1,5 @@
+import type { TaskCategory } from './taskCategories';
+
 // Row shapes for the Supabase tables. Distances are always stored in miles;
 // dates are stored as calendar days ("YYYY-MM-DD").
 
@@ -25,6 +27,8 @@ export interface MaintenanceTask {
   last_performed_mileage: number;
   last_performed_date: string | null;
   is_diy: boolean;
+  /** Null on older rows; see taskCategory() in lib/taskCategories.ts. */
+  category?: TaskCategory | null;
   notes?: string | null;
   created_at?: string;
 }
@@ -55,6 +59,8 @@ export interface ScheduleTask {
   distance_unit: 'mi' | 'km';
   interval_months: number;
   is_diy: boolean;
+  /** Null on older rows; see taskCategory() in lib/taskCategories.ts. */
+  category?: TaskCategory | null;
   sort_order: number;
 }
 

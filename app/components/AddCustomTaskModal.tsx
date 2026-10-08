@@ -3,6 +3,7 @@
 import { useState, type SubmitEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { todayIsoDate } from '@/lib/dates';
+import { categoryLabel, guessCategory, isTaskCategory, TASK_CATEGORIES, type TaskCategory } from '@/lib/taskCategories';
 import type { UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
 import Modal from './Modal';
@@ -15,7 +16,11 @@ export type NewTaskValues = {
   baselineOdometer: number;
   baselineDate: string;
   notes: string;
+  /** Left out to have it guessed from the name. */
+  category?: TaskCategory;
 };
+
+const AUTO = 'auto';
 
 type AddCustomTaskModalProps = {
   unitSystem: UnitSystem;
@@ -33,6 +38,7 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
   const [baselineOdometer, setBaselineOdometer] = useState(String(toDisplayDistance(currentOdometer, unitSystem)));
   const [baselineDate, setBaselineDate] = useState(todayIsoDate);
   const [notes, setNotes] = useState('');
+  const [category, setCategory] = useState<TaskCategory | typeof AUTO>(AUTO);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,6 +77,7 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
       baselineOdometer: baseline,
       baselineDate,
       notes,
+      category: category === AUTO ? undefined : category,
     });
     setSaving(false);
     if (submitError) setError(submitError);
@@ -90,6 +97,21 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
             required
             className={ui.input}
           />
+        </div>
+
+        <div>
+          <label htmlFor="task-category" className={ui.label}>Category</label>
+          <select
+            id="task-category"
+            value={category}
+            onChange={(event) => setCategory(isTaskCategory(event.target.value) ? event.target.value : AUTO)}
+            className={ui.input}
+          >
+            <option value={AUTO}>Automatic{taskName.trim() ? ` (${categoryLabel(guessCategory(taskName))})` : ''}</option>
+            {TASK_CATEGORIES.map((option) => (
+              <option key={option.id} value={option.id}>{option.label}</option>
+            ))}
+          </select>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">

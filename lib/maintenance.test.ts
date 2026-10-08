@@ -93,8 +93,8 @@ describe('default tasks', () => {
 
   it('uses the manufacturer schedule, in order, converted to miles', () => {
     assert.deepEqual(getDefaultTasks(nordenSchedule), [
-      { task_name: 'Engine Oil & Filter', interval_mileage: 9321, interval_months: 12, is_diy: true },
-      { task_name: 'Valve Clearance Check', interval_mileage: 18641, interval_months: 0, is_diy: false },
+      { task_name: 'Engine Oil & Filter', interval_mileage: 9321, interval_months: 12, is_diy: true, category: 'engine' },
+      { task_name: 'Valve Clearance Check', interval_mileage: 18641, interval_months: 0, is_diy: false, category: 'engine' },
     ]);
   });
 
@@ -228,5 +228,13 @@ describe('generic starter tasks', () => {
 
   it('can reset a new generic task to its default', () => {
     assert.equal(findDefaultTask(null, 'Replace coolant')?.interval_months, 24);
+  });
+});
+
+describe('generic task categories', () => {
+  it('puts every generic task in a real category', () => {
+    for (const setup of [DEFAULT_BIKE_SETUP, { finalDrive: 'shaft', cooling: 'air' } as const, { finalDrive: 'belt', cooling: 'liquid' } as const]) {
+      for (const task of genericTasksFor(setup)) assert.notEqual(task.category, 'other', task.task_name);
+    }
   });
 });

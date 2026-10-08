@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, Check, CheckCircle, Clock, Pencil, RotateCcw, Trash2, Wrench } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle, Clock, Layers, Pencil, RotateCcw, Trash2, Wrench } from 'lucide-react';
+import { categoryLabel, isTaskCategory, TASK_CATEGORIES, taskCategory, type TaskCategory } from '@/lib/taskCategories';
 import type { TaskDueState } from '@/lib/maintenance';
 import type { MaintenanceTask, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, formatDistance, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
@@ -16,7 +17,9 @@ type TaskCardProps = {
   unitSystem: UnitSystem;
   onLog: () => void;
   /** Receives the interval in miles; resolves to an error message, or null on success. */
-  onSaveIntervals: (intervals: { intervalMileage: number; intervalMonths: number }) => Promise<string | null>;
+  onSaveIntervals: (intervals: { intervalMileage: number; intervalMonths: number; category: TaskCategory }) => Promise<string | null>;
+  /** Related tasks (same category) that are coming due, worth doing at the same time. */
+  alsoComingUp: MaintenanceTask[];
   onReset: () => void;
   onDelete: () => void;
 };
@@ -46,8 +49,9 @@ function badgeText({ trigger, milesRemaining, daysRemaining }: TaskDueState, uni
   return 'No interval set';
 }
 
-export default function TaskCard({ task, dueState, neverLogged, unitSystem, onLog, onSaveIntervals, onReset, onDelete }: TaskCardProps) {
-  const [draft, setDraft] = useState<{ distance: string; months: string } | null>(null);
+export default function TaskCard({ task, dueState, neverLogged, unitSystem, onLog, onSaveIntervals, alsoComingUp, onReset, onDelete }: TaskCardProps) {
+  const [draft, setDraft] = useState<{ distance: string; months: string; category: TaskCategory } | null>(null);
+  const category = taskCategory(task);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -63,6 +67,7 @@ export default function TaskCard({ task, dueState, neverLogged, unitSystem, onLo
     setDraft({
       distance: String(toDisplayDistance(task.interval_mileage, unitSystem)),
       months: String(task.interval_months ?? 0),
+      category,
     });
   };
 
@@ -76,7 +81,7 @@ export default function TaskCard({ task, dueState, neverLogged, unitSystem, onLo
     }
 
     setSaving(true);
-    const saveError = await onSaveIntervals({ intervalMileage, intervalMonths });
+    const saveError = await onSaveIntervals({ intervalMileage, intervalMonths, category: draft.category });
     setSaving(false);
     if (saveError) {
       setError(saveError);
@@ -95,7 +100,7 @@ export default function TaskCard({ task, dueState, neverLogged, unitSystem, onLo
           <div>
             <h4 className="text-sm font-bold md:text-base">{task.task_name}</h4>
             <p className={`mt-0.5 flex items-center gap-1.5 text-xs ${ui.muted}`}>
-              <Wrench size={12} /> {task.is_diy ? 'Self-Maintain' : 'Shop Service'}
+              <Wrench size={12} /> {categoryLabel(category)} · {task.is_diy ? 'Self-Maintain' : 'Shop Service'}
               {neverLogged && <span title="No service logged yet, so this counts from when the bike was new">· Not logged yet</span>}
             </p>
           </div>
@@ -213,6 +218,29 @@ export default function TaskCard({ task, dueState, neverLogged, unitSystem, onLo
         >
           <div className={`h-full rounded-full transition-[width] ${style.bar}`} style={{ width: `${percentUsed}%` }} />
         </div>
+      )}
+      {draft && (
+        <label className={`mt-3 flex items-center justify-end gap-2 text-[11px] ${ui.muted}`}>
+          Category
+          <select
+            value={draft.category}
+            onChange={(event) => setDraft({ ...draft, category: isTaskCategory(event.target.value) ? event.target.value : 'other' })}
+            className={smallInputClass}
+          >
+            {TASK_CATEGORIES.map((option) => (
+              <option key={option.id} value={option.id}>{option.label}</option>
+            ))}
+          </select>
+        </label>
+      )}
+      {alsoComingUp.length > 0 && (
+        <p className={`mt-2.5 flex items-start gap-1.5 text-xs ${ui.muted}`}>
+          <Layers size={13} className="mt-px shrink-0 text-amber-500" />
+          <span>
+            Also coming up in {categoryLabel(category)}:{' '}
+            <span className="font-medium text-slate-700 dark:text-slate-300">{alsoComingUp.map((other) => other.task_name).join(', ')}</span>
+          </span>
+        </p>
       )}
       {error && <p className={`mt-3 ${ui.errorBox}`}>{error}</p>}
     </div>

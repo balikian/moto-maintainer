@@ -2,6 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod';
 import { cleanTasks } from './scheduleImport';
+import { TASK_CATEGORY_IDS } from './taskCategories';
 
 // Reads a maintenance schedule out of owner's-manual pages with Claude.
 // Server-only: it uses ANTHROPIC_API_KEY, which must never reach the browser.
@@ -12,6 +13,7 @@ const ExtractedTask = z.object({
   distance_unit: z.enum(['km', 'mi']),
   interval_months: z.number(),
   is_diy: z.boolean(),
+  category: z.enum(TASK_CATEGORY_IDS),
 });
 
 const ExtractedScheduleSchema = z.object({
@@ -33,6 +35,7 @@ How to read the schedule:
 - Keep task names short and rider-friendly, close to the manual's wording. Start every name with the action as a verb, then the part: "Check brake discs", "Replace front brake fluid", "Clean fork dust boots", "Lubricate chain". Use "Replace" for change/renew/replace, "Check" for inspect/check, and keep the same name every time you read the same row, because the app matches tasks by name when a schedule is re-imported.
 - is_diy answers: could a typical home mechanic with ordinary hand tools do this job? Judge from the job itself. Manufacturers mark most scheduled work with workshop symbols or "have this done by an authorized dealer" wording for liability and warranty reasons, so don't let those symbols or that wording decide it. Brake fluid changes, brake pad and disc checks, chain work, air filters, spark plugs, coolant and fork dust boots are DIY. Set is_diy to false only for jobs that need dealer diagnostic software, special equipment or specialist skill, such as valve clearance, fuel pressure checks, or suspension internals.
 - Dealer-only steps that aren't maintenance a rider tracks (reading out fault memory with the dealer diagnostics tool, programming sensors, resetting the service display, entering proof of service in a dealer portal, the final test ride) should not be separate tasks. Fold them into a single "Dealer service inspection" task (is_diy false) at the shortest recurring interval they appear at.
+- category groups related jobs so a rider can do them in one visit: engine (oil, valves, spark plugs, air filter, fuel system), brakes (fluid, pads, discs, lines, brake levers), drivetrain (chain, sprockets, belt, final drive, clutch), wheels (tires, rims, spokes, wheel bearings), suspension (forks, shocks, steering head, swingarm, frame), cooling (coolant, radiator, fan), electrical (battery, lights, electrical checks), controls (cables, levers, lubricating pivots and moving parts), other (hoses, fasteners, the dealer inspection, anything else).
 - Use notes for anything the reviewer should know: severe-use or off-road variations, footnotes you couldn't fold into an interval, or items you weren't sure about.
 
 If the pages don't contain a periodic maintenance schedule, set found_schedule to false, return no tasks, and say what the pages contain instead.`;

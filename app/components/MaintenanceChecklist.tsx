@@ -2,6 +2,7 @@
 
 import { BookOpen, CheckCircle, ChevronDown, Plus } from 'lucide-react';
 import { groupTasksByUrgency, type TaskDueState } from '@/lib/maintenance';
+import { batchCandidates, type TaskCategory } from '@/lib/taskCategories';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
 import { useStoredToggle } from '../hooks/useStoredToggle';
 import TaskCard from './TaskCard';
@@ -17,7 +18,7 @@ type MaintenanceChecklistProps = {
   onAddTask: () => void;
   onOpenManual: () => void;
   onLogTask: (task: MaintenanceTask) => void;
-  onSaveIntervals: (task: MaintenanceTask, intervals: { intervalMileage: number; intervalMonths: number }) => Promise<string | null>;
+  onSaveIntervals: (task: MaintenanceTask, intervals: { intervalMileage: number; intervalMonths: number; category: TaskCategory }) => Promise<string | null>;
   onResetTask: (task: MaintenanceTask) => void;
   onDeleteTask: (task: MaintenanceTask) => void;
 };
@@ -41,6 +42,7 @@ export default function MaintenanceChecklist({
 }: MaintenanceChecklistProps) {
   const [healthyCollapsed, toggleHealthy] = useStoredToggle('moto-maintain:healthy-tasks-collapsed', true);
   const { needsAttention, healthy } = groupTasksByUrgency(tasks, bike.current_mileage, new Date());
+  const allEntries = [...needsAttention, ...healthy];
 
   const renderCard = ({ task, dueState }: { task: MaintenanceTask; dueState: TaskDueState }) => (
     <TaskCard
@@ -51,6 +53,7 @@ export default function MaintenanceChecklist({
       unitSystem={unitSystem}
       onLog={() => onLogTask(task)}
       onSaveIntervals={(intervals) => onSaveIntervals(task, intervals)}
+      alsoComingUp={dueState.status === 'Healthy' ? [] : batchCandidates(task, allEntries)}
       onReset={() => onResetTask(task)}
       onDelete={() => onDeleteTask(task)}
     />

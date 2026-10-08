@@ -204,6 +204,22 @@ export default function GarageDashboard() {
     });
     if (result.error) return result.error;
 
+    // Related jobs done in the same visit: same date and odometer, no cost of their own.
+    for (const taskId of values.alsoTaskIds) {
+      const related = tasks.find((candidate) => candidate.id === taskId);
+      if (!related) continue;
+      const extra = await completeTaskAction({
+        motorcycleId: activeBike.id,
+        taskId,
+        taskName: related.task_name,
+        performedAt: values.performedAt,
+        odometerAtService: values.odometer,
+        cost: null,
+        notes: `Done with ${values.taskName}.`,
+      });
+      if (extra.error) reportError(`Logged ${values.taskName}, but not ${related.task_name}: ${extra.error}`);
+    }
+
     setDialog(null);
     bikesQuery.reload();
     tasksQuery.reload();

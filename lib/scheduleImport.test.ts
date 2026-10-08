@@ -46,6 +46,7 @@ const extracted = (overrides: Partial<ExtractedTask> = {}): ExtractedTask => ({
   distance_unit: 'km',
   interval_months: 12,
   is_diy: true,
+  category: 'engine',
   ...overrides,
 });
 
@@ -94,6 +95,7 @@ const scheduleTask = (task_name: string, interval_mileage = 6214, interval_month
   interval_mileage,
   interval_months,
   is_diy,
+  category: 'other' as const,
 });
 
 const noLogs = { bikeYear: 2024, logs: [] };
@@ -164,7 +166,7 @@ describe('planScheduleApply', () => {
       [{ id: 'a', task_name: '  oil   CHANGE ' }],
       noLogs
     );
-    assert.deepEqual(plan.updates, [{ id: 'a', interval_mileage: 6214, interval_months: 12, is_diy: true }]);
+    assert.deepEqual(plan.updates, [{ id: 'a', interval_mileage: 6214, interval_months: 12, is_diy: true, category: 'other' }]);
     assert.deepEqual(plan.additions.map((task) => task.task_name), ['Valve clearance']);
   });
 

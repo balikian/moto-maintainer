@@ -6,6 +6,7 @@ import { applyModelScheduleAction, extractScheduleAction, saveModelScheduleActio
 import { bikeTitle } from '@/lib/historyExport';
 import { formatPageList } from '@/lib/pageRanges';
 import { applySummary } from '@/lib/scheduleImport';
+import { isTaskCategory, TASK_CATEGORIES } from '@/lib/taskCategories';
 import { renderPdfPages } from '@/lib/pdfPages';
 import type { ExtractedTask } from '@/lib/scheduleExtraction';
 import type { Motorcycle } from '@/lib/types';
@@ -245,6 +246,16 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
                     />
                     DIY
                   </label>
+                  <select
+                    value={task.category}
+                    onChange={(e) => updateTask(index, { category: isTaskCategory(e.target.value) ? e.target.value : 'other' })}
+                    className={`${cellInput} w-auto`}
+                    aria-label="Category"
+                  >
+                    {TASK_CATEGORIES.map((category) => (
+                      <option key={category.id} value={category.id}>{category.label}</option>
+                    ))}
+                  </select>
                   <button
                     type="button"
                     onClick={() => setTasks((previous) => previous.filter((_, i) => i !== index))}
@@ -264,7 +275,7 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
             onClick={() =>
               setTasks((previous) => [
                 ...previous,
-                { task_name: '', interval_distance: 0, distance_unit: previous[0]?.distance_unit ?? 'km', interval_months: 0, is_diy: true },
+                { task_name: '', interval_distance: 0, distance_unit: previous[0]?.distance_unit ?? 'km', interval_months: 0, is_diy: true, category: 'other' },
               ])
             }
             className={`text-xs font-semibold ${ui.muted} hover:text-amber-600`}

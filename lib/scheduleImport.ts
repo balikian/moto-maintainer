@@ -35,6 +35,7 @@ export function cleanTasks(tasks: ExtractedTask[]): ExtractedTask[] {
       distance_unit: task.distance_unit,
       interval_months: Number.isFinite(task.interval_months) ? Math.max(0, Math.round(task.interval_months)) : 0,
       is_diy: task.is_diy,
+      category: task.category,
     }))
     .filter((task) => task.task_name && (task.interval_distance > 0 || task.interval_months > 0))
     .slice(0, MAX_EXTRACTED_TASKS);

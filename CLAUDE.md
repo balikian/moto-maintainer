@@ -35,6 +35,7 @@ Run Node commands in **PowerShell**: it has Node 22. Git Bash on this machine re
 - **Distances are stored in miles.** Convert only at display and input, with `lib/units.ts`. Exception: `model_schedule_tasks` keeps the manual's own unit (km or mi) and converts when tasks are created.
 - **Dates are calendar days** (`YYYY-MM-DD`). Use `lib/dates.ts`, never `new Date('YYYY-MM-DD')`, which parses as UTC and shows the previous day in US time zones.
 - **A task counts from new until service is logged.** Tasks created for a bike start at 0 miles and January 1 of the model year (`fromNewBaseline`); logging a service moves the baseline forward. Custom tasks are the exception: the rider picks their baseline.
+- **Task categories** live in `lib/taskCategories.ts` (keep the list in sync with the SQL check constraint). Older rows have no category; always read it through `taskCategory()`, which falls back to a guess from the name.
 - **Confirmations use `ConfirmPopover`**, a small box next to the button, never `window.confirm`.
 - **Reads go from the browser to Supabase; writes go through server actions.** Row-level security limits both to the user's own rows, so every new table needs RLS policies.
 - **Shared per-model data** (manuals, schedules) is submitted as `pending` and approved by an admin. Admins are listed in `app_admins`, which can only be changed in the Supabase SQL Editor.

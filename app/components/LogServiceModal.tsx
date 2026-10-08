@@ -3,6 +3,8 @@
 import { useState, type SubmitEvent } from 'react';
 import { Check } from 'lucide-react';
 import { todayIsoDate } from '@/lib/dates';
+import { getTaskDueState } from '@/lib/maintenance';
+import { batchCandidates, categoryLabel, taskCategory } from '@/lib/taskCategories';
 import type { MaintenanceTask, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
 import Modal from './Modal';
@@ -15,6 +17,8 @@ export type LogServiceValues = {
   odometer: number;
   cost: number | null;
   notes: string | null;
+  /** Related tasks done in the same visit; logged with the same date and odometer. */
+  alsoTaskIds: string[];
 };
 
 type LogServiceModalProps = {
@@ -41,8 +45,22 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [alsoTaskIds, setAlsoTaskIds] = useState<string[]>([]);
+
   const selectedTask = tasks.find((candidate) => candidate.id === selectedTaskId) ?? null;
   const isCustom = selectedTask === null;
+
+  // Same-category tasks that are coming due: worth doing while the bike is apart anyway.
+  const [today] = useState(() => new Date());
+  const related = selectedTask
+    ? batchCandidates(
+        selectedTask,
+        tasks.map((candidate) => ({ task: candidate, dueState: getTaskDueState(candidate, defaultOdometer, today) }))
+      )
+    : [];
+
+  const toggleAlso = (taskId: string) =>
+    setAlsoTaskIds((previous) => (previous.includes(taskId) ? previous.filter((id) => id !== taskId) : [...previous, taskId]));
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
@@ -77,6 +95,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
       odometer: miles,
       cost: parsedCost,
       notes: notes.trim() || null,
+      alsoTaskIds: alsoTaskIds.filter((id) => related.some((candidate) => candidate.id === id)),
     });
     setSaving(false);
     if (submitError) setError(submitError);
@@ -105,6 +124,28 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
             <option value={CUSTOM_ONE_OFF_VALUE}>+ Custom / One-Off Service</option>
           </select>
         </div>
+
+        {related.length > 0 && selectedTask && (
+          <fieldset className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
+            <legend className="px-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
+              While you&apos;re at it: also coming up in {categoryLabel(taskCategory(selectedTask))}
+            </legend>
+            <div className="space-y-1.5">
+              {related.map((candidate) => (
+                <label key={candidate.id} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={alsoTaskIds.includes(candidate.id)}
+                    onChange={() => toggleAlso(candidate.id)}
+                    className="h-4 w-4 accent-amber-500"
+                  />
+                  {candidate.task_name}
+                </label>
+              ))}
+            </div>
+            <p className={`mt-1.5 text-xs ${ui.muted}`}>Ticked tasks are logged too, with the same date and odometer.</p>
+          </fieldset>
+        )}
 
         {isCustom && (
           <div>

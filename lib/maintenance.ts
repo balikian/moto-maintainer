@@ -1,8 +1,11 @@
 import { addMonths, daysBetween, parseIsoDate } from './dates';
+import { guessCategory, taskCategory, type TaskCategory } from './taskCategories';
 import type { MaintenanceTask, ModelSchedule } from './types';
 import { fromDisplayDistance } from './units';
 
-export type TaskDefaults = Pick<MaintenanceTask, 'task_name' | 'interval_mileage' | 'interval_months' | 'is_diy'>;
+export type TaskDefaults = Pick<MaintenanceTask, 'task_name' | 'interval_mileage' | 'interval_months' | 'is_diy'> & {
+  category: TaskCategory;
+};
 
 export type FinalDrive = 'chain' | 'belt' | 'shaft';
 export type Cooling = 'liquid' | 'air';
@@ -11,7 +14,8 @@ export type BikeSetup = { finalDrive: FinalDrive; cooling: Cooling };
 
 export const DEFAULT_BIKE_SETUP: BikeSetup = { finalDrive: 'chain', cooling: 'liquid' };
 
-type GenericTask = TaskDefaults & { only?: Partial<BikeSetup> };
+// Categories for these come from guessCategory(), whose tests cover every name here.
+type GenericTask = Omit<TaskDefaults, 'category'> & { only?: Partial<BikeSetup> };
 
 /**
  * Starter tasks for bikes without a manufacturer schedule yet. Intervals are
@@ -36,13 +40,14 @@ const GENERIC_TASKS: GenericTask[] = [
 ];
 
 /** The starter tasks from before the list was expanded, still on older bikes' checklists. */
-const LEGACY_GENERIC_TASKS: TaskDefaults[] = [
+const LEGACY_GENERIC_TASKS: GenericTask[] = [
   { task_name: 'Engine Oil & Filter', interval_mileage: 5000, interval_months: 12, is_diy: true },
   { task_name: 'Chain Clean & Tension', interval_mileage: 500, interval_months: 1, is_diy: true },
   { task_name: 'Valve Clearance Check', interval_mileage: 15000, interval_months: 24, is_diy: false },
 ];
 
 const toDefaults = ({ task_name, interval_mileage, interval_months, is_diy }: GenericTask): TaskDefaults => ({
+  category: guessCategory(task_name),
   task_name,
   interval_mileage,
   interval_months,
@@ -58,7 +63,7 @@ export function genericTasksFor(setup: BikeSetup): TaskDefaults[] {
 }
 
 /** Every generic task, whatever the bike's setup, plus the older ones. Used to recognise them by name. */
-const ALL_GENERIC_TASKS: TaskDefaults[] = [...GENERIC_TASKS.map(toDefaults), ...LEGACY_GENERIC_TASKS];
+const ALL_GENERIC_TASKS: TaskDefaults[] = [...GENERIC_TASKS, ...LEGACY_GENERIC_TASKS].map(toDefaults);
 
 const nameKey = (name: string) => name.replace(/\s+/g, ' ').trim().toLowerCase();
 const GENERIC_NAMES = new Set(ALL_GENERIC_TASKS.map((task) => nameKey(task.task_name)));
@@ -86,6 +91,7 @@ export function getDefaultTasks(
       interval_mileage: Math.round(fromDisplayDistance(task.interval_distance, task.distance_unit === 'km' ? 'metric' : 'imperial')),
       interval_months: task.interval_months,
       is_diy: task.is_diy,
+      category: taskCategory(task),
     }));
 }
 

@@ -2,6 +2,7 @@
 
 import { isIsoDate } from '../dates';
 import { baselineFromLogs } from '../maintenance';
+import { guessCategory, isTaskCategory, type TaskCategory } from '../taskCategories';
 import { getSignedInClient } from '../supabase/server';
 import { normalizeMileage } from '../units';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
@@ -16,6 +17,8 @@ type CreateMaintenanceTaskInput = {
   baselineOdometer: number;
   baselineDate: string;
   notes?: string;
+  /** Guessed from the name when not given. */
+  category?: TaskCategory;
 };
 
 export async function createMaintenanceTaskAction(
@@ -49,6 +52,7 @@ export async function createMaintenanceTaskAction(
       last_performed_date: input.baselineDate,
       notes: input.notes?.trim() || null,
       is_diy: true,
+      category: isTaskCategory(input.category) ? input.category : guessCategory(taskName),
     })
     .select('id')
     .single();
@@ -59,7 +63,7 @@ export async function createMaintenanceTaskAction(
 
 export async function updateTaskIntervalsAction(
   taskId: string,
-  intervals: { intervalMileage: number; intervalMonths: number }
+  intervals: { intervalMileage: number; intervalMonths: number; category?: TaskCategory }
 ): Promise<ActionResult> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
@@ -72,7 +76,11 @@ export async function updateTaskIntervalsAction(
 
   const { data, error } = await supabase
     .from('maintenance_tasks')
-    .update({ interval_mileage: intervalMileage, interval_months: intervalMonths })
+    .update({
+      interval_mileage: intervalMileage,
+      interval_months: intervalMonths,
+      ...(isTaskCategory(intervals.category) ? { category: intervals.category } : {}),
+    })
     .eq('id', taskId)
     .select('id');
 
