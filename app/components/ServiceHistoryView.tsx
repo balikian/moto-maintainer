@@ -3,16 +3,19 @@
 import { useState } from 'react';
 import { ChevronDown, Clock3, Plus, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
-import type { Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
+import type { MaintenanceTask, Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
 import { useStoredToggle } from '../hooks/useStoredToggle';
 import ConfirmPopover from './ConfirmPopover';
 import ExportMenu from './ExportMenu';
+import SpendSummary from './SpendSummary';
 import { ui } from './ui';
 
 type ServiceHistoryViewProps = {
   bike: Motorcycle;
   logs: ServiceLog[];
+  /** The bike's tasks, to put each service's cost in a category. */
+  tasks: MaintenanceTask[];
   loading: boolean;
   unitSystem: UnitSystem;
   onAddLog: () => void;
@@ -23,7 +26,7 @@ type ServiceHistoryViewProps = {
 
 const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-export default function ServiceHistoryView({ bike, logs, loading, unitSystem, onAddLog, onDeleteLog, onShare }: ServiceHistoryViewProps) {
+export default function ServiceHistoryView({ bike, logs, tasks, loading, unitSystem, onAddLog, onDeleteLog, onShare }: ServiceHistoryViewProps) {
   const [collapsed, toggleCollapsed] = useStoredToggle('moto-maintain:history-collapsed', false);
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +69,7 @@ export default function ServiceHistoryView({ bike, logs, loading, unitSystem, on
       </div>
 
       <div id="service-history-list" hidden={collapsed}>
+        {!loading && logs.length > 0 && <SpendSummary logs={logs} tasks={tasks} />}
         {loading ? (
           <div className={ui.emptyState}>Loading service history…</div>
         ) : logs.length === 0 ? (

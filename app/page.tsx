@@ -313,6 +313,7 @@ export default function GarageDashboard() {
             <ServiceHistoryView
               bike={activeBike}
               logs={logsQuery.data ?? []}
+              tasks={tasks}
               loading={logsQuery.loading}
               unitSystem={unitSystem}
               onAddLog={() => setDialog({ type: 'logService', task: null })}
