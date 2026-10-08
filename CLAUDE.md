@@ -4,6 +4,8 @@
 
 A motorcycle maintenance tracker: riders add bikes, track maintenance tasks by distance and time (whichever comes first), log service, and export or share a bike's service history. Web app first; it will later be wrapped as a phone app with Capacitor.
 
+**Plans and open decisions are in `ROADMAP.md`. Read it at the start of a session; update it when something is decided or done.**
+
 Stack: Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS 4, Supabase (auth + Postgres), Anthropic SDK (schedule import). TypeScript throughout.
 
 ## Commands
