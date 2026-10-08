@@ -18,7 +18,7 @@ export function isHttpUrl(value: string): boolean {
 }
 
 /** Escapes % and _ so a make/model is matched literally by ilike (case-insensitive equals). */
-function literal(value: string): string {
+export function literalPattern(value: string): string {
   return value.trim().replace(/[\\%_]/g, (character) => `\\${character}`);
 }
 
@@ -43,8 +43,8 @@ export async function fetchManuals(supabase: SupabaseClient, bike: BikeIdentity)
   const { data, error } = await supabase
     .from('bike_manuals')
     .select('*')
-    .ilike('make', literal(bike.make))
-    .ilike('model', literal(bike.model))
+    .ilike('make', literalPattern(bike.make))
+    .ilike('model', literalPattern(bike.model))
     .lte('year_from', bike.year)
     .gte('year_to', bike.year);
 
@@ -56,8 +56,8 @@ export async function fetchModelSchedule(supabase: SupabaseClient, bike: BikeIde
   const { data, error } = await supabase
     .from('model_schedules')
     .select('*, model_schedule_tasks(*)')
-    .ilike('make', literal(bike.make))
-    .ilike('model', literal(bike.model))
+    .ilike('make', literalPattern(bike.make))
+    .ilike('model', literalPattern(bike.model))
     .lte('year_from', bike.year)
     .gte('year_to', bike.year);
 

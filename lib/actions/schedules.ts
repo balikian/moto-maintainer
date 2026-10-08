@@ -1,7 +1,7 @@
 'use server';
 
 import { getDefaultTasks } from '../maintenance';
-import { fetchModelSchedule } from '../modelData';
+import { fetchModelSchedule, literalPattern } from '../modelData';
 import { extractScheduleFromPages, ScheduleExtractionError, type ExtractedSchedule, type ExtractedTask } from '../scheduleExtraction';
 import { nameKey, planScheduleApply, validatePageImages } from '../scheduleImport';
 import { getSignedInClient } from '../supabase/server';
@@ -107,6 +107,21 @@ export async function saveModelScheduleAction(
     // Don't leave an empty schedule behind.
     await supabase.from('model_schedules').delete().eq('id', schedule.id);
     return { error: tasksError.message };
+  }
+
+  // An admin's import replaces earlier schedules for exactly this model and
+  // years (re-imports, or a rider's pending one), so they don't pile up.
+  // Riders' checklists are copies, so nothing on a bike changes.
+  if (isAdmin) {
+    const { error: cleanupError } = await supabase
+      .from('model_schedules')
+      .delete()
+      .ilike('make', literalPattern(make))
+      .ilike('model', literalPattern(model))
+      .eq('year_from', yearFrom)
+      .eq('year_to', yearTo)
+      .neq('id', schedule.id);
+    if (cleanupError) return { error: `Saved, but couldn’t remove the older copy: ${cleanupError.message}` };
   }
 
   return { data: { id: schedule.id as string, status } };
