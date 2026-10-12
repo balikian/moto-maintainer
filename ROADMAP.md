@@ -22,11 +22,22 @@ project: one (used for everything so far). Git: commit straight to `main`.
 - **Decided (2026-10-12):** the app is **SwingArm**. Domain **swingarm.app**,
   registered at GoDaddy (DNS gets pointed at the host in step 3; `.app`
   domains are HTTPS-only, which Vercel handles).
-- 🔨 Logo and app icon: owner is finalizing them.
+- ✅ **Logo (2026-10-12): "R4c".** A cream swingarm holding a dark-red rear
+  wheel that runs off the edge of a deep-red rounded tile. The wordmark is
+  SWINGARM in Big Shoulders Display Black, two-tone (cream SWING, red ARM on
+  charcoal; charcoal SWING, red ARM on light backgrounds), with the tagline
+  "Kick-start your service". Colors: deep red `#8f1f18`, tire red `#5e140f`,
+  cream `#f2e4c9`, charcoal `#1c1f23`, bright red `#d63a2c`. Files are in
+  `public/brand/` (text is outlined, so no font is needed). Rejected: spark,
+  cigar/whiskey and tank-badge themes, and a zigzag coil shock.
 - ⏳ Rename in code: page titles and metadata, the `MOTO_MAINTAIN` header and
   login card, README, CLAUDE.md, `package.json` name, export/print/share
   headings. Keep the `moto-maintain:` localStorage keys (renaming them would
   reset riders' saved view settings). GitHub repo rename is optional.
+- **Open:** confirm "SwingArm" is free on the App Store and Google Play, and
+  run a USPTO trademark search (class 9 apps / class 42 software) before
+  spending on store listings.
+- ✅ Favicon and app icons: `app/favicon.ico`, `app/icon.svg`, `app/apple-icon.png`.
 - ✅ Store check (2026-10-12): neither "SwingArm" nor "Swing Arm" turned up
   on the App Store or Google Play.
 - ✅ USPTO search (2026-10-12): every "SwingArm" record is dead or abandoned,
@@ -41,7 +52,8 @@ project: one (used for everything so far). Git: commit straight to `main`.
 
 ## 2. Design ⏳
 
-- **Open:** a visual direction. Current look is a dark slate + amber dashboard.
+- **Open:** a visual direction. Current look is a dark slate + amber dashboard;
+  the logo's reds, cream and charcoal are the starting palette.
 - Approach: Claude produces 2–3 contrasting directions as clickable mockups of
   the same two screens (dashboard and a task card), the owner picks or mixes,
   then it becomes a small design system (colors, type, spacing, components)
