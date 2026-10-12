@@ -38,6 +38,17 @@ project: one (used for everything so far). Git: commit straight to `main`.
   run a USPTO trademark search (class 9 apps / class 42 software) before
   spending on store listings.
 - ✅ Favicon and app icons: `app/favicon.ico`, `app/icon.svg`, `app/apple-icon.png`.
+- ✅ Store check (2026-10-12): neither "SwingArm" nor "Swing Arm" turned up
+  on the App Store or Google Play.
+- ✅ USPTO search (2026-10-12): every "SwingArm" record is dead or abandoned,
+  and none were in the motorcycle space. "Swing Arm" has one live mark (serial
+  86080260): Glenair's Swing-Arm, a cable strain-relief clamp for mil-spec
+  connectors, sold for commercial and military aerospace. No motorcycle or
+  consumer use, and different goods from an app (class 9/42), so we treat
+  it as no conflict.
+- **Open:** consider filing our own "SwingArm" mark in class 9 / class 42
+  before launch.
+- Once the logo is final: favicon and app icons, then into step 2.
 
 ## 2. Design ⏳
 
