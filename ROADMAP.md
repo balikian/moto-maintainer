@@ -37,8 +37,20 @@ project: one (used for everything so far). Git: commit straight to `main`.
   dashboard header, login card, sign-in error page, print/share history.
   The `moto-maintain:` localStorage keys stay (renaming them would reset
   riders' saved view settings). GitHub repo and folder rename are optional.
-- ⏳ Outside the code: the app name in Supabase (Auth email templates and
-  sender name) and on the Google OAuth consent screen.
+- ⏳ Outside the code:
+  - Google OAuth consent screen: set the app name to SwingArm (Google Auth
+    Platform → Branding). Add the logo, home page and privacy policy once
+    the app is on swingarm.app (adding a logo can trigger Google's brand
+    verification).
+  - Supabase sign-in emails: later. The templates are Supabase's generic
+    defaults (no old name in them) and are locked until custom SMTP is set
+    up. Plan: Resend on `swingarm.app` (DNS records at GoDaddy), sender
+    "SwingArm <noreply@swingarm.app>", then write branded Magic Link and
+    Confirm signup templates. Needed before launch anyway: the built-in
+    sender allows only a few emails an hour. Fits with step 3 or step 5.
+  - Before launch, consider a Supabase custom domain (paid add-on, e.g.
+    auth.swingarm.app) so Google's sign-in screen stops showing the
+    `*.supabase.co` address.
 - ✅ Store check (2026-10-12): neither "SwingArm" nor "Swing Arm" turned up
   on the App Store or Google Play.
 - ✅ USPTO search (2026-10-12): every "SwingArm" record is dead or abandoned,
