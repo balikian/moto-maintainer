@@ -8,7 +8,7 @@ import HistoryReport from '../../components/HistoryReport';
 import PrintButton from '../../components/PrintButton';
 
 export const metadata: Metadata = {
-  title: 'Service History · MOTO_MAINTAIN',
+  title: 'Service History · SwingArm',
 };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

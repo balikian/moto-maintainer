@@ -2,6 +2,7 @@
 
 import { useState, type SubmitEvent } from 'react';
 import { sendMagicLink, signInWithGoogle } from '@/lib/actions/auth';
+import BrandLogo from './BrandLogo';
 import { ui } from './ui';
 
 export default function LoginCard() {
@@ -56,7 +57,9 @@ export default function LoginCard() {
     <div className={`flex items-center justify-center p-4 ${ui.page}`}>
       <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl dark:border-slate-800 dark:bg-slate-900/80">
         <div className="mb-6 text-center">
-          <h1 className="text-3xl font-black tracking-tight text-amber-500">MOTO_MAINTAIN</h1>
+          <h1 className="flex justify-center">
+            <BrandLogo className="h-14" />
+          </h1>
           <p className={`mt-2 text-sm ${ui.muted}`}>Sign in to unlock your digital garage.</p>
         </div>
 

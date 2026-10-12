@@ -32,10 +32,13 @@ project: one (used for everything so far). Git: commit straight to `main`.
   `public/brand/` (text is outlined, so no font is needed). Rejected: spark,
   cigar/whiskey and tank-badge themes, and a zigzag coil shock.
 - ✅ Favicon and app icons: `app/favicon.ico`, `app/icon.svg`, `app/apple-icon.png`.
-- ⏳ Rename in code: page titles and metadata, the `MOTO_MAINTAIN` header and
-  login card, README, CLAUDE.md, `package.json` name, export/print/share
-  headings. Keep the `moto-maintain:` localStorage keys (renaming them would
-  reset riders' saved view settings). GitHub repo rename is optional.
+- ✅ Rename in code (2026-10-12): page titles, README, CLAUDE.md, `package.json`
+  name (`swingarm`), and the logo (`app/components/BrandLogo.tsx`) on the
+  dashboard header, login card, sign-in error page, print/share history.
+  The `moto-maintain:` localStorage keys stay (renaming them would reset
+  riders' saved view settings). GitHub repo and folder rename are optional.
+- ⏳ Outside the code: the app name in Supabase (Auth email templates and
+  sender name) and on the Google OAuth consent screen.
 - ✅ Store check (2026-10-12): neither "SwingArm" nor "Swing Arm" turned up
   on the App Store or Google Play.
 - ✅ USPTO search (2026-10-12): every "SwingArm" record is dead or abandoned,
@@ -46,7 +49,7 @@ project: one (used for everything so far). Git: commit straight to `main`.
   it as no conflict.
 - **Open:** consider filing our own "SwingArm" mark in class 9 / class 42
   before launch.
-- Next: the rename in code, then into step 2.
+- Next: step 2 (the app's amber UI doesn't match the red logo yet).
 
 ## 2. Design ⏳
 

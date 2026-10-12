@@ -15,7 +15,7 @@ const yearsLabel = (entry: Pick<ModelEntry, 'year_from' | 'year_to'>) =>
   entry.year_from === entry.year_to ? String(entry.year_from) : `${entry.year_from}–${entry.year_to}`;
 
 export const metadata: Metadata = {
-  title: 'Review Submissions · MOTO_MAINTAIN',
+  title: 'Review Submissions · SwingArm',
   robots: { index: false, follow: false },
 };
 

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MOTO_MAINTAIN",
+  title: "SwingArm",
   description: "Your digital garage: track motorcycle maintenance by mileage and time.",
 };
 

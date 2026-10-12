@@ -1,4 +1,4 @@
-# MOTO_MAINTAIN
+# SwingArm
 
 A digital garage for motorcycle maintenance. Add your bikes, track service
 tasks by mileage and time (whichever comes first), and keep a service history.

@@ -1,8 +1,8 @@
 @AGENTS.md
 
-# MOTO_MAINTAIN
+# SwingArm
 
-A motorcycle maintenance tracker: riders add bikes, track maintenance tasks by distance and time (whichever comes first), log service, and export or share a bike's service history. Web app first; it will later be wrapped as a phone app with Capacitor.
+SwingArm (swingarm.app) is a motorcycle maintenance tracker: riders add bikes, track maintenance tasks by distance and time (whichever comes first), log service, and export or share a bike's service history. Web app first; it will later be wrapped as a phone app with Capacitor.
 
 **Plans and open decisions are in `ROADMAP.md`. Read it at the start of a session; update it when something is decided or done.**
 
@@ -22,7 +22,7 @@ Run Node commands in **PowerShell**: it has Node 22. Git Bash on this machine re
 ## Layout
 
 - `app/page.tsx`: the dashboard. Loads data and wires handlers to the components.
-- `app/components/`: UI. Shared Tailwind class strings live in `ui.ts`; modals use `Modal.tsx`.
+- `app/components/`: UI. Shared Tailwind class strings live in `ui.ts`; modals use `Modal.tsx`; the logo is `BrandLogo.tsx` (files in `public/brand/`).
 - `app/hooks/`: `useSupabaseQuery` (keyed loading with `reload()`), `useAuthUser`, `usePreferences` (units and theme, saved to `profiles`), `useStoredToggle` (collapse state in localStorage).
 - `app/history/[bikeId]`: owner-only printable history. `app/share/[token]`: public read-only shared history. `app/admin`: admin page: import schedules for bikes that have a manual but no schedule, and review submitted manual links and new makes/models.
 - `lib/actions/`: server actions. Every database write goes through these, and each one checks the signed-in user.

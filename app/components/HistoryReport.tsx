@@ -2,6 +2,7 @@ import { formatDisplayDate } from '@/lib/dates';
 import { bikeTitle, serviceType, totalCost, type ReportBike, type ReportLog } from '@/lib/historyExport';
 import type { UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
+import BrandLogo from './BrandLogo';
 
 // A printable, read-only service history. Used by the print page and the
 // public share page, so it always uses light "paper" colors and no app chrome.
@@ -21,8 +22,11 @@ export default function HistoryReport({ bike, logs, unitSystem, generatedOn }: H
   return (
     <article className="mx-auto w-full max-w-3xl bg-white p-6 text-slate-900 sm:p-10 print:max-w-none print:p-0">
       <header className="border-b-2 border-amber-500 pb-4">
-        <p className="text-xs font-black tracking-tight text-amber-600">MOTO_MAINTAIN · SERVICE HISTORY</p>
-        <h1 className="mt-1 text-2xl font-bold sm:text-3xl">{bikeTitle(bike)}</h1>
+        <div className="flex items-center justify-between gap-4">
+          <BrandLogo className="h-10" lightOnly />
+          <p className="text-xs font-black tracking-wide text-slate-500">SERVICE HISTORY</p>
+        </div>
+        <h1 className="mt-3 text-2xl font-bold sm:text-3xl">{bikeTitle(bike)}</h1>
         <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-slate-600 sm:grid-cols-4">
           <div>
             <dt className="text-[11px] uppercase tracking-wide text-slate-500">Odometer</dt>
