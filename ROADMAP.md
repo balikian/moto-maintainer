@@ -17,13 +17,20 @@ project: one (used for everything so far). Git: commit straight to `main`.
 
 ---
 
-## 1. Name and brand ⏳
+## 1. Name and brand 🔨
 
-- **Open:** a new name. Wants: easy to say, clearly about motorcycles, the
-  `.com` (or `.app`) and app-store name available, no trademark clash.
-- Steps: shortlist → check domain, App Store / Play Store, and USPTO trademark
-  search → pick → buy domain → rename in code (title, `MOTO_MAINTAIN` header,
-  README, package name).
+- **Decided (2026-10-12):** the app is **SwingArm**. Domain **swingarm.app**,
+  registered at GoDaddy (DNS gets pointed at the host in step 3; `.app`
+  domains are HTTPS-only, which Vercel handles).
+- 🔨 Logo and app icon: owner is finalizing them.
+- ⏳ Rename in code: page titles and metadata, the `MOTO_MAINTAIN` header and
+  login card, README, CLAUDE.md, `package.json` name, export/print/share
+  headings. Keep the `moto-maintain:` localStorage keys (renaming them would
+  reset riders' saved view settings). GitHub repo rename is optional.
+- **Open:** confirm "SwingArm" is free on the App Store and Google Play, and
+  run a USPTO trademark search (class 9 apps / class 42 software) before
+  spending on store listings.
+- Once the logo is final: favicon and app icons, then into step 2.
 
 ## 2. Design ⏳
 
