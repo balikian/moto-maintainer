@@ -19,8 +19,6 @@ Built with Next.js (App Router), React, Tailwind CSS, and Supabase (auth + Postg
    ```bash
    NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=sb_publishable_...
-   # Optional; defaults to http://localhost:3000. Used for sign-in redirects.
-   NEXT_PUBLIC_SITE_URL=http://localhost:3000
    # Optional; enables "Import from manual" (reads maintenance schedules with Claude).
    # Server-only: never prefix it with NEXT_PUBLIC_.
    ANTHROPIC_API_KEY=sk-ant-...

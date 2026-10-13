@@ -1,9 +1,23 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { createClient } from '../supabase/server';
 import { redirect } from 'next/navigation';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+/**
+ * Where sign-in sends the rider back to: the site they're on, taken from the
+ * request (localhost, a Vercel preview, or swingarm.app), so each deployment
+ * works without a setting. Supabase only redirects to addresses on its
+ * allow list (Authentication → URL Configuration).
+ */
+async function siteUrl(): Promise<string> {
+  const requestHeaders = await headers();
+  const origin = requestHeaders.get('origin');
+  if (origin) return origin;
+  const host = requestHeaders.get('x-forwarded-host') ?? requestHeaders.get('host');
+  const protocol = requestHeaders.get('x-forwarded-proto') ?? 'https';
+  return host ? `${protocol}://${host}` : 'http://localhost:3000';
+}
 
 export async function signInWithGoogle() {
   const supabase = await createClient();
@@ -11,7 +25,7 @@ export async function signInWithGoogle() {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${SITE_URL}/auth/callback`,
+      redirectTo: `${await siteUrl()}/auth/callback`,
     },
   });
 
@@ -35,7 +49,7 @@ export async function sendMagicLink(formData: FormData) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${SITE_URL}/auth/callback`,
+      emailRedirectTo: `${await siteUrl()}/auth/callback`,
     },
   });
 
