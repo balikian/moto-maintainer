@@ -73,7 +73,7 @@ export default function ShareHistoryModal({ supabase, bike, onClose }: ShareHist
     : undefined;
 
   return (
-    <Modal title="Share Service History" description={bikeTitle(bike)} onClose={onClose}>
+    <Modal title="Share service history" description={bikeTitle(bike)} onClose={onClose}>
       <div className="space-y-4">
         <p className={`text-sm ${ui.muted}`}>
           Anyone with the link can view this bike&apos;s service history, including dates, odometer readings, costs,
@@ -113,7 +113,7 @@ export default function ShareHistoryModal({ supabase, bike, onClose }: ShareHist
               </a>
             </div>
 
-            <div className="border-t border-slate-200 pt-4 dark:border-slate-800">
+            <div className="border-t border-line pt-4">
               <ConfirmPopover
                 message="Turn off this link? Anyone who has it will no longer be able to view the history."
                 confirmLabel="Turn off"
@@ -126,7 +126,7 @@ export default function ShareHistoryModal({ supabase, bike, onClose }: ShareHist
                     disabled={busy}
                     onClick={open}
                     {...popoverProps}
-                    className="text-sm font-semibold text-rose-600 hover:underline disabled:opacity-60 dark:text-rose-400"
+                    className="text-sm font-bold text-danger hover:underline disabled:opacity-60"
                   >
                     Turn off link
                   </button>

@@ -24,8 +24,8 @@ function ChoiceRow<T extends string>({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <span className="text-sm">{label}</span>
-      <div role="radiogroup" aria-label={label} className="inline-flex rounded-xl border border-slate-300 p-0.5 dark:border-slate-700">
+      <span className="text-sm font-semibold">{label}</span>
+      <div role="radiogroup" aria-label={label} className="inline-flex rounded-xl bg-raised p-1">
         {options.map((option) => (
           <button
             key={option.value}
@@ -33,10 +33,10 @@ function ChoiceRow<T extends string>({
             role="radio"
             aria-checked={value === option.value}
             onClick={() => onChange(option.value)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
+            className={`rounded-lg px-3 py-2 text-sm font-bold transition-colors ${
               value === option.value
-                ? 'bg-amber-500 text-slate-950'
-                : 'text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'
+                ? 'bg-surface text-fg shadow-sm'
+                : 'text-muted hover:text-fg'
             }`}
           >
             {option.label}
@@ -137,7 +137,7 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
 
   return (
     <Modal
-      title={isEditing ? 'Edit Motorcycle' : 'Add Motorcycle'}
+      title={isEditing ? 'Edit bike' : 'Add a bike'}
       description={
         isEditing
           ? 'Your maintenance tasks and service history stay as they are.'
@@ -156,7 +156,7 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
         </div>
 
         <div>
-          <label htmlFor="bike-make" className={ui.label}>Make / Manufacturer</label>
+          <label htmlFor="bike-make" className={ui.label}>Make</label>
           <select id="bike-make" required value={make} onChange={(event) => handleMakeChange(event.target.value)} className={ui.input}>
             <option value="">Select a make</option>
             {makes.map((option) => (
@@ -215,7 +215,7 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
         ) : (
           <div>
             <label htmlFor="bike-odometer" className={ui.label}>
-              Current Odometer ({distanceUnitLabel(unitSystem)})
+              Current odometer ({distanceUnitLabel(unitSystem)})
             </label>
             <input
               id="bike-odometer"
@@ -265,7 +265,7 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
             Cancel
           </button>
           <button type="submit" disabled={saving} className={`w-1/2 py-2.5 ${ui.primaryButton}`}>
-            {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Add to Garage'}
+            {saving ? 'Saving…' : isEditing ? 'Save changes' : 'Add to garage'}
           </button>
         </div>
       </form>

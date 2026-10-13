@@ -45,13 +45,13 @@ export default function Modal({ title, description, size = 'md', onClose, childr
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-3 top-3 rounded-lg p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700 sm:right-4 sm:top-4 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-colors hover:bg-raised hover:text-fg sm:right-3 sm:top-3"
           aria-label="Close"
         >
           <X size={18} />
         </button>
 
-        <h2 id={titleId} className="pr-8 text-xl font-bold">{title}</h2>
+        <h2 id={titleId} className="pr-10 text-xl font-extrabold tracking-tight">{title}</h2>
         {description && <p className={`mt-1 text-sm ${ui.muted}`}>{description}</p>}
 
         <div className="mt-5">{children}</div>

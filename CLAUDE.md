@@ -41,7 +41,7 @@ Run Node commands in **PowerShell**: it has Node 22. Git Bash on this machine re
 - **Confirmations use `ConfirmPopover`**, a small box next to the button, never `window.confirm`.
 - **Reads go from the browser to Supabase; writes go through server actions.** Row-level security limits both to the user's own rows, so every new table needs RLS policies.
 - **Shared per-model data** (manuals, schedules) is submitted as `pending` and approved by an admin. Admins are listed in `app_admins`, which can only be changed in the Supabase SQL Editor.
-- **Theme:** components use light classes plus `dark:` variants; dark mode follows the `dark` class on `<html>`.
+- **Theme and colors:** use the design tokens from `app/globals.css` (`bg-page`, `bg-surface`, `bg-raised`, `border-line`, `text-fg`, `text-muted`, `bg-brand`/`text-on-brand`, `text-accent`, `text-danger`, `text-warn`, `text-good`, `text-info`), never raw Tailwind colors like `slate-500`. They switch with the `dark` class on `<html>`, so no `dark:` variants are needed; `.theme-light` keeps a section light (print and share pages). Font: Manrope. Labels and headings are sentence case.
 - Pure logic goes in `lib/` with tests next to it.
 
 ## Database migrations

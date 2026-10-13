@@ -8,6 +8,7 @@ import { ui } from './ui';
 
 type UserMenuProps = {
   avatarUrl: string | null;
+  email: string | null;
   unitSystem: UnitSystem;
   theme: Theme;
   isAdmin: boolean;
@@ -15,10 +16,10 @@ type UserMenuProps = {
   onToggleTheme: () => void;
 };
 
-const menuItemClass =
-  'w-full rounded-xl bg-slate-100 px-3 py-2 text-left text-sm transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700';
+const menuItemClass = 'flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold transition-colors hover:bg-raised';
 
-export default function UserMenu({ avatarUrl, unitSystem, theme, isAdmin, onToggleUnits, onToggleTheme }: UserMenuProps) {
+/** The signed-in rider's avatar, top right; opens account options. */
+export default function UserMenu({ avatarUrl, email, unitSystem, theme, isAdmin, onToggleUnits, onToggleTheme }: UserMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -26,24 +27,30 @@ export default function UserMenu({ avatarUrl, unitSystem, theme, isAdmin, onTogg
       <button
         type="button"
         onClick={() => setIsOpen((previous) => !previous)}
-        className="flex items-center justify-center overflow-hidden rounded-full bg-slate-100 p-1 text-slate-900 transition-colors hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
-        aria-label="User options"
+        className="flex h-11 w-11 items-center justify-center rounded-full"
+        aria-label={email ? `Account: ${email}` : 'Account'}
+        title={email ?? undefined}
         aria-expanded={isOpen}
       >
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- external OAuth avatar; next/image would need remotePatterns per provider
-          <img src={avatarUrl} alt="Profile" className="h-9 w-9 rounded-full object-cover" referrerPolicy="no-referrer" />
-        ) : (
-          <div className="p-2">
-            <User size={18} />
-          </div>
-        )}
+        <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-raised text-fg ring-2 ring-line ring-offset-2 ring-offset-page">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element -- external OAuth avatar; next/image would need remotePatterns per provider
+            <img src={avatarUrl} alt="" className="h-full w-full object-cover" referrerPolicy="no-referrer" />
+          ) : (
+            <User size={18} aria-hidden="true" />
+          )}
+        </span>
       </button>
 
       {isOpen && (
-        <div className={`absolute right-0 top-full z-40 mt-2 w-52 ${ui.popover}`}>
-          <div className="space-y-2 p-3">
-            <div className="text-xs uppercase tracking-wide text-slate-500">User Options</div>
+        <div className={`absolute right-0 top-full z-40 mt-2 w-64 p-2 ${ui.popover}`}>
+          {email && (
+            <div className="border-b border-line px-3 pb-2.5 pt-1.5">
+              <div className="text-xs font-semibold text-muted">Signed in as</div>
+              <div className="truncate text-sm font-bold" title={email}>{email}</div>
+            </div>
+          )}
+          <div className="py-1">
             <button
               type="button"
               onClick={() => {
@@ -52,7 +59,7 @@ export default function UserMenu({ avatarUrl, unitSystem, theme, isAdmin, onTogg
               }}
               className={menuItemClass}
             >
-              {unitSystem === 'imperial' ? 'Switch to Metric (km)' : 'Switch to Imperial (mi)'}
+              {unitSystem === 'imperial' ? 'Use kilometers' : 'Use miles'}
             </button>
             <button
               type="button"
@@ -62,24 +69,20 @@ export default function UserMenu({ avatarUrl, unitSystem, theme, isAdmin, onTogg
               }}
               className={menuItemClass}
             >
-              {theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              {theme === 'dark' ? 'Use light theme' : 'Use dark theme'}
             </button>
             {isAdmin && (
-              <a href="/admin" className={`block ${menuItemClass}`}>
+              <a href="/admin" className={menuItemClass}>
                 Review submissions
               </a>
             )}
-            <div className="my-2 border-t border-slate-200 dark:border-slate-800" />
-            <form action={logout}>
-              <button
-                type="submit"
-                className="flex w-full items-center gap-2 rounded-lg p-2 text-xs font-medium text-rose-500 transition-colors hover:bg-rose-500/10 dark:text-rose-400 dark:hover:text-rose-300"
-              >
-                <LogOut size={14} />
-                <span>Sign Out</span>
-              </button>
-            </form>
           </div>
+          <form action={logout} className="border-t border-line pt-1">
+            <button type="submit" className={`${menuItemClass} text-danger`}>
+              <LogOut size={15} aria-hidden="true" />
+              Sign out
+            </button>
+          </form>
         </div>
       )}
     </div>

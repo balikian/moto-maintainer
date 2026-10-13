@@ -84,10 +84,10 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
   };
 
   return (
-    <Modal title="Add Custom Task" description="Create a maintenance item unique to this motorcycle." size="lg" onClose={onClose}>
+    <Modal title="Add a custom task" description="Create a maintenance item unique to this motorcycle." size="lg" onClose={onClose}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="task-name" className={ui.label}>Task Name</label>
+          <label htmlFor="task-name" className={ui.label}>Task name</label>
           <input
             id="task-name"
             type="text"
@@ -128,7 +128,7 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
             />
           </div>
           <div>
-            <label htmlFor="task-interval-months" className={ui.label}>Interval (Months)</label>
+            <label htmlFor="task-interval-months" className={ui.label}>Interval (months)</label>
             <input
               id="task-interval-months"
               type="number"
@@ -143,7 +143,7 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label htmlFor="task-baseline-odometer" className={ui.label}>Last Done At ({unitLabel})</label>
+            <label htmlFor="task-baseline-odometer" className={ui.label}>Last done at ({unitLabel})</label>
             <input
               id="task-baseline-odometer"
               type="number"
@@ -154,7 +154,7 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
             />
           </div>
           <div>
-            <label htmlFor="task-baseline-date" className={ui.label}>Last Done On</label>
+            <label htmlFor="task-baseline-date" className={ui.label}>Last done on</label>
             <input
               id="task-baseline-date"
               type="date"
@@ -186,7 +186,7 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
           </button>
           <button type="submit" disabled={saving} className={ui.primaryButton}>
             <Plus size={16} />
-            {saving ? 'Adding…' : 'Add Task'}
+            {saving ? 'Adding…' : 'Add task'}
           </button>
         </div>
       </form>

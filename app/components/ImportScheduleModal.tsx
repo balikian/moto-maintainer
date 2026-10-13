@@ -30,7 +30,7 @@ type Stage =
   | { name: 'saving' };
 
 const cellInput =
-  'w-full rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
+  'w-full rounded-lg border border-line-strong bg-page px-2 py-1.5 text-sm text-fg';
 
 export default function ImportScheduleModal({ bike, years, onClose, onImported }: ImportScheduleModalProps) {
   const [stage, setStage] = useState<Stage>({ name: 'select' });
@@ -132,7 +132,7 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
 
   return (
     <Modal
-      title="Import Maintenance Schedule"
+      title="Import maintenance schedule"
       description={`Read the service schedule from the ${bikeTitle(bike)} owner's manual.`}
       size="lg"
       onClose={stage.name === 'reading' || stage.name === 'saving' ? () => {} : onClose}
@@ -147,7 +147,7 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
               accept="application/pdf,.pdf"
               onChange={(event) => setFile(event.target.files?.[0] ?? null)}
               disabled={stage.name === 'reading'}
-              className={`${ui.input} file:mr-3 file:rounded-lg file:border-0 file:bg-amber-500 file:px-3 file:py-1 file:text-sm file:font-semibold file:text-slate-950`}
+              className={`${ui.input} file:mr-3 file:rounded-lg file:border-0 file:bg-brand file:px-3 file:py-1 file:text-sm file:font-bold file:text-on-brand`}
             />
           </div>
 
@@ -162,7 +162,7 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
               disabled={stage.name === 'reading'}
               className={ui.input}
             />
-            <p className="mt-1.5 text-xs text-slate-500">
+            <p className="mt-1.5 text-xs text-muted">
               Use the page numbers your PDF viewer shows (not the numbers printed on the page). The schedule is usually a
               table near the back, titled &ldquo;Maintenance schedule&rdquo; or &ldquo;Service intervals.&rdquo; Only
               these pages are sent, which keeps it quick and cheap.
@@ -189,13 +189,13 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
           </p>
 
           {notes && (
-            <div className="rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200">
+            <div className={ui.infoBox}>
               <span className="font-semibold">Notes from the manual:</span> {notes}
             </div>
           )}
 
           {/* One block per task: the full name on top (wrapping, never cut off), its intervals below. */}
-          <ul className="divide-y divide-slate-200 dark:divide-slate-800">
+          <ul className="divide-y divide-line">
             {tasks.map((task, index) => (
               <li key={index} className="grid gap-2 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
                 <textarea
@@ -242,7 +242,7 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
                       type="checkbox"
                       checked={task.is_diy}
                       onChange={(e) => updateTask(index, { is_diy: e.target.checked })}
-                      className="h-4 w-4 accent-amber-500"
+                      className="h-4 w-4 accent-brand"
                     />
                     DIY
                   </label>
@@ -259,7 +259,7 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
                   <button
                     type="button"
                     onClick={() => setTasks((previous) => previous.filter((_, i) => i !== index))}
-                    className="ml-auto rounded p-1.5 text-slate-400 hover:text-rose-500"
+                    className="ml-auto rounded p-1.5 text-muted hover:text-danger"
                     aria-label={`Remove ${task.task_name || 'this task'}`}
                     title="Remove task"
                   >
@@ -278,7 +278,7 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
                 { task_name: '', interval_distance: 0, distance_unit: previous[0]?.distance_unit ?? 'km', interval_months: 0, is_diy: true, category: 'other' },
               ])
             }
-            className={`text-xs font-semibold ${ui.muted} hover:text-amber-600`}
+            className={`text-xs font-semibold ${ui.muted} hover:text-fg`}
           >
             <Plus size={12} className="mr-0.5 inline" /> Add a row
           </button>
@@ -297,13 +297,13 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
               <input id="schedule-source" value={source} onChange={(e) => setSource(e.target.value)} className={ui.input} />
             </div>
           </div>
-          <p className="-mt-2 text-xs text-slate-500">
+          <p className="-mt-2 text-xs text-muted">
             Widen the years if the same schedule applies to other model years; it will be used for all of them.
           </p>
 
           {bike.id ? (
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={applyToBike} onChange={(e) => setApplyToBike(e.target.checked)} className="h-4 w-4 accent-amber-500" />
+              <input type="checkbox" checked={applyToBike} onChange={(e) => setApplyToBike(e.target.checked)} className="h-4 w-4 accent-brand" />
               Also update my bike&apos;s checklist with this schedule
             </label>
           ) : (

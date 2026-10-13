@@ -14,7 +14,7 @@ type ExportMenuProps = {
 };
 
 const menuItemClass =
-  'flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors hover:bg-slate-100 dark:hover:bg-slate-800';
+  'flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors hover:bg-raised';
 
 function downloadCsv(bike: Motorcycle, logs: ServiceLog[], unitSystem: UnitSystem) {
   // The byte-order mark makes Excel read the file as UTF-8 (accents, symbols).
@@ -33,7 +33,7 @@ export default function ExportMenu({ bike, logs, unitSystem, onShare }: ExportMe
   return (
     <div className="relative">
       <button type="button" onClick={() => setIsOpen((previous) => !previous)} className={ui.chipButton} aria-expanded={isOpen}>
-        <FileDown size={14} className="text-amber-500" />
+        <FileDown size={15} />
         Export
       </button>
 
@@ -47,7 +47,7 @@ export default function ExportMenu({ bike, logs, unitSystem, onShare }: ExportMe
             }}
             className={menuItemClass}
           >
-            <Download size={15} className="text-amber-500" /> Download spreadsheet (CSV)
+            <Download size={15} className="text-accent" /> Download spreadsheet (CSV)
           </button>
           <a
             href={`/history/${bike.id}`}
@@ -56,7 +56,7 @@ export default function ExportMenu({ bike, logs, unitSystem, onShare }: ExportMe
             onClick={() => setIsOpen(false)}
             className={menuItemClass}
           >
-            <Printer size={15} className="text-amber-500" /> Print / Save as PDF
+            <Printer size={15} className="text-accent" /> Print / Save as PDF
           </a>
           <button
             type="button"
@@ -66,7 +66,7 @@ export default function ExportMenu({ bike, logs, unitSystem, onShare }: ExportMe
             }}
             className={menuItemClass}
           >
-            <Link2 size={15} className="text-amber-500" /> Share link…
+            <Link2 size={15} className="text-accent" /> Share link…
           </button>
         </div>
       )}

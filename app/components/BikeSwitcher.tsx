@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bike as BikeIcon, ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
 import { ui } from './ui';
@@ -16,9 +16,9 @@ type BikeSwitcherProps = {
   onRemove: (bike: Motorcycle) => void;
 };
 
-const rowButtonClass =
-  'rounded-md border border-slate-300 p-1.5 text-slate-500 transition-colors dark:border-slate-700';
+const rowButtonClass = 'rounded-lg border border-line p-2 text-muted transition-colors';
 
+/** The bike's name, large; opens the garage list to switch, add, edit or remove bikes. */
 export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, onAdd, onEdit, onRemove }: BikeSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   // The bike whose row is asking "remove this bike?"; shown inline, since the list scrolls.
@@ -36,19 +36,21 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
 
   return (
     <div className="relative">
-      <button type="button" onClick={toggleOpen} className={`py-2 ${ui.chipButton}`} aria-expanded={isOpen}>
-        <BikeIcon size={14} className="text-amber-500" />
+      <button type="button" onClick={toggleOpen} className="flex w-full items-end justify-between gap-3 text-left" aria-expanded={isOpen}>
         {activeBike ? (
-          <>
-            <span className="max-w-[180px] truncate">{activeBike.make} {activeBike.model}</span>
-            <span className="rounded-md bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-              {activeBike.year}
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold text-muted">
+              {activeBike.year} {activeBike.make}
             </span>
-          </>
+            <span className="block truncate text-3xl font-extrabold leading-tight tracking-tight">{activeBike.model}</span>
+          </span>
         ) : (
-          <span>No bikes in garage</span>
+          <span className="text-lg font-bold">No bikes in your garage</span>
         )}
-        <ChevronDown size={14} className={`text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <span className="flex shrink-0 items-center gap-1 pb-1.5 text-sm font-bold text-muted">
+          {bikes.length > 1 ? `${bikes.length} bikes` : 'Garage'}
+          <ChevronDown size={16} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+        </span>
       </button>
 
       {isOpen && (
@@ -59,7 +61,7 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
                 const isSelected = bike.id === activeBike?.id;
                 if (confirmingId === bike.id) {
                   return (
-                    <div key={bike.id} role="alertdialog" aria-label="Confirm removing this bike" className="border-l-2 border-rose-500 bg-rose-500/5 px-3 py-2.5">
+                    <div key={bike.id} role="alertdialog" aria-label="Confirm removing this bike" className="border-l-2 border-danger bg-danger/5 px-3 py-2.5">
                       <p className="text-sm">
                         Remove the {bike.year} {bike.make} {bike.model}? This deletes its tasks and service history.
                       </p>
@@ -75,7 +77,7 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
                             setIsOpen(false);
                             onRemove(bike);
                           }}
-                          className="inline-flex items-center justify-center rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-rose-500"
+                          className={`${ui.primaryButton} px-3 py-1.5 text-xs`}
                         >
                           Remove bike
                         </button>
@@ -96,18 +98,13 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
                       }
                     }}
                     className={`w-full cursor-pointer border-l-2 px-3 py-2.5 text-left transition-colors ${
-                      isSelected
-                        ? 'border-amber-500 bg-amber-500/10'
-                        : 'border-transparent hover:bg-slate-100 dark:hover:bg-slate-800/80'
+                      isSelected ? 'border-accent bg-accent/10' : 'border-transparent hover:bg-raised'
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <BikeIcon size={14} className="shrink-0 text-amber-500" />
-                      <span className="truncate text-sm">{bike.make} {bike.model}</span>
-                      <span className="shrink-0 rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                        {bike.year}
-                      </span>
-                      <span className={`ml-auto shrink-0 font-mono text-xs ${ui.muted}`}>
+                      <span className="truncate text-sm font-semibold">{bike.make} {bike.model}</span>
+                      <span className="shrink-0 rounded bg-raised px-1.5 py-0.5 text-xs font-bold text-muted">{bike.year}</span>
+                      <span className="ml-auto shrink-0 text-xs font-semibold text-muted tabular-nums">
                         {formatDistance(bike.current_mileage, unitSystem)}
                       </span>
                       <button
@@ -117,11 +114,11 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
                           setIsOpen(false);
                           onEdit(bike);
                         }}
-                        className={`${rowButtonClass} hover:border-amber-500/40 hover:text-amber-500`}
+                        className={`${rowButtonClass} hover:text-fg`}
                         title="Edit bike"
                         aria-label={`Edit ${bike.year} ${bike.make} ${bike.model}`}
                       >
-                        <Pencil size={13} />
+                        <Pencil size={14} />
                       </button>
                       <button
                         type="button"
@@ -129,21 +126,21 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
                           event.stopPropagation();
                           setConfirmingId(bike.id);
                         }}
-                        className={`${rowButtonClass} hover:border-rose-500/40 hover:text-rose-500 dark:hover:text-rose-400`}
+                        className={`${rowButtonClass} hover:border-danger/40 hover:text-danger`}
                         title="Remove bike"
                         aria-label={`Remove ${bike.year} ${bike.make} ${bike.model}`}
                       >
-                        <Trash2 size={13} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className={`px-4 py-4 text-sm ${ui.muted}`}>Your garage is empty.</div>
+              <div className="px-4 py-4 text-sm text-muted">Your garage is empty.</div>
             )}
           </div>
-          <div className="border-t border-slate-200 p-2 dark:border-slate-800">
+          <div className="border-t border-line p-2">
             <button
               type="button"
               onClick={() => {
@@ -152,7 +149,7 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
               }}
               className={`w-full ${ui.secondaryButton}`}
             >
-              <Plus size={15} className="text-amber-500" /> Add Bike
+              <Plus size={15} /> Add bike
             </button>
           </div>
         </div>

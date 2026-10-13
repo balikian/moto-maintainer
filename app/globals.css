@@ -3,12 +3,86 @@
 /* `dark:` classes follow the `dark` class on <html> (the in-app toggle), not the OS setting. */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * SwingArm design tokens. Components use these names (bg-surface, text-muted,
+ * border-line, bg-brand...) instead of raw Tailwind colors, so light and dark
+ * mode come from here and need no `dark:` variants.
+ *
+ * .theme-light pins the light palette inside a dark page: the print and share
+ * views are always "paper".
+ */
+:root,
+.theme-light {
+  --sa-page: #ece6dc;
+  --sa-surface: #fbf8f2;
+  --sa-raised: #f1ebe0;
+  --sa-line: #d9cfbf;
+  --sa-line-strong: #c4b8a5;
+  --sa-fg: #1c1f23;
+  --sa-muted: #5f5955;
+  --sa-brand: #b5281f;
+  --sa-brand-hover: #9c2219;
+  --sa-on-brand: #ffffff;
+  --sa-accent: #b5281f;
+  --sa-danger: #b5281f;
+  --sa-warn: #8a5a0b;
+  --sa-good: #2d6a4f;
+  --sa-info: #2f6b8c;
+  --sa-track: #e2d9ca;
+  color-scheme: light;
+}
+
+.dark {
+  --sa-page: #141619;
+  --sa-surface: #1d2024;
+  --sa-raised: #262a2f;
+  --sa-line: #30353b;
+  --sa-line-strong: #3d434a;
+  --sa-fg: #f4ece0;
+  --sa-muted: #b5ab9c;
+  --sa-brand: #d63a2c;
+  --sa-brand-hover: #e04a3c;
+  --sa-on-brand: #fff6e6;
+  --sa-accent: #ff6b57;
+  --sa-danger: #ff6b57;
+  --sa-warn: #f0b03c;
+  --sa-good: #7cc4a0;
+  --sa-info: #7fb6d6;
+  --sa-track: #30353b;
+  color-scheme: dark;
+}
+
 @theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-manrope);
+
+  /* Backgrounds, from the page up: page < surface (cards) < raised (insets, secondary buttons). */
+  --color-page: var(--sa-page);
+  --color-surface: var(--sa-surface);
+  --color-raised: var(--sa-raised);
+  --color-line: var(--sa-line);
+  --color-line-strong: var(--sa-line-strong);
+  --color-fg: var(--sa-fg);
+  --color-muted: var(--sa-muted);
+  /* Brand red: fills for primary buttons, with on-brand text. Accent is the red for text and icons. */
+  --color-brand: var(--sa-brand);
+  --color-brand-hover: var(--sa-brand-hover);
+  --color-on-brand: var(--sa-on-brand);
+  --color-accent: var(--sa-accent);
+  /* Status: danger = overdue, urgent, errors, deletes; warn = due soon; good = success; info = notices. */
+  --color-danger: var(--sa-danger);
+  --color-warn: var(--sa-warn);
+  --color-good: var(--sa-good);
+  --color-info: var(--sa-info);
+  --color-track: var(--sa-track);
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50;
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  @apply bg-page text-fg;
+  font-family: var(--font-manrope), "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Thin scrollbars in the theme's colors. Phones already show theirs only while scrolling. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sa-line-strong) transparent;
 }

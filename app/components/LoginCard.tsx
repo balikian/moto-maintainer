@@ -55,7 +55,7 @@ export default function LoginCard() {
 
   return (
     <div className={`flex items-center justify-center p-4 ${ui.page}`}>
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl dark:border-slate-800 dark:bg-slate-900/80">
+      <div className={`w-full max-w-md p-8 shadow-xl ${ui.card}`}>
         <div className="mb-6 text-center">
           <h1 className="flex justify-center">
             <BrandLogo className="h-14" />
@@ -68,20 +68,20 @@ export default function LoginCard() {
             type="button"
             onClick={handleGoogleLogin}
             disabled={redirecting || sending}
-            className={`w-full rounded-2xl py-3 ${ui.secondaryButton}`}
+            className={`w-full py-3 ${ui.primaryButton}`}
           >
             {redirecting ? 'Redirecting to Google…' : 'Sign in with Google'}
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="h-px flex-1 bg-slate-300 dark:bg-slate-700" />
-            <span className={`text-xs font-semibold tracking-[0.18em] ${ui.muted}`}>OR</span>
-            <div className="h-px flex-1 bg-slate-300 dark:bg-slate-700" />
+            <div className="h-px flex-1 bg-line" />
+            <span className={`text-xs font-bold ${ui.muted}`}>or</span>
+            <div className="h-px flex-1 bg-line" />
           </div>
 
           {linkSent ? (
-            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-900/60 dark:bg-emerald-950/30">
-              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">Sign-in link sent!</p>
+            <div className="rounded-2xl border border-good/30 bg-good/10 p-4">
+              <p className="text-sm font-bold text-good">Sign-in link sent!</p>
               <p className={`mt-1 text-sm ${ui.muted}`}>
                 We sent a one-click magic link to <span className="font-medium">{email}</span>. Tap the link in your
                 email to open your garage.
@@ -93,7 +93,7 @@ export default function LoginCard() {
           ) : (
             <form onSubmit={handleMagicLinkSubmit} className="space-y-3">
               <label htmlFor="magic-email" className={ui.label}>
-                Email Address
+                Email address
               </label>
               <input
                 id="magic-email"
@@ -110,10 +110,10 @@ export default function LoginCard() {
                 placeholder="rider@example.com"
                 required
               />
-              <button type="submit" disabled={sending} className={`w-full rounded-2xl py-3 ${ui.secondaryButton}`}>
+              <button type="submit" disabled={sending} className={`w-full py-3 ${ui.secondaryButton}`}>
                 {sending ? 'Sending magic link…' : 'Send magic link'}
               </button>
-              <p className="mt-2 text-center text-[11px] text-slate-500">
+              <p className="mt-2 text-center text-xs text-muted">
                 We&apos;ll email you a secure, password-free login link (magic link).
               </p>
             </form>

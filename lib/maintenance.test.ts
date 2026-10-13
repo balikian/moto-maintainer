@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   baselineFromLogs,
+  countTasksByStatus,
   findDefaultTask,
   fromNewBaseline,
   getDefaultTasks,
@@ -143,6 +144,11 @@ describe('groupTasksByUrgency', () => {
   it('sorts healthy tasks by what is coming up next, with no-interval tasks last', () => {
     const { healthy } = groupTasksByUrgency(tasks, 14000, today);
     assert.deepEqual(names(healthy), ['Healthy near', 'Healthy far', 'No interval']);
+  });
+
+  it('counts tasks by status', () => {
+    assert.deepEqual(countTasksByStatus(tasks, 14000, today), { Overdue: 1, Urgent: 1, Soon: 1, Healthy: 3 });
+    assert.deepEqual(countTasksByStatus([], 14000, today), { Overdue: 0, Urgent: 0, Soon: 0, Healthy: 0 });
   });
 });
 

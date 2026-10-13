@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { AlertTriangle, Check, CheckCircle, Clock, Layers, Pencil, RotateCcw, Trash2, Wrench } from 'lucide-react';
+import { useId, useState } from 'react';
+import { Check, Layers, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { formatDisplayDate } from '@/lib/dates';
 import { categoryLabel, isTaskCategory, TASK_CATEGORIES, taskCategory, type TaskCategory } from '@/lib/taskCategories';
-import type { TaskDueState } from '@/lib/maintenance';
+import type { TaskDueState, TaskStatus } from '@/lib/maintenance';
+import { dueLabel, intervalLabel } from '@/lib/taskLabels';
 import type { MaintenanceTask, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, formatDistance, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
 import ConfirmPopover from './ConfirmPopover';
@@ -15,6 +17,8 @@ type TaskCardProps = {
   /** True until a service is logged for this task, so its countdown runs from new. */
   neverLogged: boolean;
   unitSystem: UnitSystem;
+  /** "card" for tasks that need attention; "row" for the compact list of healthy ones. */
+  variant?: 'card' | 'row';
   onLog: () => void;
   /** Receives the interval in miles; resolves to an error message, or null on success. */
   onSaveIntervals: (intervals: { intervalMileage: number; intervalMonths: number; category: TaskCategory }) => Promise<string | null>;
@@ -24,43 +28,60 @@ type TaskCardProps = {
   onDelete: () => void;
 };
 
-const STATUS_STYLES = {
-  Overdue: { badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: 'bg-rose-500/10 text-rose-500', bar: 'bg-rose-500', Icon: AlertTriangle },
-  Urgent: { badge: 'bg-rose-500/10 text-rose-600 dark:text-rose-400', icon: 'bg-rose-500/10 text-rose-500', bar: 'bg-rose-500', Icon: AlertTriangle },
-  Soon: { badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400', icon: 'bg-amber-500/10 text-amber-500', bar: 'bg-amber-500', Icon: Clock },
-  Healthy: { badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400', icon: 'bg-emerald-500/10 text-emerald-500', bar: 'bg-emerald-500', Icon: CheckCircle },
-} as const;
+const STATUS_TEXT: Record<TaskStatus, string> = {
+  Overdue: 'text-danger',
+  Urgent: 'text-danger',
+  Soon: 'text-warn',
+  Healthy: 'text-muted',
+};
 
-const smallInputClass =
-  'rounded-md border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] text-slate-900 focus:border-amber-500 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100';
+const STATUS_FILL: Record<TaskStatus, string> = {
+  Overdue: 'bg-danger',
+  Urgent: 'bg-danger',
+  Soon: 'bg-warn',
+  Healthy: 'bg-good',
+};
 
-const iconButtonClass = 'rounded p-1 transition-colors';
+/** The progress bar is split into segments, like a rev counter. */
+const SEGMENTS = 12;
 
-function badgeText({ trigger, milesRemaining, daysRemaining }: TaskDueState, unitSystem: UnitSystem): string {
-  if (trigger === 'time' && daysRemaining !== null) {
-    if (daysRemaining < 0) return `Overdue by ${-daysRemaining} day${daysRemaining === -1 ? '' : 's'}`;
-    return daysRemaining === 0 ? 'Due today' : `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} left`;
+function lastDoneLabel(task: MaintenanceTask, neverLogged: boolean, unitSystem: UnitSystem): string {
+  const date = task.last_performed_date ? formatDisplayDate(task.last_performed_date) : null;
+  const distance = formatDistance(task.last_performed_mileage, unitSystem);
+  if (neverLogged) {
+    const from = [date, task.last_performed_mileage > 0 ? `at ${distance}` : null].filter(Boolean).join(' ');
+    return from ? `Not logged yet; counting from ${from}` : 'Not logged yet';
   }
-  if (milesRemaining !== null) {
-    return milesRemaining < 0
-      ? `Overdue by ${formatDistance(-milesRemaining, unitSystem)}`
-      : `${formatDistance(milesRemaining, unitSystem)} left`;
-  }
-  return 'No interval set';
+  return [date, distance].filter(Boolean).join(' · ');
 }
 
-export default function TaskCard({ task, dueState, neverLogged, unitSystem, onLog, onSaveIntervals, alsoComingUp, onReset, onDelete }: TaskCardProps) {
+export default function TaskCard({
+  task,
+  dueState,
+  neverLogged,
+  unitSystem,
+  variant = 'card',
+  onLog,
+  onSaveIntervals,
+  alsoComingUp,
+  onReset,
+  onDelete,
+}: TaskCardProps) {
+  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<{ distance: string; months: string; category: TaskCategory } | null>(null);
-  const category = taskCategory(task);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const id = useId();
+  const category = taskCategory(task);
 
-  const style = STATUS_STYLES[dueState.status];
   const unitLabel = distanceUnitLabel(unitSystem);
+  const due = dueLabel(dueState, unitSystem);
+  const meta = [categoryLabel(category), task.is_diy ? 'DIY' : 'Shop', neverLogged ? 'not logged yet' : null].filter(Boolean).join(' · ');
   // How much of the interval has been used up, capped at 100% once overdue.
   const percentUsed = dueState.fractionRemaining === null
     ? null
     : Math.round(Math.min(1, Math.max(0, 1 - dueState.fractionRemaining)) * 100);
+  const litSegments = percentUsed === null ? 0 : Math.round((percentUsed / 100) * SEGMENTS);
 
   const startEditing = () => {
     setError(null);
@@ -90,159 +111,189 @@ export default function TaskCard({ task, dueState, neverLogged, unitSystem, onLo
     setDraft(null);
   };
 
-  return (
-    <div className={`${ui.card} p-4`}>
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className={`rounded-lg p-2 ${style.icon}`}>
-            <style.Icon size={18} />
-          </div>
-          <div>
-            <h4 className="text-sm font-bold md:text-base">{task.task_name}</h4>
-            <p className={`mt-0.5 flex items-center gap-1.5 text-xs ${ui.muted}`}>
-              <Wrench size={12} /> {categoryLabel(category)} · {task.is_diy ? 'Self-Maintain' : 'Shop Service'}
-              {neverLogged && <span title="No service logged yet, so this counts from when the bike was new">· Not logged yet</span>}
-            </p>
-          </div>
-        </div>
+  const toggle = () => {
+    setOpen((previous) => !previous);
+    setDraft(null);
+    setError(null);
+  };
 
-        <div className="flex flex-col items-end gap-2 text-right">
-          <span className={`rounded-md px-2 py-0.5 text-xs font-bold ${style.badge}`}>{badgeText(dueState, unitSystem)}</span>
-
-          <div className={`flex items-center gap-1 text-[11px] ${ui.muted}`}>
-            <span>Every</span>
-            {draft ? (
-              <form
-                className="flex items-center gap-1"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  void saveEdit();
-                }}
-              >
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={draft.distance}
-                  onChange={(event) => setDraft({ ...draft, distance: event.target.value })}
-                  className={`w-16 ${smallInputClass}`}
-                  aria-label={`Interval in ${unitLabel}`}
-                  autoFocus
-                />
-                <span>{unitLabel} /</span>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  value={draft.months}
-                  onChange={(event) => setDraft({ ...draft, months: event.target.value })}
-                  className={`w-10 ${smallInputClass}`}
-                  aria-label="Interval in months"
-                />
-                <span>mo</span>
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className={`${iconButtonClass} text-slate-700 hover:text-emerald-500 dark:text-slate-300 dark:hover:text-emerald-400`}
-                  title="Save changes"
-                  aria-label="Save interval changes"
-                >
-                  <Check size={14} />
-                </button>
-              </form>
-            ) : (
-              <>
-                <span className="font-semibold">{toDisplayDistance(task.interval_mileage, unitSystem).toLocaleString()}</span>
-                <span>{unitLabel} /</span>
-                <span className="font-semibold">{task.interval_months ?? 0}</span>
-                <span>mo</span>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={onLog}
-              className="rounded-lg border border-slate-300 bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 transition-colors hover:border-amber-500/40 hover:text-amber-600 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300 dark:hover:text-amber-400"
-            >
-              Log Service
-            </button>
-            <div className="flex items-center gap-1 rounded-lg border border-slate-300 bg-slate-100 px-1.5 py-1 dark:border-slate-700 dark:bg-slate-800/70">
-              <button
-                type="button"
-                onClick={draft ? () => setDraft(null) : startEditing}
-                className={`${iconButtonClass} hover:text-amber-500`}
-                title={draft ? 'Cancel editing' : 'Edit intervals'}
-                aria-label={draft ? 'Cancel editing' : 'Edit intervals'}
-              >
-                <Pencil size={12} />
-              </button>
-              <button
-                type="button"
-                onClick={onReset}
-                className={`${iconButtonClass} hover:text-amber-500`}
-                title="Reset to default interval"
-                aria-label="Reset to default interval"
-              >
-                <RotateCcw size={12} />
-              </button>
-              <ConfirmPopover
-                message={`Delete "${task.task_name}"? Its past service records are kept.`}
-                confirmLabel="Delete task"
-                onConfirm={onDelete}
-              >
-                {(open, popoverProps) => (
-                  <button
-                    type="button"
-                    onClick={open}
-                    {...popoverProps}
-                    className={`${iconButtonClass} hover:text-rose-500`}
-                    title="Delete task"
-                    aria-label="Delete task"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                )}
-              </ConfirmPopover>
+  const details = open && (
+    <div id={`${id}-details`} className={`space-y-3 border-t border-line px-4 py-3 ${variant === 'card' ? 'rounded-b-2xl bg-raised' : ''}`}>
+      {draft ? (
+        <form
+          className="space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void saveEdit();
+          }}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor={`${id}-distance`} className={ui.label}>Every ({unitLabel})</label>
+              <input
+                id={`${id}-distance`}
+                type="text"
+                inputMode="numeric"
+                value={draft.distance}
+                onChange={(event) => setDraft({ ...draft, distance: event.target.value })}
+                className={ui.input}
+                autoFocus
+              />
+            </div>
+            <div>
+              <label htmlFor={`${id}-months`} className={ui.label}>Or every (months)</label>
+              <input
+                id={`${id}-months`}
+                type="text"
+                inputMode="numeric"
+                value={draft.months}
+                onChange={(event) => setDraft({ ...draft, months: event.target.value })}
+                className={ui.input}
+              />
             </div>
           </div>
-        </div>
-      </div>
-      {percentUsed !== null && (
-        <div
-          className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800"
-          role="progressbar"
-          aria-label={`${task.task_name}: ${percentUsed}% of the ${dueState.trigger === 'time' ? 'time' : 'distance'} interval used`}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={percentUsed}
+          <div>
+            <label htmlFor={`${id}-category`} className={ui.label}>Category</label>
+            <select
+              id={`${id}-category`}
+              value={draft.category}
+              onChange={(event) => setDraft({ ...draft, category: isTaskCategory(event.target.value) ? event.target.value : 'other' })}
+              className={ui.input}
+            >
+              {TASK_CATEGORIES.map((option) => (
+                <option key={option.id} value={option.id}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+          <p className="text-xs text-muted">Set a distance or months to 0 if it doesn&apos;t apply.</p>
+          <div className="flex justify-end gap-2">
+            <button type="button" onClick={() => setDraft(null)} className={ui.secondaryButton}>
+              Cancel
+            </button>
+            <button type="submit" disabled={saving} className={ui.primaryButton}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </form>
+      ) : (
+        <>
+          <dl className="grid grid-cols-[6rem_minmax(0,1fr)] gap-y-1.5 text-sm">
+            {variant === 'row' && (
+              <>
+                <dt className="font-semibold text-muted">Type</dt>
+                <dd className="font-bold">{meta}</dd>
+              </>
+            )}
+            <dt className="font-semibold text-muted">Interval</dt>
+            <dd className="font-bold">{intervalLabel(task, unitSystem)}</dd>
+            <dt className="font-semibold text-muted">Last done</dt>
+            <dd className="font-bold">{lastDoneLabel(task, neverLogged, unitSystem)}</dd>
+            {task.notes && (
+              <>
+                <dt className="font-semibold text-muted">Notes</dt>
+                <dd className="whitespace-pre-wrap">{task.notes}</dd>
+              </>
+            )}
+          </dl>
+          <div className="flex gap-2">
+            <button type="button" onClick={onLog} className={`flex-1 ${ui.primaryButton}`}>
+              <Check size={16} strokeWidth={2.6} /> Log service
+            </button>
+            <button type="button" onClick={startEditing} className={ui.iconButton} title="Edit interval" aria-label="Edit interval">
+              <Pencil size={16} />
+            </button>
+            <button type="button" onClick={onReset} className={ui.iconButton} title="Reset to default interval" aria-label="Reset to default interval">
+              <RotateCcw size={16} />
+            </button>
+            <ConfirmPopover
+              message={`Delete "${task.task_name}"? Its past service records are kept.`}
+              confirmLabel="Delete task"
+              onConfirm={onDelete}
+            >
+              {(openConfirm, popoverProps) => (
+                <button
+                  type="button"
+                  onClick={openConfirm}
+                  {...popoverProps}
+                  className={`${ui.iconButton} text-danger`}
+                  title="Delete task"
+                  aria-label="Delete task"
+                >
+                  <Trash2 size={16} />
+                </button>
+              )}
+            </ConfirmPopover>
+          </div>
+        </>
+      )}
+      {error && <p className={ui.errorBox}>{error}</p>}
+    </div>
+  );
+
+  if (variant === 'row') {
+    return (
+      <li>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          aria-controls={`${id}-details`}
+          className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-2.5 text-left"
         >
-          <div className={`h-full rounded-full transition-[width] ${style.bar}`} style={{ width: `${percentUsed}%` }} />
-        </div>
-      )}
-      {draft && (
-        <label className={`mt-3 flex items-center justify-end gap-2 text-[11px] ${ui.muted}`}>
-          Category
-          <select
-            value={draft.category}
-            onChange={(event) => setDraft({ ...draft, category: isTaskCategory(event.target.value) ? event.target.value : 'other' })}
-            className={smallInputClass}
-          >
-            {TASK_CATEGORIES.map((option) => (
-              <option key={option.id} value={option.id}>{option.label}</option>
-            ))}
-          </select>
-        </label>
-      )}
+          <span className="font-semibold">{task.task_name}</span>
+          <span className="shrink-0 text-sm font-semibold text-muted tabular-nums">
+            {due.value} {due.caption}
+          </span>
+        </button>
+        {details}
+      </li>
+    );
+  }
+
+  return (
+    <article className={ui.card}>
+      <button
+        type="button"
+        onClick={toggle}
+        aria-expanded={open}
+        aria-controls={`${id}-details`}
+        className="block w-full px-4 pb-3.5 pt-4 text-left"
+      >
+        <span className="flex items-start justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block text-base font-bold leading-snug">{task.task_name}</span>
+            <span className="mt-0.5 block text-sm text-muted">{meta}</span>
+          </span>
+          <span className={`flex shrink-0 flex-col items-end ${STATUS_TEXT[dueState.status]}`}>
+            <span className="text-2xl font-extrabold leading-none tracking-tight tabular-nums">{due.value}</span>
+            <span className="mt-1 text-xs font-bold">{due.caption}</span>
+          </span>
+        </span>
+        {percentUsed !== null && (
+          <>
+            <span className="mt-3 grid grid-cols-12 gap-[3px]" aria-hidden="true">
+              {Array.from({ length: SEGMENTS }, (_, index) => (
+                <span
+                  key={index}
+                  className={`h-2 -skew-x-12 rounded-[2px] ${index < litSegments ? STATUS_FILL[dueState.status] : 'bg-track'}`}
+                />
+              ))}
+            </span>
+            <span className="sr-only">
+              {percentUsed}% of the {dueState.trigger === 'time' ? 'time' : 'distance'} interval used
+            </span>
+          </>
+        )}
+      </button>
       {alsoComingUp.length > 0 && (
-        <p className={`mt-2.5 flex items-start gap-1.5 text-xs ${ui.muted}`}>
-          <Layers size={13} className="mt-px shrink-0 text-amber-500" />
+        <p className="flex items-start gap-1.5 px-4 pb-3 text-sm text-muted">
+          <Layers size={14} className="mt-0.5 shrink-0 text-warn" aria-hidden="true" />
           <span>
-            Also coming up in {categoryLabel(category)}:{' '}
-            <span className="font-medium text-slate-700 dark:text-slate-300">{alsoComingUp.map((other) => other.task_name).join(', ')}</span>
+            Do it with: <span className="font-semibold text-fg">{alsoComingUp.map((other) => other.task_name).join(', ')}</span>
           </span>
         </p>
       )}
-      {error && <p className={`mt-3 ${ui.errorBox}`}>{error}</p>}
-    </div>
+      {details}
+    </article>
   );
 }

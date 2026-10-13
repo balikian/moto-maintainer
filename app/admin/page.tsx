@@ -15,12 +15,12 @@ const yearsLabel = (entry: Pick<ModelEntry, 'year_from' | 'year_to'>) =>
   entry.year_from === entry.year_to ? String(entry.year_from) : `${entry.year_from}–${entry.year_to}`;
 
 export const metadata: Metadata = {
-  title: 'Review Submissions · SwingArm',
+  title: 'Review submissions · SwingArm',
   robots: { index: false, follow: false },
 };
 
 const smallInput =
-  'rounded-lg border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100';
+  'rounded-lg border border-line-strong bg-page px-2 py-1.5 text-sm text-fg';
 
 /** Admin-only: import missing schedules, and approve or reject what riders submitted. */
 export default async function AdminPage() {
@@ -49,10 +49,10 @@ export default async function AdminPage() {
       <div className="mx-auto max-w-4xl space-y-6">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-amber-500">Review Submissions</h1>
+            <h1 className="text-2xl font-extrabold tracking-tight">Review submissions</h1>
             <p className={`text-sm ${ui.muted}`}>Manuals, schedules, and bike names from riders. Approved entries are shared with everyone.</p>
           </div>
-          <Link href="/" className="text-sm font-semibold text-slate-500 hover:text-amber-600">
+          <Link href="/" className="text-sm font-bold text-muted hover:text-fg">
             ← Back to garage
           </Link>
         </div>
@@ -69,7 +69,7 @@ export default async function AdminPage() {
                     {manual.make} {manual.model} <span className={`font-normal ${ui.muted}`}>· {yearsLabel(manual)}</span>
                   </p>
                   {isHttpUrl(manual.url) && (
-                    <a href={manual.url} target="_blank" rel="noreferrer noopener" className="text-xs font-semibold text-amber-600 hover:underline dark:text-amber-400">
+                    <a href={manual.url} target="_blank" rel="noreferrer noopener" className="text-xs font-bold text-accent hover:underline">
                       Open the manual to download the PDF
                     </a>
                   )}
@@ -99,7 +99,7 @@ export default async function AdminPage() {
               </form>
             ))
           )}
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted">
             Riders typed these in because they weren&apos;t in the list. Fix the spelling if needed; approved names appear in
             everyone&apos;s make and model dropdowns.
           </p>
@@ -124,13 +124,13 @@ export default async function AdminPage() {
                 </div>
 
                 {isHttpUrl(manual.url) ? (
-                  <a href={manual.url} target="_blank" rel="noreferrer noopener" className="block break-all font-mono text-xs text-amber-600 hover:underline dark:text-amber-400">
+                  <a href={manual.url} target="_blank" rel="noreferrer noopener" className="block break-all font-mono text-xs text-accent hover:underline">
                     {manual.url}
                   </a>
                 ) : (
-                  <p className="break-all font-mono text-xs text-rose-600">{manual.url} (not a web link)</p>
+                  <p className="break-all font-mono text-xs text-danger">{manual.url} (not a web link)</p>
                 )}
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted">
                   Check that it opens the right manual, ideally on the manufacturer&apos;s site. Widen the years if the
                   manual covers several model years.
                 </p>

@@ -1,22 +1,31 @@
-// Shared Tailwind class strings, so light and dark mode stay consistent.
-// Each value is the light style followed by its `dark:` counterpart.
+// Shared Tailwind class strings. Colors are the design tokens in globals.css,
+// which switch with the theme, so these need no `dark:` variants.
 
 export const ui = {
-  page: 'min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-50',
-  card: 'rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/50',
-  popover: 'rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-xl dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100',
-  emptyState: 'rounded-xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 dark:border-slate-800',
-  muted: 'text-slate-500 dark:text-slate-400',
-  sectionTitle: 'text-xs font-bold uppercase tracking-wider text-slate-500',
-  label: 'mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400',
+  page: 'min-h-screen bg-page text-fg',
+  card: 'rounded-2xl border border-line bg-surface',
+  popover: 'rounded-2xl border border-line bg-surface text-fg shadow-xl shadow-black/20',
+  emptyState: 'rounded-2xl border border-dashed border-line p-8 text-center text-sm text-muted',
+  muted: 'text-muted',
+  /** Page sections: "Needs attention", "Service history". */
+  sectionTitle: 'text-xl font-extrabold tracking-tight',
+  /** Headings inside a card or dialog. */
+  subTitle: 'text-sm font-bold',
+  label: 'mb-1.5 block text-sm font-semibold text-muted',
   input:
-    'w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition-colors placeholder:text-slate-400 focus:border-amber-500 disabled:opacity-60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:placeholder:text-slate-600',
+    'w-full rounded-xl border border-line-strong bg-page px-3 py-2.5 text-base text-fg outline-none transition-colors placeholder:text-muted/70 focus:border-accent disabled:opacity-60 sm:text-sm',
   primaryButton:
-    'inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-bold text-slate-950 transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-70',
+    'inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-4 py-2.5 text-sm font-extrabold text-on-brand transition-colors hover:bg-brand-hover disabled:cursor-not-allowed disabled:opacity-70',
   secondaryButton:
-    'inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700',
+    'inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-raised px-4 py-2.5 text-sm font-bold text-fg transition-colors hover:border-line-strong disabled:cursor-not-allowed disabled:opacity-60',
   chipButton:
-    'inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 transition-colors hover:border-amber-500/60 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100',
-  errorBox:
-    'rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-700/60 dark:bg-rose-950/40 dark:text-rose-300',
+    'inline-flex items-center gap-2 rounded-xl border border-line px-3 py-2 text-sm font-bold text-fg transition-colors hover:bg-raised disabled:cursor-not-allowed disabled:opacity-60',
+  /** A square button holding only an icon; give it an aria-label. */
+  iconButton:
+    'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-fg transition-colors hover:bg-raised disabled:cursor-not-allowed disabled:opacity-60',
+  errorBox: 'rounded-xl border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger',
+  successBox: 'rounded-xl border border-good/30 bg-good/10 px-3 py-2 text-sm text-good',
+  infoBox: 'rounded-xl border border-info/30 bg-info/10 px-3 py-2 text-sm text-info',
+  /** A small pill for statuses like "Waiting for review". */
+  tag: 'rounded-md px-2 py-0.5 text-xs font-bold',
 };

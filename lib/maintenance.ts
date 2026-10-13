@@ -228,3 +228,14 @@ export function groupTasksByUrgency<T extends Parameters<typeof getTaskDueState>
     healthy: sorted.filter((entry) => entry.dueState.status === 'Healthy'),
   };
 }
+
+/** How many of a bike's tasks are in each status, for the summary under the odometer. */
+export function countTasksByStatus(
+  tasks: Parameters<typeof getTaskDueState>[0][],
+  currentMileage: number,
+  today: Date
+): Record<TaskStatus, number> {
+  const counts: Record<TaskStatus, number> = { Overdue: 0, Urgent: 0, Soon: 0, Healthy: 0 };
+  for (const task of tasks) counts[getTaskDueState(task, currentMileage, today).status] += 1;
+  return counts;
+}

@@ -27,7 +27,7 @@ type BikeManualPanelProps = {
 };
 
 const linkButtonClass =
-  'inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-amber-500/60 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200';
+  'inline-flex items-center gap-1.5 rounded-xl border border-line bg-surface px-3 py-2 text-sm font-bold text-fg transition-colors hover:bg-raised disabled:opacity-60';
 
 function yearsLabel(entry: Pick<ModelEntry, 'year_from' | 'year_to'>): string {
   return entry.year_from === entry.year_to ? String(entry.year_from) : `${entry.year_from}–${entry.year_to}`;
@@ -98,14 +98,14 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
   };
 
   return (
-    <Modal title="Manual & Schedule" description={bikeTitle(bike)} size="lg" onClose={onClose}>
+    <Modal title="Manual & schedule" description={bikeTitle(bike)} size="lg" onClose={onClose}>
       <div className="flex items-center justify-between gap-3">
-        <h2 className={`inline-flex items-center gap-1.5 ${ui.sectionTitle}`}>
-          <BookOpen size={14} className="text-amber-500" />
-          Owner&apos;s Manual
+        <h2 className={`inline-flex items-center gap-1.5 ${ui.subTitle}`}>
+          <BookOpen size={14} className="text-accent" />
+          Owner&apos;s manual
         </h2>
         {list.length > 0 && !showForm && (
-          <button type="button" onClick={() => setShowForm(true)} className={`text-xs font-semibold ${ui.muted} hover:text-amber-600`}>
+          <button type="button" onClick={() => setShowForm(true)} className={`text-xs font-semibold ${ui.muted} hover:text-fg`}>
             <Plus size={12} className="mr-0.5 inline" />
             Add another link
           </button>
@@ -129,7 +129,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
                 </span>
                 {manual.status === 'pending' && (
                   <>
-                    <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+                    <span className={`${ui.tag} bg-warn/10 text-warn`}>
                       Waiting for review
                     </span>
                     {manual.submitted_by === currentUserId && (
@@ -139,7 +139,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
                             type="button"
                             onClick={open}
                             {...popoverProps}
-                            className="rounded p-1 text-slate-400 hover:text-rose-500"
+                            className="rounded p-1 text-muted hover:text-danger"
                             aria-label="Remove this link"
                             title="Remove this link"
                           >
@@ -168,11 +168,11 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
           <div className="flex flex-wrap gap-2">
             {portal && (
               <a href={portal.url} target="_blank" rel="noreferrer noopener" className={linkButtonClass}>
-                <BookOpen size={13} className="text-amber-500" /> {portal.name} manuals
+                <BookOpen size={13} className="text-accent" /> {portal.name} manuals
               </a>
             )}
             <a href={manualSearchUrl(bike)} target="_blank" rel="noreferrer noopener" className={linkButtonClass}>
-              <Search size={13} className="text-amber-500" /> Search the web
+              <Search size={13} className="text-accent" /> Search the web
             </a>
           </div>
 
@@ -198,16 +198,16 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
               )}
             </div>
           </form>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-muted">
             Prefer the manufacturer&apos;s own site. Links from other riders are reviewed before they&apos;re shared.
           </p>
         </div>
       )}
 
-      <div className="mt-4 border-t border-slate-200 pt-3 dark:border-slate-800">
-        <h3 className={`inline-flex items-center gap-1.5 ${ui.sectionTitle}`}>
-          <ListChecks size={14} className="text-amber-500" />
-          Manufacturer Schedule
+      <div className="mt-4 border-t border-line pt-3">
+        <h3 className={`inline-flex items-center gap-1.5 ${ui.subTitle}`}>
+          <ListChecks size={14} className="text-accent" />
+          Manufacturer schedule
         </h3>
 
         {schedule.loading ? (
@@ -219,14 +219,13 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
               {schedule.data.source && <span className={ui.muted}> · from the {schedule.data.source}</span>}
             </span>
             {schedule.data.status === 'pending' && (
-              <span className="rounded-md bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+              <span className={`${ui.tag} bg-warn/10 text-warn`}>
                 Waiting for review
               </span>
             )}
             <ConfirmPopover
               message="Update your checklist from this schedule? Matching tasks get its intervals and missing ones are added. Starter tasks it replaces are removed unless you logged service for them. Tasks you added yourself are kept."
               confirmLabel="Update checklist"
-              destructive={false}
               align="left"
               onConfirm={() => void handleApplySchedule()}
             >
@@ -237,7 +236,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
               )}
             </ConfirmPopover>
             {isAdmin && (
-              <button type="button" onClick={() => setImportOpen(true)} className={`text-xs font-semibold ${ui.muted} hover:text-amber-600`}>
+              <button type="button" onClick={() => setImportOpen(true)} className={`text-xs font-semibold ${ui.muted} hover:text-fg`}>
                 Re-import
               </button>
             )}
@@ -278,7 +277,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
         <p
           className={`mt-3 ${
             message?.tone === 'info'
-              ? 'rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/30 dark:text-emerald-300'
+              ? ui.successBox
               : ui.errorBox
           }`}
         >

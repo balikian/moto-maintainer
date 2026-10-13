@@ -25,7 +25,7 @@ type MaintenanceChecklistProps = {
 
 /**
  * The bike's tasks, most due first. Anything overdue, urgent, or coming up
- * soon is always shown; healthy tasks sit in a collapsible "All good" group.
+ * soon is a card; healthy tasks are compact rows in a collapsible "All good" list.
  */
 export default function MaintenanceChecklist({
   bike,
@@ -44,13 +44,14 @@ export default function MaintenanceChecklist({
   const { needsAttention, healthy } = groupTasksByUrgency(tasks, bike.current_mileage, new Date());
   const allEntries = [...needsAttention, ...healthy];
 
-  const renderCard = ({ task, dueState }: { task: MaintenanceTask; dueState: TaskDueState }) => (
+  const renderTask = ({ task, dueState }: { task: MaintenanceTask; dueState: TaskDueState }, variant: 'card' | 'row') => (
     <TaskCard
       key={task.id}
       task={task}
       dueState={dueState}
       neverLogged={!loggedTaskIds.has(task.id)}
       unitSystem={unitSystem}
+      variant={variant}
       onLog={() => onLogTask(task)}
       onSaveIntervals={(intervals) => onSaveIntervals(task, intervals)}
       alsoComingUp={dueState.status === 'Healthy' ? [] : batchCandidates(task, allEntries)}
@@ -62,17 +63,11 @@ export default function MaintenanceChecklist({
   return (
     <section>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className={ui.sectionTitle}>Maintenance Checklist</h2>
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={onOpenManual} className={ui.chipButton}>
-            <BookOpen size={14} className="text-amber-500" />
-            Manual &amp; schedule
-          </button>
-          <button type="button" onClick={onAddTask} className={ui.chipButton}>
-            <Plus size={14} className="text-amber-500" />
-            Add Task
-          </button>
-        </div>
+        <h2 className={ui.sectionTitle}>Needs attention</h2>
+        <button type="button" onClick={onOpenManual} className={ui.chipButton}>
+          <BookOpen size={15} />
+          Manual &amp; schedule
+        </button>
       </div>
 
       {loading ? (
@@ -80,38 +75,46 @@ export default function MaintenanceChecklist({
       ) : tasks.length === 0 ? (
         <div className={ui.emptyState}>No maintenance tasks for this bike yet. Add one to start tracking.</div>
       ) : (
-        <div className="grid gap-3">
+        <div className="grid gap-2.5">
           {needsAttention.length > 0 ? (
-            needsAttention.map(renderCard)
+            needsAttention.map((entry) => renderTask(entry, 'card'))
           ) : (
-            <div className={`flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-sm ${ui.muted}`}>
-              <CheckCircle size={16} className="shrink-0 text-emerald-500" />
-              Nothing due soon. Everything on this bike is in good shape.
+            <div className={`${ui.card} flex items-center gap-3 px-4 py-4 text-sm`}>
+              <CheckCircle size={20} className="shrink-0 text-good" aria-hidden="true" />
+              <span>
+                <span className="font-bold">Nothing due soon.</span> <span className={ui.muted}>Go ride.</span>
+              </span>
             </div>
           )}
 
           {healthy.length > 0 && (
-            <div>
+            <div className="mt-4">
               <button
                 type="button"
                 onClick={toggleHealthy}
                 aria-expanded={!healthyCollapsed}
                 aria-controls="healthy-tasks"
-                className={`inline-flex items-center gap-1.5 py-1 hover:text-slate-700 dark:hover:text-slate-300 ${ui.sectionTitle}`}
+                className="inline-flex min-h-11 items-center gap-2"
               >
-                <ChevronDown size={14} className={`transition-transform ${healthyCollapsed ? '-rotate-90' : ''}`} />
-                All good
-                <span className="rounded-md bg-slate-200 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                  {healthy.length}
-                </span>
+                <ChevronDown size={16} className={`transition-transform ${healthyCollapsed ? '-rotate-90' : ''}`} aria-hidden="true" />
+                <span className={ui.sectionTitle}>All good</span>
+                <span className="rounded-md bg-raised px-2 py-0.5 text-xs font-extrabold text-muted">{healthy.length}</span>
               </button>
-              <div id="healthy-tasks" hidden={healthyCollapsed} className="mt-2">
-                <div className="grid gap-3">{healthy.map(renderCard)}</div>
-              </div>
+              <ul id="healthy-tasks" hidden={healthyCollapsed} className={`mt-1 divide-y divide-line ${ui.card}`}>
+                {healthy.map((entry) => renderTask(entry, 'row'))}
+              </ul>
             </div>
           )}
         </div>
       )}
+
+      <button
+        type="button"
+        onClick={onAddTask}
+        className="mt-3 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-line text-sm font-bold text-muted transition-colors hover:border-line-strong hover:text-fg"
+      >
+        <Plus size={15} /> Add a custom task
+      </button>
     </section>
   );
 }

@@ -10,7 +10,7 @@ import {
   updateTaskIntervalsAction,
 } from '@/lib/actions/tasks';
 import type { CustomModel } from '@/lib/bikeCatalog';
-import { findDefaultTask, scheduleOverlapsTasks } from '@/lib/maintenance';
+import { countTasksByStatus, findDefaultTask, scheduleOverlapsTasks } from '@/lib/maintenance';
 import { fetchModelSchedule } from '@/lib/modelData';
 import { createClient } from '@/lib/supabase/client';
 import type { MaintenanceTask, ModelSchedule, Motorcycle, ServiceLog } from '@/lib/types';
@@ -241,7 +241,7 @@ export default function GarageDashboard() {
     return (
       <div className={`flex items-center justify-center p-4 ${ui.page}`}>
         <div className="flex flex-col items-center gap-4">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-accent border-t-transparent" />
           <p className={`text-sm ${ui.muted}`}>Checking your garage access…</p>
         </div>
       </div>
@@ -253,13 +253,18 @@ export default function GarageDashboard() {
   }
 
   const avatarUrl = (user.user_metadata?.avatar_url || user.user_metadata?.picture || null) as string | null;
+  const statusCounts = activeBike && !tasksQuery.loading && tasks.length > 0
+    ? countTasksByStatus(tasks, activeBike.current_mileage, new Date())
+    : null;
 
   return (
     <div className={`relative p-4 md:p-8 ${ui.page}`}>
       <GarageHeader
         avatarUrl={avatarUrl}
+        email={user.email ?? null}
         bikes={bikes}
         activeBike={activeBike}
+        statusCounts={statusCounts}
         unitSystem={unitSystem}
         theme={theme}
         isAdmin={isAdmin}
@@ -285,7 +290,7 @@ export default function GarageDashboard() {
         {activeBike ? (
           <>
             {unappliedSchedule && (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-200">
+              <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${ui.infoBox}`}>
                 <span>
                   The manufacturer&apos;s maintenance schedule for your {activeBike.make} {activeBike.model} is available (
                   {unappliedSchedule.model_schedule_tasks.length} tasks). Your checklist doesn&apos;t use it yet.
@@ -324,7 +329,7 @@ export default function GarageDashboard() {
         ) : (
           <div className={ui.emptyState}>
             Your garage is empty.{' '}
-            <button type="button" onClick={() => setDialog({ type: 'addBike' })} className="font-semibold text-amber-600 hover:underline dark:text-amber-500">
+            <button type="button" onClick={() => setDialog({ type: 'addBike' })} className="font-bold text-accent hover:underline">
               Add your first bike
             </button>{' '}
             to start tracking maintenance.

@@ -39,9 +39,9 @@ export default async function PrintHistoryPage({ params }: { params: Promise<{ b
   if (!bikeResult.data) notFound();
 
   return (
-    <div className="min-h-screen w-full bg-slate-100 print:bg-white">
+    <div className="theme-light min-h-screen w-full bg-page text-fg print:bg-white">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 p-4 print:hidden">
-        <Link href="/" className="text-sm font-semibold text-slate-600 hover:text-slate-900">
+        <Link href="/" className="text-sm font-bold text-muted hover:text-fg">
           ← Back to garage
         </Link>
         <PrintButton />

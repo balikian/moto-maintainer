@@ -24,7 +24,7 @@ export default function ImportScheduleButton({ make, model, yearFrom, yearTo }: 
       <button type="button" onClick={() => setOpen(true)} className={`${ui.primaryButton} px-3 py-1.5 text-xs`}>
         <Sparkles size={14} /> Import schedule
       </button>
-      {summary && <p className="text-sm text-emerald-700 dark:text-emerald-300">{summary}</p>}
+      {summary && <p className="text-sm text-good">{summary}</p>}
       {open && (
         <ImportScheduleModal
           bike={{ make, model, year: yearTo }}

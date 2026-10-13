@@ -29,13 +29,13 @@ export default async function SharedHistoryPage({ params }: { params: Promise<{ 
 
   if (!shared) {
     return (
-      <div className="flex min-h-screen w-full items-center justify-center bg-slate-100 p-4 text-slate-900">
-        <div className="max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
+      <div className="theme-light flex min-h-screen w-full items-center justify-center bg-page p-4 text-fg">
+        <div className="max-w-md rounded-2xl bg-surface p-8 text-center shadow-lg">
           <div className="flex justify-center">
             <BrandLogo className="h-12" lightOnly />
           </div>
-          <h1 className="mt-3 text-lg font-bold">This link isn&apos;t available</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <h1 className="mt-3 text-lg font-extrabold">This link isn&apos;t available</h1>
+          <p className="mt-2 text-sm text-muted">
             The owner may have turned off sharing for this service history, or the link was copied incorrectly.
           </p>
         </div>
@@ -44,9 +44,9 @@ export default async function SharedHistoryPage({ params }: { params: Promise<{ 
   }
 
   return (
-    <div className="min-h-screen w-full bg-slate-100 print:bg-white">
+    <div className="theme-light min-h-screen w-full bg-page text-fg print:bg-white">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 p-4 print:hidden">
-        <p className="text-sm text-slate-600">Shared with you from SwingArm</p>
+        <p className="text-sm text-muted">Shared with you from SwingArm</p>
         <PrintButton />
       </div>
       <div className="pb-10 print:pb-0">

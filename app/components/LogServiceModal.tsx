@@ -103,7 +103,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
 
   return (
     <Modal
-      title="Log Service"
+      title="Log service"
       description={`Record maintenance details for ${task?.task_name ?? 'this bike'}.`}
       size="lg"
       onClose={onClose}
@@ -121,13 +121,13 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
             {tasks.map((option) => (
               <option key={option.id} value={option.id}>{option.task_name}</option>
             ))}
-            <option value={CUSTOM_ONE_OFF_VALUE}>+ Custom / One-Off Service</option>
+            <option value={CUSTOM_ONE_OFF_VALUE}>+ Something else (one-off job)</option>
           </select>
         </div>
 
         {related.length > 0 && selectedTask && (
-          <fieldset className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2.5">
-            <legend className="px-1 text-xs font-semibold text-amber-700 dark:text-amber-400">
+          <fieldset className="rounded-xl border border-warn/30 bg-warn/5 px-3 py-2.5">
+            <legend className="px-1 text-sm font-bold text-warn">
               While you&apos;re at it: also coming up in {categoryLabel(taskCategory(selectedTask))}
             </legend>
             <div className="space-y-1.5">
@@ -137,7 +137,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
                     type="checkbox"
                     checked={alsoTaskIds.includes(candidate.id)}
                     onChange={() => toggleAlso(candidate.id)}
-                    className="h-4 w-4 accent-amber-500"
+                    className="h-4 w-4 accent-brand"
                   />
                   {candidate.task_name}
                 </label>
@@ -149,7 +149,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
 
         {isCustom && (
           <div>
-            <label htmlFor="log-custom-name" className={ui.label}>Service Name / Description</label>
+            <label htmlFor="log-custom-name" className={ui.label}>What was done</label>
             <input
               id="log-custom-name"
               type="text"
@@ -164,7 +164,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label htmlFor="log-date" className={ui.label}>Date Performed</label>
+            <label htmlFor="log-date" className={ui.label}>Date</label>
             <input
               id="log-date"
               type="date"
@@ -189,7 +189,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
         </div>
 
         <div>
-          <label htmlFor="log-cost" className={ui.label}>Cost (Optional)</label>
+          <label htmlFor="log-cost" className={ui.label}>Cost (optional)</label>
           <input
             id="log-cost"
             type="number"
@@ -203,7 +203,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
         </div>
 
         <div>
-          <label htmlFor="log-notes" className={ui.label}>Service Notes / Parts Used</label>
+          <label htmlFor="log-notes" className={ui.label}>Notes and parts used</label>
           <textarea
             id="log-notes"
             value={notes}
@@ -222,7 +222,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
           </button>
           <button type="submit" disabled={saving} className={ui.primaryButton}>
             <Check size={16} />
-            {saving ? 'Saving…' : 'Save Service Log'}
+            {saving ? 'Saving…' : 'Save service'}
           </button>
         </div>
       </form>

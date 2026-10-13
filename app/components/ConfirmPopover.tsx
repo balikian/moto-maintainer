@@ -7,8 +7,6 @@ type ConfirmPopoverProps = {
   /** What will happen, e.g. `Delete "Oil change"? Its service records are kept.` */
   message: string;
   confirmLabel: string;
-  /** Styles the confirm button red for deletes. */
-  destructive?: boolean;
   /** Which edge of the trigger the box lines up with. */
   align?: 'left' | 'right';
   onConfirm: () => void;
@@ -20,7 +18,7 @@ type ConfirmPopoverProps = {
  * A small "are you sure?" box next to the button that asked, instead of a
  * browser alert. Closes on Escape, Cancel, or a click outside it.
  */
-export default function ConfirmPopover({ message, confirmLabel, destructive = true, align = 'right', onConfirm, children }: ConfirmPopoverProps) {
+export default function ConfirmPopover({ message, confirmLabel, align = 'right', onConfirm, children }: ConfirmPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const boxId = useId();
   const wrapperRef = useRef<HTMLSpanElement>(null);
@@ -59,7 +57,7 @@ export default function ConfirmPopover({ message, confirmLabel, destructive = tr
             align === 'right' ? 'right-0' : 'left-0'
           }`}
         >
-          <span className="block text-sm font-normal normal-case tracking-normal text-slate-700 dark:text-slate-200">{message}</span>
+          <span className="block text-sm font-medium normal-case tracking-normal text-fg">{message}</span>
           <span className="mt-3 flex justify-end gap-2">
             <button type="button" onClick={() => setIsOpen(false)} className={`${ui.secondaryButton} px-3 py-1.5 text-xs`}>
               Cancel
@@ -71,11 +69,7 @@ export default function ConfirmPopover({ message, confirmLabel, destructive = tr
                 setIsOpen(false);
                 onConfirm();
               }}
-              className={
-                destructive
-                  ? 'inline-flex items-center justify-center rounded-xl bg-rose-600 px-3 py-1.5 text-xs font-bold text-white transition-colors hover:bg-rose-500'
-                  : `${ui.primaryButton} px-3 py-1.5 text-xs`
-              }
+              className={`${ui.primaryButton} px-3 py-1.5 text-xs`}
             >
               {confirmLabel}
             </button>

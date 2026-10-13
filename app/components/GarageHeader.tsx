@@ -1,15 +1,20 @@
 'use client';
 
+import type { TaskStatus } from '@/lib/maintenance';
 import type { Motorcycle, Theme, UnitSystem } from '@/lib/types';
 import BikeSwitcher from './BikeSwitcher';
 import BrandLogo from './BrandLogo';
 import OdometerControl from './OdometerControl';
 import UserMenu from './UserMenu';
+import { ui } from './ui';
 
 type GarageHeaderProps = {
   avatarUrl: string | null;
+  email: string | null;
   bikes: Motorcycle[];
   activeBike: Motorcycle | null;
+  /** The active bike's tasks by status; null while they load. */
+  statusCounts: Record<TaskStatus, number> | null;
   unitSystem: UnitSystem;
   theme: Theme;
   isAdmin: boolean;
@@ -22,15 +27,25 @@ type GarageHeaderProps = {
   onToggleTheme: () => void;
 };
 
+const STATUS_TILES: { status: TaskStatus; label: string; color: string }[] = [
+  { status: 'Overdue', label: 'Overdue', color: 'text-danger' },
+  { status: 'Urgent', label: 'Urgent', color: 'text-danger' },
+  { status: 'Soon', label: 'Soon', color: 'text-warn' },
+  { status: 'Healthy', label: 'All good', color: 'text-muted' },
+];
+
 export default function GarageHeader(props: GarageHeaderProps) {
+  const { statusCounts } = props;
+
   return (
-    <header className="relative mx-auto mb-8 max-w-4xl rounded-2xl border border-l-4 border-slate-200 border-l-amber-500 bg-white/80 p-5 shadow-xl backdrop-blur-md dark:border-slate-800 dark:border-l-amber-500 dark:bg-slate-900/80">
-      <div className="flex items-start justify-between gap-4">
+    <header className="mx-auto mb-6 max-w-4xl">
+      <div className="flex items-center justify-between gap-4">
         <h1>
-          <BrandLogo className="h-12 sm:h-14" />
+          <BrandLogo className="h-10 sm:h-12" />
         </h1>
         <UserMenu
           avatarUrl={props.avatarUrl}
+          email={props.email}
           unitSystem={props.unitSystem}
           theme={props.theme}
           isAdmin={props.isAdmin}
@@ -39,7 +54,7 @@ export default function GarageHeader(props: GarageHeaderProps) {
         />
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3">
+      <section aria-label="Your bike" className={`${ui.card} mt-4 space-y-3.5 p-4`}>
         <BikeSwitcher
           bikes={props.bikes}
           activeBike={props.activeBike}
@@ -49,13 +64,27 @@ export default function GarageHeader(props: GarageHeaderProps) {
           onEdit={props.onEditBike}
           onRemove={props.onRemoveBike}
         />
-        <OdometerControl
-          key={props.activeBike?.id ?? 'none'}
-          bike={props.activeBike}
-          unitSystem={props.unitSystem}
-          onSave={props.onUpdateOdometer}
-        />
-      </div>
+        {props.activeBike && (
+          <div className="border-t border-line pt-3.5">
+            <OdometerControl
+              key={props.activeBike.id}
+              bike={props.activeBike}
+              unitSystem={props.unitSystem}
+              onSave={props.onUpdateOdometer}
+            />
+          </div>
+        )}
+        {statusCounts && (
+          <ul aria-label="Tasks by status" className="grid grid-cols-4 gap-1.5">
+            {STATUS_TILES.map(({ status, label, color }) => (
+              <li key={status} className={`rounded-xl bg-raised px-1 py-2 text-center ${color}`}>
+                <span className="block text-2xl font-extrabold leading-none tabular-nums">{statusCounts[status]}</span>
+                <span className="mt-1 block text-xs font-bold">{label}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </header>
   );
 }

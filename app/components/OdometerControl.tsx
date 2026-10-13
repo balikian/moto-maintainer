@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, type SubmitEvent } from 'react';
-import { Check, Gauge, X } from 'lucide-react';
+import { useId, useState, type SubmitEvent } from 'react';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
-import { distanceUnitLabel, formatDistance, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
+import { distanceUnitLabel, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
+import { ui } from './ui';
 
 type OdometerControlProps = {
-  bike: Motorcycle | null;
+  bike: Motorcycle;
   unitSystem: UnitSystem;
   /** Receives miles; resolves to an error message, or null on success. */
   onSave: (miles: number) => Promise<string | null>;
@@ -16,6 +16,8 @@ export default function OdometerControl({ bike, unitSystem, onSave }: OdometerCo
   const [draft, setDraft] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const inputId = useId();
+  const unitLabel = distanceUnitLabel(unitSystem);
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
@@ -36,39 +38,23 @@ export default function OdometerControl({ bike, unitSystem, onSave }: OdometerCo
     setError(null);
   };
 
-  return (
-    <div className="inline-flex flex-wrap items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs dark:border-slate-800 dark:bg-slate-950">
-      <Gauge size={14} className="text-amber-500" />
-      <span className="font-mono font-bold">{bike ? formatDistance(bike.current_mileage, unitSystem) : '--'}</span>
-
-      {draft === null ? (
-        <button
-          type="button"
-          disabled={!bike}
-          onClick={() => bike && setDraft(String(toDisplayDistance(bike.current_mileage, unitSystem)))}
-          className="rounded-lg bg-amber-500/10 px-2 py-1 text-[11px] font-bold text-amber-600 transition-colors hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-500 dark:hover:text-amber-400"
-        >
-          Update
-        </button>
-      ) : (
-        <form onSubmit={handleSubmit} className="inline-flex items-center gap-1">
+  if (draft !== null) {
+    return (
+      <form onSubmit={handleSubmit}>
+        <label htmlFor={inputId} className={ui.label}>Odometer ({unitLabel})</label>
+        <div className="flex flex-wrap items-center gap-2">
           <input
+            id={inputId}
             type="text"
             inputMode="numeric"
             value={draft}
             onChange={(event) => setDraft(event.target.value)}
             onFocus={(event) => event.currentTarget.select()}
-            className="w-24 rounded-lg border border-slate-300 bg-slate-100 px-2 py-1 font-mono text-xs text-slate-900 focus:border-amber-500 focus:outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
-            placeholder={`New ${distanceUnitLabel(unitSystem)}`}
-            aria-label={`Odometer in ${distanceUnitLabel(unitSystem)}`}
+            className={`${ui.input} w-36 text-lg font-bold tabular-nums`}
             autoFocus
           />
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center gap-1 rounded-lg bg-amber-500 px-2 py-1 text-[11px] font-bold text-slate-950 transition-colors hover:bg-amber-600 disabled:opacity-70"
-          >
-            <Check size={11} /> {saving ? 'Saving…' : 'Save'}
+          <button type="submit" disabled={saving} className={ui.primaryButton}>
+            {saving ? 'Saving…' : 'Save'}
           </button>
           <button
             type="button"
@@ -76,13 +62,34 @@ export default function OdometerControl({ bike, unitSystem, onSave }: OdometerCo
               setDraft(null);
               setError(null);
             }}
-            className="inline-flex items-center gap-1 rounded-lg bg-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-700 transition-colors hover:text-slate-900 dark:bg-slate-800 dark:text-slate-300 dark:hover:text-slate-100"
+            className={ui.secondaryButton}
           >
-            <X size={11} /> Cancel
+            Cancel
           </button>
-        </form>
-      )}
-      {error && <span className="text-rose-600 dark:text-rose-400">{error}</span>}
+        </div>
+        {error && <p className="mt-2 text-sm text-danger">{error}</p>}
+      </form>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <div>
+        <span className="block text-sm font-semibold text-muted">Odometer</span>
+        <span className="flex items-baseline gap-1.5">
+          <span className="text-3xl font-extrabold tracking-tight tabular-nums">
+            {toDisplayDistance(bike.current_mileage, unitSystem).toLocaleString()}
+          </span>
+          <span className="text-base font-bold text-muted">{unitLabel}</span>
+        </span>
+      </div>
+      <button
+        type="button"
+        onClick={() => setDraft(String(toDisplayDistance(bike.current_mileage, unitSystem)))}
+        className={ui.secondaryButton}
+      >
+        Update
+      </button>
     </div>
   );
 }
