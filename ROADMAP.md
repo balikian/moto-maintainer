@@ -94,8 +94,15 @@ project: one (used for everything so far). Git: commit straight to `main`.
     light phone). Migration `20261013000000_theme_auto.sql` makes Auto the
     default for new profiles and adds a check constraint (needs running).
   - ⏳ Desktop layout: for now it's the phone layout in a centered column
-    with the bar at the bottom. Mock up first: probably a centered column
-    with the bar as a top or side menu.
+    with the bar at the bottom. Two mockups (2026-10-13) on the design
+    canvas, row "Desktop layout": **1 · Top bar:** logo, Tasks/History/
+    Garage tabs, a red Log service button and the avatar (which opens More)
+    across the top; the bike panel and a "Your bikes" list in a left
+    column, task cards two across on the right. **2 · Side menu:** a left
+    menu with the logo, Log service, the four screens, a bikes list with
+    status dots, and the account at the bottom; the bike panel runs across
+    the top of a single column of wide task cards (bar in the middle).
+    **Open:** which one. Phones keep the bottom bar either way.
 - 🔨 Mockups (2026-10-12): three directions, each as a phone dashboard
   (clickable: open a task, collapse "All good", switch light/dark) and a task
   card in all its states, on the design canvas
