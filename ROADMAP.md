@@ -173,9 +173,25 @@ project: one (used for everything so far). Git: commit straight to `main`.
 - Move migrations to the **Supabase CLI** so the same files apply to both
   databases in order (no more pasting into the SQL Editor twice).
 - Secrets per environment in Vercel (Supabase URL/key, `ANTHROPIC_API_KEY`).
-- Email for **support@swingarm.app** (decided 2026-10-13; the home page
-  and More link to it): a mailbox or forwarding on swingarm.app, set up in
-  GoDaddy DNS. Mail to it bounces until then.
+- ⏳ Email for **support@swingarm.app** (decided 2026-10-13; the home page
+  and More link to it). Mail to it bounces until this is done. Plan, where
+  we stopped on 2026-10-13 (nothing set up yet):
+  1. Receiving: **ImprovMX** free forwarding, `support` → the owner's
+     inbox (Thunderbird). GoDaddy DNS: MX `mx1.improvmx.com` (10) and
+     `mx2.improvmx.com` (20), TXT `v=spf1 include:spf.improvmx.com ~all`
+     (use ImprovMX's exact values; one SPF record per domain).
+  2. Replying as support@: **Resend** for swingarm.app (DKIM and `send`
+     subdomain records in GoDaddy), an API key limited to swingarm.app,
+     then in Thunderbird an outgoing server `smtp.resend.com` (465 SSL/TLS,
+     user `resend`, password = API key) and a "SwingArm Support" identity
+     that replies as support@ through it ("Reply from this identity when
+     delivery headers match: support@swingarm.app"). Sending as support@
+     through the owner's own mail server would fail DMARC (`_dmarc` is
+     p=quarantine) and land in spam.
+  3. Test from another account: arrives, reply's From switches, DMARC
+     passes.
+  The same Resend account later sends Supabase's sign-in emails as
+  noreply@swingarm.app (custom SMTP, branded templates).
 - Also: custom domain, Google (and Apple) sign-in redirect URLs for both
   sites, error monitoring (e.g. Sentry), database backups on prod.
 
