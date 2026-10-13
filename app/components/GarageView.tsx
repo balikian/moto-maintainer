@@ -26,7 +26,8 @@ const SUMMARY: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'Soon', label: 'soon', color: 'text-warn' },
 ];
 
-function StatusLine({ tasks, mileage }: { tasks: MaintenanceTask[]; mileage: number }) {
+/** "2 overdue · 1 soon", "All good" or "No tasks yet" for one bike. */
+export function BikeStatusLine({ tasks, mileage }: { tasks: MaintenanceTask[]; mileage: number }) {
   if (tasks.length === 0) return <span className="text-muted">No tasks yet</span>;
   const counts = countTasksByStatus(tasks, mileage, new Date());
   const parts = SUMMARY.filter(({ status }) => counts[status] > 0);
@@ -53,7 +54,7 @@ export default function GarageView({ bikes, activeBikeId, allTasks, unitSystem, 
       {bikes.length === 0 ? (
         <div className={ui.emptyState}>Your garage is empty. Add your first bike to start tracking maintenance.</div>
       ) : (
-        <ul className="grid gap-2.5">
+        <ul className="grid gap-2.5 lg:grid-cols-2">
           {bikes.map((bike) => {
             const name = `${bike.year} ${bike.make} ${bike.model}`;
             const isActive = bike.id === activeBikeId;
@@ -68,7 +69,7 @@ export default function GarageView({ bikes, activeBikeId, allTasks, unitSystem, 
                     <span className="tabular-nums">{formatDistance(bike.current_mileage, unitSystem)}</span>
                     <span className="text-muted"> · </span>
                     {allTasks ? (
-                      <StatusLine tasks={allTasks.filter((task) => task.motorcycle_id === bike.id)} mileage={bike.current_mileage} />
+                      <BikeStatusLine tasks={allTasks.filter((task) => task.motorcycle_id === bike.id)} mileage={bike.current_mileage} />
                     ) : (
                       <span className="text-muted">…</span>
                     )}

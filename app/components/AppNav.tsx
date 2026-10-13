@@ -12,16 +12,17 @@ type AppNavProps = {
   canLogService: boolean;
 };
 
-const TABS: { view: View; label: string; Icon: LucideIcon }[] = [
+/** The screens, in bar order. On desktop, More is reached from the avatar instead. */
+export const NAV_TABS: { view: View; label: string; Icon: LucideIcon }[] = [
   { view: 'tasks', label: 'Tasks', Icon: Wrench },
   { view: 'history', label: 'History', Icon: HistoryIcon },
   { view: 'garage', label: 'Garage', Icon: Bike },
   { view: 'more', label: 'More', Icon: Menu },
 ];
 
-/** The bottom bar: four screens, with Log service (the common action) raised in the middle. */
+/** The phone's bottom bar: four screens, with Log service (the common action) raised in the middle. Desktop uses DesktopHeader. */
 export default function AppNav({ view, onNavigate, onLogService, canLogService }: AppNavProps) {
-  const tab = ({ view: target, label, Icon }: (typeof TABS)[number]) => {
+  const tab = ({ view: target, label, Icon }: (typeof NAV_TABS)[number]) => {
     const isCurrent = target === view;
     return (
       <ViewLink
@@ -42,10 +43,10 @@ export default function AppNav({ view, onNavigate, onLogService, canLogService }
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 print:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 print:hidden lg:hidden"
     >
       <div className="mx-auto grid max-w-lg grid-cols-5 items-end px-2">
-        {TABS.slice(0, 2).map(tab)}
+        {NAV_TABS.slice(0, 2).map(tab)}
         <button
           type="button"
           onClick={onLogService}
@@ -57,7 +58,7 @@ export default function AppNav({ view, onNavigate, onLogService, canLogService }
           </span>
           Log service
         </button>
-        {TABS.slice(2).map(tab)}
+        {NAV_TABS.slice(2).map(tab)}
       </div>
     </nav>
   );

@@ -18,8 +18,10 @@ import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
 import AddCustomTaskModal, { type NewTaskValues } from './components/AddCustomTaskModal';
 import AppNav from './components/AppNav';
 import BikeManualPanel from './components/BikeManualPanel';
+import BikeList from './components/BikeList';
 import BikePanel from './components/BikePanel';
 import BrandLogo from './components/BrandLogo';
+import DesktopHeader from './components/DesktopHeader';
 import ErrorList from './components/ErrorList';
 import GarageView from './components/GarageView';
 import LoadingScreen from './components/LoadingScreen';
@@ -34,12 +36,20 @@ import { ui } from './components/ui';
 import { useAuthUser } from './hooks/useAuthUser';
 import { usePreferences } from './hooks/usePreferences';
 import { useSupabaseQuery } from './hooks/useSupabaseQuery';
-import { useView } from './hooks/useView';
+import { useView, type View } from './hooks/useView';
 
 // Reads go straight from the browser to Supabase; writes go through the server
 // actions in lib/actions. Row-level security keeps both scoped to the user.
 
 const NO_CUSTOM_MODELS: CustomModel[] = [];
+
+/** How wide each screen gets on desktop: Tasks has two columns; lists and settings read better narrower. */
+const DESKTOP_WIDTH: Record<View, string> = {
+  tasks: 'lg:max-w-[1180px]',
+  history: 'lg:max-w-3xl',
+  garage: 'lg:max-w-4xl',
+  more: 'lg:max-w-2xl',
+};
 
 type OpenDialog =
   | { type: 'addBike' }
@@ -87,10 +97,14 @@ export default function GarageApp() {
   );
   const loggedTaskIds = new Set((logsQuery.data ?? []).flatMap((log) => (log.task_id ? [log.task_id] : [])));
 
-  // Every bike's tasks, for Garage's "2 overdue · 1 soon" lines. Loaded fresh each time Garage opens.
-  const allTasksQuery = useSupabaseQuery<MaintenanceTask[]>(view === 'garage' ? userId : null, () =>
+  // Every bike's tasks, for the "2 overdue · 1 soon" lines in Garage and the desktop bike list.
+  const allTasksQuery = useSupabaseQuery<MaintenanceTask[]>(userId, () =>
     supabase.from('maintenance_tasks').select('*')
   );
+  const reloadTasks = () => {
+    tasksQuery.reload();
+    allTasksQuery.reload();
+  };
 
   // Admins see a link to the review page. The page itself re-checks on the server.
   const adminQuery = useSupabaseQuery<boolean>(userId, () => supabase.rpc('is_app_admin'));
@@ -162,14 +176,14 @@ export default function GarageApp() {
     const result = await createMaintenanceTaskAction({ motorcycleId: activeBike.id, ...values });
     if (result.error) return result.error;
     setDialog(null);
-    tasksQuery.reload();
+    reloadTasks();
     return null;
   };
 
   const handleSaveIntervals = async (task: MaintenanceTask, intervals: { intervalMileage: number; intervalMonths: number }) => {
     const result = await updateTaskIntervalsAction(task.id, intervals);
     if (result.error) return result.error;
-    tasksQuery.reload();
+    reloadTasks();
     return null;
   };
 
@@ -191,7 +205,7 @@ export default function GarageApp() {
       reportError(`Unable to reset ${task.task_name}: ${result.error}`);
       return;
     }
-    tasksQuery.reload();
+    reloadTasks();
   };
 
   const handleDeleteTask = async (task: MaintenanceTask) => {
@@ -200,7 +214,7 @@ export default function GarageApp() {
       reportError(`Unable to delete ${task.task_name}: ${result.error}`);
       return;
     }
-    tasksQuery.reload();
+    reloadTasks();
     logsQuery.reload();
   };
 
@@ -237,16 +251,15 @@ export default function GarageApp() {
 
     setDialog(null);
     bikesQuery.reload();
-    tasksQuery.reload();
+    reloadTasks();
     logsQuery.reload();
-    allTasksQuery.reload();
     return null;
   };
 
   const handleDeleteLog = async (log: ServiceLog) => {
     const result = await deleteServiceLogAction(log.id);
     if (result.error) return result.error;
-    tasksQuery.reload();
+    reloadTasks();
     logsQuery.reload();
     return null;
   };
@@ -283,12 +296,25 @@ export default function GarageApp() {
     </TopBar>
   );
 
+  const logService = () => setDialog({ type: 'logService', task: null });
+
   return (
     <div className={ui.page}>
-      {/* Bottom padding keeps the last item clear of the bottom bar. */}
-      <main className="mx-auto grid max-w-2xl gap-6 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 md:px-8 md:pt-8">
+      <DesktopHeader
+        view={view}
+        avatarUrl={avatarUrl}
+        email={email}
+        onNavigate={setView}
+        onLogService={logService}
+        canLogService={activeBike !== null}
+      />
+
+      {/* Bottom padding keeps the last item clear of the phone's bottom bar. */}
+      <main
+        className={`mx-auto grid max-w-2xl gap-6 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 md:px-8 md:pt-8 lg:pb-12 lg:pt-7 ${DESKTOP_WIDTH[view]}`}
+      >
         {view === 'tasks' ? (
-          <TopBar avatarUrl={avatarUrl} email={email} onNavigate={setView}>
+          <TopBar avatarUrl={avatarUrl} email={email} onNavigate={setView} className="lg:hidden">
             <h1>
               <BrandLogo className="h-10 sm:h-12" />
             </h1>
@@ -307,44 +333,58 @@ export default function GarageApp() {
         />
 
         {view === 'tasks' && (activeBike ? (
-          <>
-            <BikePanel
-              bikes={bikes}
-              activeBike={activeBike}
-              statusCounts={statusCounts}
-              unitSystem={unitSystem}
-              onSelectBike={setSelectedBikeId}
-              onAddBike={() => setDialog({ type: 'addBike' })}
-              onManageGarage={() => setView('garage')}
-              onUpdateOdometer={handleUpdateOdometer}
-            />
+          // Desktop: the bike and the garage in a left column that stays put, tasks on the right.
+          <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-7">
+            <aside className="grid gap-4 lg:sticky lg:top-24">
+              <BikePanel
+                bikes={bikes}
+                activeBike={activeBike}
+                statusCounts={statusCounts}
+                unitSystem={unitSystem}
+                onSelectBike={setSelectedBikeId}
+                onAddBike={() => setDialog({ type: 'addBike' })}
+                onManageGarage={() => setView('garage')}
+                onUpdateOdometer={handleUpdateOdometer}
+              />
+              <BikeList
+                className="hidden lg:block"
+                bikes={bikes}
+                activeBikeId={activeBike.id}
+                allTasks={allTasksQuery.data}
+                unitSystem={unitSystem}
+                onSelect={setSelectedBikeId}
+                onAdd={() => setDialog({ type: 'addBike' })}
+              />
+            </aside>
 
-            {unappliedSchedule && (
-              <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${ui.infoBox}`}>
-                <span>
-                  The manufacturer&apos;s maintenance schedule for your {activeBike.make} {activeBike.model} is available (
-                  {unappliedSchedule.model_schedule_tasks.length} tasks). Your checklist doesn&apos;t use it yet.
-                </span>
-                <button type="button" onClick={() => setDialog({ type: 'manual' })} className={`${ui.primaryButton} px-3 py-1.5 text-xs`}>
-                  Review &amp; apply
-                </button>
-              </div>
-            )}
+            <div className="grid min-w-0 gap-6">
+              {unappliedSchedule && (
+                <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${ui.infoBox}`}>
+                  <span>
+                    The manufacturer&apos;s maintenance schedule for your {activeBike.make} {activeBike.model} is available (
+                    {unappliedSchedule.model_schedule_tasks.length} tasks). Your checklist doesn&apos;t use it yet.
+                  </span>
+                  <button type="button" onClick={() => setDialog({ type: 'manual' })} className={`${ui.primaryButton} px-3 py-1.5 text-xs`}>
+                    Review &amp; apply
+                  </button>
+                </div>
+              )}
 
-            <MaintenanceChecklist
-              bike={activeBike}
-              tasks={tasks}
-              loggedTaskIds={loggedTaskIds}
-              loading={tasksQuery.loading}
-              unitSystem={unitSystem}
-              onAddTask={() => setDialog({ type: 'addTask' })}
-              onOpenManual={() => setDialog({ type: 'manual' })}
-              onLogTask={(task) => setDialog({ type: 'logService', task })}
-              onSaveIntervals={handleSaveIntervals}
-              onResetTask={(task) => void handleResetTask(task)}
-              onDeleteTask={(task) => void handleDeleteTask(task)}
-            />
-          </>
+              <MaintenanceChecklist
+                bike={activeBike}
+                tasks={tasks}
+                loggedTaskIds={loggedTaskIds}
+                loading={tasksQuery.loading}
+                unitSystem={unitSystem}
+                onAddTask={() => setDialog({ type: 'addTask' })}
+                onOpenManual={() => setDialog({ type: 'manual' })}
+                onLogTask={(task) => setDialog({ type: 'logService', task })}
+                onSaveIntervals={handleSaveIntervals}
+                onResetTask={(task) => void handleResetTask(task)}
+                onDeleteTask={(task) => void handleDeleteTask(task)}
+              />
+            </div>
+          </div>
         ) : addFirstBike)}
 
         {view === 'history' && (activeBike ? (
@@ -354,7 +394,7 @@ export default function GarageApp() {
             tasks={tasks}
             loading={logsQuery.loading}
             unitSystem={unitSystem}
-            onAddLog={() => setDialog({ type: 'logService', task: null })}
+            onAddLog={logService}
             onDeleteLog={handleDeleteLog}
             onShare={() => setDialog({ type: 'share' })}
           />
@@ -393,7 +433,7 @@ export default function GarageApp() {
       <AppNav
         view={view}
         onNavigate={setView}
-        onLogService={() => setDialog({ type: 'logService', task: null })}
+        onLogService={logService}
         canLogService={activeBike !== null}
       />
 
@@ -438,7 +478,7 @@ export default function GarageApp() {
           currentUserId={user.id}
           isAdmin={isAdmin}
           onTasksChanged={() => {
-            tasksQuery.reload();
+            reloadTasks();
             logsQuery.reload();
           }}
           onClose={() => setDialog(null)}

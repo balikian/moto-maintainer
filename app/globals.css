@@ -81,6 +81,14 @@ body {
   font-family: var(--font-manrope), "Helvetica Neue", Arial, sans-serif;
 }
 
+/*
+ * Always reserve the scrollbar's space, so the layout doesn't shift sideways
+ * when a page grows tall enough to scroll (or switching screens changes that).
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
 /* Thin scrollbars in the theme's colors. Phones already show theirs only while scrolling. */
 * {
   scrollbar-width: thin;

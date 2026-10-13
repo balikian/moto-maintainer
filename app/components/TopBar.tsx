@@ -8,20 +8,21 @@ type TopBarProps = {
   children: ReactNode;
   avatarUrl: string | null;
   email: string | null;
-  /** Shows the avatar, which opens More; omit on More itself. */
+  className?: string;
+  /** Shows the avatar, which opens More; omit on More itself. Desktop shows it in DesktopHeader instead. */
   onNavigate?: (view: View) => void;
 };
 
 /** The top of each screen: its title, and the signed-in rider's avatar, which opens More. */
-export default function TopBar({ children, avatarUrl, email, onNavigate }: TopBarProps) {
+export default function TopBar({ children, avatarUrl, email, onNavigate, className = '' }: TopBarProps) {
   return (
-    <header className="flex min-h-12 items-center justify-between gap-4">
+    <header className={`flex min-h-12 items-center justify-between gap-4 ${className}`}>
       {children}
       {onNavigate && (
         <ViewLink
           view="more"
           onNavigate={onNavigate}
-          className="flex h-11 w-11 items-center justify-center rounded-full"
+          className="flex h-11 w-11 items-center justify-center rounded-full lg:hidden"
           aria-label={email ? `Signed in as ${email}. Account and settings` : 'Account and settings'}
           title={email ?? undefined}
         >

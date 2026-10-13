@@ -77,7 +77,10 @@ export default function MaintenanceChecklist({
       ) : (
         <div className="grid gap-2.5">
           {needsAttention.length > 0 ? (
-            needsAttention.map((entry) => renderTask(entry, 'card'))
+            // Two across on desktop; an opened card grows without stretching its neighbor.
+            <div className="grid items-start gap-2.5 lg:grid-cols-2 lg:gap-3">
+              {needsAttention.map((entry) => renderTask(entry, 'card'))}
+            </div>
           ) : (
             <div className={`${ui.card} flex items-center gap-3 px-4 py-4 text-sm`}>
               <CheckCircle size={20} className="shrink-0 text-good" aria-hidden="true" />
