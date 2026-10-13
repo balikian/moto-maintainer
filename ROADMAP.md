@@ -93,16 +93,24 @@ project: one (used for everything so far). Git: commit straight to `main`.
     is cached in the browser so the first paint uses it (no dark flash on a
     light phone). Migration `20261013000000_theme_auto.sql` makes Auto the
     default for new profiles and adds a check constraint (needs running).
-  - ⏳ Desktop layout: for now it's the phone layout in a centered column
-    with the bar at the bottom. Two mockups (2026-10-13) on the design
-    canvas, row "Desktop layout": **1 · Top bar:** logo, Tasks/History/
-    Garage tabs, a red Log service button and the avatar (which opens More)
-    across the top; the bike panel and a "Your bikes" list in a left
-    column, task cards two across on the right. **2 · Side menu:** a left
-    menu with the logo, Log service, the four screens, a bikes list with
-    status dots, and the account at the bottom; the bike panel runs across
-    the top of a single column of wide task cards (bar in the middle).
-    **Open:** which one. Phones keep the bottom bar either way.
+  - ✅ Desktop layout (decided and built 2026-10-13): **Desktop 1 · Top
+    bar** from the canvas. From `lg` (1024px) up: a sticky bar with the
+    logo, Tasks/History/Garage, a red Log service button and the avatar
+    (opens More); Tasks puts the bike panel and a "Your bikes" list in a
+    left column that stays put, with cards needing attention two across.
+    History, Garage and More are centered columns; Garage shows bikes two
+    across. Phones keep the bottom bar. Rejected: a side menu.
+    "All good" stays one column (rows open in place, which two columns
+    would make jumpy).
+  - ✅ No sideways shift when a scrollbar appears: `html` reserves the
+    scrollbar's space (`scrollbar-gutter: stable`).
+  - 🔨 Public home page (asked 2026-10-13): what signed-out visitors see at
+    swingarm.app instead of just the sign-in card: what the app does,
+    pricing, app store links when the apps exist, a short FAQ, and footer
+    links to privacy, terms and contact. Mockup on the canvas, row
+    "Public home page". Pricing shows Free and Pro from step 6 with
+    `[PRICE]` placeholders. **Open:** prices (step 6), and whether More
+    gets an "About SwingArm" link to it.
 - 🔨 Mockups (2026-10-12): three directions, each as a phone dashboard
   (clickable: open a task, collapse "All good", switch light/dark) and a task
   card in all its states, on the design canvas
