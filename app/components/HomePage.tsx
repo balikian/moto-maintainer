@@ -15,8 +15,8 @@ type HomePageProps = {
 
 const FEATURES = [
   {
-    title: 'Your bikeâ€™s real schedule',
-    body: 'Starts from the manufacturerâ€™s maintenance schedule where we have it, or a sensible checklist for your bike. Change any interval.',
+    title: 'Your bike’s real schedule',
+    body: 'Starts from the manufacturer’s maintenance schedule where we have it, or a sensible checklist for your bike. Change any interval.',
   },
   {
     title: 'Miles or months',
@@ -241,7 +241,7 @@ export default function HomePage({ signedIn }: HomePageProps) {
 
       <footer className="border-t border-line">
         <div className={`${wrap} flex flex-wrap justify-between gap-5 pb-9 pt-7 text-sm font-semibold text-muted`}>
-          <span>Â© {new Date().getFullYear()} SwingArm</span>
+          <span>© {new Date().getFullYear()} SwingArm</span>
           <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-fg">
             Contact
           </a>
