@@ -4,7 +4,8 @@ import type { TaskCategory } from './taskCategories';
 // dates are stored as calendar days ("YYYY-MM-DD").
 
 export type UnitSystem = 'imperial' | 'metric';
-export type Theme = 'dark' | 'light';
+/** 'system' is Auto: follow the device's light or dark setting. */
+export type Theme = 'system' | 'light' | 'dark';
 
 export interface Motorcycle {
   id: string;

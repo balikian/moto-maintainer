@@ -76,11 +76,26 @@ project: one (used for everything so far). Git: commit straight to `main`.
   panel (name, odometer, status counts), the avatar menu showing the
   signed-in email, sentence-case labels, thin scrollbars. Print and share
   pages stay light via `.theme-light`.
-- ⏳ Phase 2: the phone layout: bottom bar (Tasks, History, Log service,
-  Garage, More), a More page (account, units, theme with Auto/Light/Dark,
-  reminders, help, legal, admin, sign out), and the desktop layout (to
-  mock up first: probably a centered column with the bar as a top or side
-  menu). Auto theme needs a `system` value for `profiles.theme`.
+- 🔨 Phase 2 (started 2026-10-13):
+  - ✅ Phone layout, in code: a bottom bar (Tasks, History, raised red Log
+    service, Garage, More). Each screen is kept in the URL (`/?view=garage`),
+    so back, reload and links work. Tasks: logo, avatar, bike panel,
+    checklist. History: the bike's service records, spend summary and
+    Export (its own "Log service" button went; the bar has one). Garage:
+    every bike with its odometer and "1 overdue · 2 soon", tap to open its
+    tasks; edit and remove live here now, so the bike name's dropdown only
+    switches, adds, or jumps to Garage. More: account (email, sign-in
+    method), Distance (Miles/Kilometers), Theme (Auto/Light/Dark),
+    reminders, help, privacy and terms (all "Coming soon" until they
+    exist), admin review (admins only), sign out. The avatar menu is gone;
+    the avatar opens More.
+  - ✅ Auto theme: follows the device and switches when it does. The choice
+    is cached in the browser so the first paint uses it (no dark flash on a
+    light phone). Migration `20261013000000_theme_auto.sql` makes Auto the
+    default for new profiles and adds a check constraint (needs running).
+  - ⏳ Desktop layout: for now it's the phone layout in a centered column
+    with the bar at the bottom. Mock up first: probably a centered column
+    with the bar as a top or side menu.
 - 🔨 Mockups (2026-10-12): three directions, each as a phone dashboard
   (clickable: open a task, collapse "All good", switch light/dark) and a task
   card in all its states, on the design canvas

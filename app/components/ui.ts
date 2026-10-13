@@ -7,7 +7,9 @@ export const ui = {
   popover: 'rounded-2xl border border-line bg-surface text-fg shadow-xl shadow-black/20',
   emptyState: 'rounded-2xl border border-dashed border-line p-8 text-center text-sm text-muted',
   muted: 'text-muted',
-  /** Page sections: "Needs attention", "Service history". */
+  /** A screen's title in the top bar: "History", "Garage", "More". */
+  pageTitle: 'text-3xl font-extrabold tracking-tight',
+  /** Page sections: "Needs attention", "All good". */
   sectionTitle: 'text-xl font-extrabold tracking-tight',
   /** Headings inside a card or dialog. */
   subTitle: 'text-sm font-bold',

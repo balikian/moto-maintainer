@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, Clock3, Plus, Trash2 } from 'lucide-react';
+import { Clock3, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
 import type { MaintenanceTask, Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
-import { useStoredToggle } from '../hooks/useStoredToggle';
 import ConfirmPopover from './ConfirmPopover';
 import ExportMenu from './ExportMenu';
 import SpendSummary from './SpendSummary';
@@ -27,7 +26,6 @@ type ServiceHistoryViewProps = {
 const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 export default function ServiceHistoryView({ bike, logs, tasks, loading, unitSystem, onAddLog, onDeleteLog, onShare }: ServiceHistoryViewProps) {
-  const [collapsed, toggleCollapsed] = useStoredToggle('moto-maintain:history-collapsed', false);
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,40 +38,32 @@ export default function ServiceHistoryView({ bike, logs, tasks, loading, unitSys
   };
 
   return (
-    <section>
+    <section aria-label="Service history">
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2>
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            aria-expanded={!collapsed}
-            aria-controls="service-history-list"
-            className={`inline-flex min-h-11 items-center gap-2 ${ui.sectionTitle}`}
-          >
-            <ChevronDown size={16} className={`transition-transform ${collapsed ? '-rotate-90' : ''}`} aria-hidden="true" />
-            Service history
-            {!loading && (
-              <span className="rounded-md bg-raised px-2 py-0.5 text-xs font-extrabold text-muted">
-                {logs.length}
-              </span>
-            )}
-          </button>
-        </h2>
-        <div className="flex items-center gap-2">
-          <ExportMenu bike={bike} logs={logs} unitSystem={unitSystem} onShare={onShare} />
-          <button type="button" onClick={onAddLog} className={ui.chipButton}>
-            <Plus size={15} />
-            Log service
-          </button>
+        <div className="min-w-0">
+          <div className="truncate text-base font-extrabold">
+            {bike.year} {bike.make} {bike.model}
+          </div>
+          {!loading && (
+            <div className="text-sm font-semibold text-muted">
+              {logs.length === 1 ? '1 service record' : `${logs.length} service records`}
+            </div>
+          )}
         </div>
+        <ExportMenu bike={bike} logs={logs} unitSystem={unitSystem} onShare={onShare} />
       </div>
 
-      <div id="service-history-list" hidden={collapsed}>
+      <div>
         {!loading && logs.length > 0 && <SpendSummary logs={logs} tasks={tasks} />}
         {loading ? (
           <div className={ui.emptyState}>Loading service history…</div>
         ) : logs.length === 0 ? (
-          <div className={ui.emptyState}>No service records logged yet for this bike.</div>
+          <div className={ui.emptyState}>
+            No service logged for this bike yet.{' '}
+            <button type="button" onClick={onAddLog} className="font-bold text-accent hover:underline">
+              Log a service
+            </button>
+          </div>
         ) : (
           <div className="space-y-3">
             {logs.map((log) => (
@@ -107,7 +97,7 @@ export default function ServiceHistoryView({ bike, logs, tasks, loading, unitSys
                     )}
                     {log.notes && <p className="whitespace-pre-wrap text-sm">{log.notes}</p>}
                   </div>
-  
+
                   <ConfirmPopover
                     message={`Delete the "${log.task_name}" service record?`}
                     confirmLabel="Delete record"

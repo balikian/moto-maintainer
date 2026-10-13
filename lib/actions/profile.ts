@@ -14,7 +14,7 @@ export async function updatePreferencesAction(
   if (preferences.unitSystem === 'imperial' || preferences.unitSystem === 'metric') {
     changes.unit_system = preferences.unitSystem;
   }
-  if (preferences.theme === 'dark' || preferences.theme === 'light') {
+  if (preferences.theme === 'dark' || preferences.theme === 'light' || preferences.theme === 'system') {
     changes.theme = preferences.theme;
   }
   if (Object.keys(changes).length === 0) return {};

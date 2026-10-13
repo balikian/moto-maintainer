@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { updatePreferencesAction } from '@/lib/actions/profile';
+import { isDarkTheme, parseTheme, THEME_STORAGE_KEY } from '@/lib/theme';
 import type { Theme, UnitSystem } from '@/lib/types';
 import { useSupabaseQuery } from './useSupabaseQuery';
 
 type Preferences = { unitSystem: UnitSystem; theme: Theme };
 
-const DEFAULT_PREFERENCES: Preferences = { unitSystem: 'imperial', theme: 'dark' };
+const DARK_QUERY = '(prefers-color-scheme: dark)';
 
 /** Units and theme, saved to the user's row in `profiles` so they survive reloads and devices. */
 export function usePreferences(supabase: SupabaseClient, userId: string | null, onError: (message: string) => void) {
@@ -20,14 +21,29 @@ export function usePreferences(supabase: SupabaseClient, userId: string | null, 
 
   const saved = profile.data ?? {};
   const preferences: Preferences = {
-    unitSystem: overrides.unitSystem
-      ?? (saved.unit_system === 'metric' || saved.unit_system === 'km' ? 'metric' : DEFAULT_PREFERENCES.unitSystem),
-    theme: overrides.theme ?? (saved.theme === 'light' ? 'light' : DEFAULT_PREFERENCES.theme),
+    unitSystem: overrides.unitSystem ?? (saved.unit_system === 'metric' || saved.unit_system === 'km' ? 'metric' : 'imperial'),
+    theme: overrides.theme ?? parseTheme(saved.theme),
   };
+  // Until the profile loads, keep whatever the boot script in layout.tsx applied.
+  const themeKnown = overrides.theme !== undefined || (userId !== null && !profile.loading);
 
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', preferences.theme === 'dark');
-  }, [preferences.theme]);
+    if (!themeKnown) return;
+    const theme = preferences.theme;
+    try {
+      window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch {
+      // Storage unavailable; the theme still applies for this visit.
+    }
+
+    const media = window.matchMedia(DARK_QUERY);
+    const apply = () => document.documentElement.classList.toggle('dark', isDarkTheme(theme, media.matches));
+    apply();
+    if (theme !== 'system') return;
+    // Auto: follow the device when it switches (e.g. at sunset).
+    media.addEventListener('change', apply);
+    return () => media.removeEventListener('change', apply);
+  }, [themeKnown, preferences.theme]);
 
   const update = async (changes: Partial<Preferences>) => {
     setOverrides((previous) => ({ ...previous, ...changes }));
