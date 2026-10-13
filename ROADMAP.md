@@ -152,6 +152,13 @@ project: one (used for everything so far). Git: commit straight to `main`.
   `*.vercel.app` address, then add swingarm.app, then the test setup below.
   Done in code: sign-in redirects use the site the rider is on (no
   `NEXT_PUBLIC_SITE_URL`); a clean production build passes.
+- ✅ Live at **https://swingarm.app** (2026-10-13): Vercel project
+  `swingarm`, deploying `main` with the existing Supabase project; GoDaddy
+  DNS A record `@` → Vercel; `www` redirects to the bare domain. Supabase
+  Auth URL Configuration: Site URL `https://swingarm.app`; redirect URLs
+  for swingarm.app, www.swingarm.app, the vercel.app address and
+  localhost:3000. The Vercel Supabase integration was skipped on purpose
+  (it would add a new database and the service-role key).
   Watch for: Vercel caps a request at 4.5 MB, which a schedule import with
   many manual pages can exceed (fix: upload pages to Supabase Storage
   first); Claude calls must finish within the function time limit.
