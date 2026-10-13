@@ -19,7 +19,7 @@ export default async function PrintHistoryPage({ params }: { params: Promise<{ b
   if (!UUID_PATTERN.test(bikeId)) notFound();
 
   const { supabase, user } = await getSignedInClient();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
   // Row-level security limits these to the signed-in user's own rows.
   const [bikeResult, logsResult, profileResult] = await Promise.all([

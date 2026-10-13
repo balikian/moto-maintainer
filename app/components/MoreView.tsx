@@ -5,6 +5,7 @@ import { ChevronRight, LogOut } from 'lucide-react';
 import { logout } from '@/lib/actions/auth';
 import type { Theme, UnitSystem } from '@/lib/types';
 import Avatar from './Avatar';
+import { SUPPORT_EMAIL } from '@/lib/site';
 import { ui } from './ui';
 
 type MoreViewProps = {
@@ -103,7 +104,15 @@ export default function MoreView({ email, avatarUrl, provider, unitSystem, theme
       </Group>
 
       <Group title="SwingArm">
-        {['Help and feedback', 'Privacy policy', 'Terms of use'].map((label) => (
+        <a href="/about" className={`${rowClass} text-base font-bold`}>
+          About SwingArm
+          <ChevronRight size={18} className="text-muted" aria-hidden="true" />
+        </a>
+        <a href={`mailto:${SUPPORT_EMAIL}`} className={`${rowClass} text-base font-bold`}>
+          Help and feedback
+          <span className="text-sm font-semibold text-muted">{SUPPORT_EMAIL}</span>
+        </a>
+        {['Privacy policy', 'Terms of use'].map((label) => (
           <div key={label} className={rowClass}>
             <span className="text-base font-bold">{label}</span>
             {comingSoon}

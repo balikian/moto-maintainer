@@ -25,7 +25,7 @@ const smallInput =
 /** Admin-only: import missing schedules, and approve or reject what riders submitted. */
 export default async function AdminPage() {
   const { supabase, user } = await getSignedInClient();
-  if (!user) redirect('/');
+  if (!user) redirect('/login');
 
   const { data: isAdmin } = await supabase.rpc('is_app_admin');
   if (!isAdmin) notFound();

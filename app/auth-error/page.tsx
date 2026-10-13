@@ -13,7 +13,7 @@ export default function AuthErrorPage() {
           It may have expired or already been used. Sign-in links only work once.
         </p>
         <Link
-          href="/"
+          href="/login"
           className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-brand px-4 py-3 text-sm font-extrabold text-on-brand transition-colors hover:bg-brand-hover"
         >
           Back to sign in

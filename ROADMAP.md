@@ -106,13 +106,16 @@ project: one (used for everything so far). Git: commit straight to `main`.
     scrollbar's space (`scrollbar-gutter: stable`), and the bottom bar is
     `sticky`, not `fixed` (fixed elements span the gutter, so their
     centered buttons still moved). Phones show the logo on every screen.
-  - 🔨 Public home page (asked 2026-10-13): what signed-out visitors see at
-    swingarm.app instead of just the sign-in card: what the app does,
-    pricing, app store links when the apps exist, a short FAQ, and footer
-    links to privacy, terms and contact. Mockup on the canvas, row
-    "Public home page". Pricing shows Free and Pro from step 6 with
-    `[PRICE]` placeholders. **Open:** prices (step 6), and whether More
-    gets an "About SwingArm" link to it.
+  - ✅ Public home page (built 2026-10-13, from the canvas mockup):
+    signed-out visitors at `/` get it, rendered on the server; sign-in
+    moved to `/login`; signed-in riders reach it at `/about` (More →
+    About SwingArm). What the app does, four features, pricing as **"Free
+    during early access"** (no Pro yet; "paid plans may come later, you'll
+    hear before anything changes"), "Coming soon" App Store and Google
+    Play tiles, a short FAQ, and contact **support@swingarm.app** (also
+    More → Help and feedback). Privacy and terms links get added when
+    those pages exist (needed before launch, and for Google's sign-in
+    branding).
 - 🔨 Mockups (2026-10-12): three directions, each as a phone dashboard
   (clickable: open a task, collapse "All good", switch light/dark) and a task
   card in all its states, on the design canvas
@@ -154,6 +157,9 @@ project: one (used for everything so far). Git: commit straight to `main`.
 - Move migrations to the **Supabase CLI** so the same files apply to both
   databases in order (no more pasting into the SQL Editor twice).
 - Secrets per environment in Vercel (Supabase URL/key, `ANTHROPIC_API_KEY`).
+- Email for **support@swingarm.app** (decided 2026-10-13; the home page
+  and More link to it): a mailbox or forwarding on swingarm.app, set up in
+  GoDaddy DNS. Mail to it bounces until then.
 - Also: custom domain, Google (and Apple) sign-in redirect URLs for both
   sites, error monitoring (e.g. Sentry), database backups on prod.
 
@@ -186,8 +192,27 @@ project: one (used for everything so far). Git: commit straight to `main`.
     manufacturer schedules (open: or not?), service log, spend summary.
   - **Pro:** multiple bikes, importing a schedule from your own manual (with a
     monthly limit to cap API cost), export/share (open), priority features.
-- **Open:** price (monthly/yearly), whether existing users get grandfathered,
-  free trial length.
+- **Decided (2026-10-13):** free during early access until paid tiers are
+  built. The home page says so.
+- Owner's first idea for Pro (2026-10-13): **$3.95/month or $25/year**.
+  Notes for when this is decided:
+  - Store fees (check current terms before deciding): Apple takes 30%, or
+    15% in its Small Business Program (under $1M a year) and on
+    subscriptions after a subscriber's first year; Google Play takes 15% on
+    subscriptions. Stripe on the web is about 2.9% + $0.30 per charge (US
+    cards), so small monthly charges lose more to the fixed fee. Rules on
+    linking from the iPhone app to web purchase have been changing (US
+    court rulings in 2025); check what's allowed then.
+  - Rough take-home per subscriber: $3.95/month → about $3.36 via Apple or
+    Google at 15%, about $3.54 via Stripe. $25/year → about $21.25 via the
+    stores at 15%, about $23.98 via Stripe. Before any income tax, sales tax
+    or VAT.
+  - App Store prices come in fixed steps that mostly end in .99, so
+    $3.95 would likely be $3.99 there.
+  - $25/year is about 6 months of the monthly price (47% off). A common
+    yearly discount is about 2 months free, which would be about $39.
+- **Open:** final prices, whether early riders get grandfathered, free trial
+  length.
 - Technical: an `entitlements`/`subscriptions` table checked by server actions
   (never only in the UI). Payments: **Stripe** on the web. Apps sold through
   the App Store/Play must use their in-app purchase for digital subscriptions;

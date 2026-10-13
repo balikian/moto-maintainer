@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useState, type SubmitEvent } from 'react';
 import { sendMagicLink, signInWithGoogle } from '@/lib/actions/auth';
 import BrandLogo from './BrandLogo';
@@ -54,7 +55,7 @@ export default function LoginCard() {
   };
 
   return (
-    <div className={`flex items-center justify-center p-4 ${ui.page}`}>
+    <div className={`flex flex-col items-center justify-center p-4 ${ui.page}`}>
       <div className={`w-full max-w-md p-8 shadow-xl ${ui.card}`}>
         <div className="mb-6 text-center">
           <h1 className="flex justify-center">
@@ -122,6 +123,9 @@ export default function LoginCard() {
           {error && <p className={ui.errorBox}>{error}</p>}
         </div>
       </div>
+      <Link href="/" className="mt-5 text-sm font-bold text-muted hover:text-fg">
+        ← What&apos;s SwingArm?
+      </Link>
     </div>
   );
 }
