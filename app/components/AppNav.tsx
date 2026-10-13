@@ -43,7 +43,7 @@ export default function AppNav({ view, onNavigate, onLogService, canLogService }
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-line bg-surface pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 print:hidden lg:hidden"
+      className="sticky bottom-0 z-30 border-t border-line bg-surface pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 print:hidden lg:hidden"
     >
       <div className="mx-auto grid max-w-lg grid-cols-5 items-end px-2">
         {NAV_TABS.slice(0, 2).map(tab)}

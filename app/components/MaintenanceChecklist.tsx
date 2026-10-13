@@ -75,10 +75,10 @@ export default function MaintenanceChecklist({
       ) : tasks.length === 0 ? (
         <div className={ui.emptyState}>No maintenance tasks for this bike yet. Add one to start tracking.</div>
       ) : (
-        <div className="grid gap-2.5">
+        <div className="grid grid-cols-1 gap-2.5">
           {needsAttention.length > 0 ? (
             // Two across on desktop; an opened card grows without stretching its neighbor.
-            <div className="grid items-start gap-2.5 lg:grid-cols-2 lg:gap-3">
+            <div className="grid grid-cols-1 items-start gap-2.5 lg:grid-cols-2 lg:gap-3">
               {needsAttention.map((entry) => renderTask(entry, 'card'))}
             </div>
           ) : (

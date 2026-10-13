@@ -1,28 +1,28 @@
-import type { ReactNode } from 'react';
 import type { View } from '../hooks/useView';
 import Avatar from './Avatar';
+import BrandLogo from './BrandLogo';
 import ViewLink from './ViewLink';
 
 type TopBarProps = {
-  /** The logo on Tasks, the screen's title elsewhere. */
-  children: ReactNode;
   avatarUrl: string | null;
   email: string | null;
-  className?: string;
-  /** Shows the avatar, which opens More; omit on More itself. Desktop shows it in DesktopHeader instead. */
-  onNavigate?: (view: View) => void;
+  onNavigate: (view: View) => void;
+  /** False on More itself, where the avatar would link to the same screen. */
+  showAvatar: boolean;
 };
 
-/** The top of each screen: its title, and the signed-in rider's avatar, which opens More. */
-export default function TopBar({ children, avatarUrl, email, onNavigate, className = '' }: TopBarProps) {
+/** The phone's top bar on every screen: the logo (back to Tasks) and the avatar, which opens More. Desktop uses DesktopHeader. */
+export default function TopBar({ avatarUrl, email, onNavigate, showAvatar }: TopBarProps) {
   return (
-    <header className={`flex min-h-12 items-center justify-between gap-4 ${className}`}>
-      {children}
-      {onNavigate && (
+    <header className="flex min-h-12 items-center justify-between gap-4 lg:hidden">
+      <ViewLink view="tasks" onNavigate={onNavigate} aria-label="SwingArm: your tasks">
+        <BrandLogo className="h-10 sm:h-12" />
+      </ViewLink>
+      {showAvatar && (
         <ViewLink
           view="more"
           onNavigate={onNavigate}
-          className="flex h-11 w-11 items-center justify-center rounded-full lg:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-full"
           aria-label={email ? `Signed in as ${email}. Account and settings` : 'Account and settings'}
           title={email ?? undefined}
         >

@@ -103,7 +103,9 @@ project: one (used for everything so far). Git: commit straight to `main`.
     "All good" stays one column (rows open in place, which two columns
     would make jumpy).
   - ✅ No sideways shift when a scrollbar appears: `html` reserves the
-    scrollbar's space (`scrollbar-gutter: stable`).
+    scrollbar's space (`scrollbar-gutter: stable`), and the bottom bar is
+    `sticky`, not `fixed` (fixed elements span the gutter, so their
+    centered buttons still moved). Phones show the logo on every screen.
   - 🔨 Public home page (asked 2026-10-13): what signed-out visitors see at
     swingarm.app instead of just the sign-in card: what the app does,
     pricing, app store links when the apps exist, a short FAQ, and footer

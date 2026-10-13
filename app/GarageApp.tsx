@@ -20,7 +20,6 @@ import AppNav from './components/AppNav';
 import BikeManualPanel from './components/BikeManualPanel';
 import BikeList from './components/BikeList';
 import BikePanel from './components/BikePanel';
-import BrandLogo from './components/BrandLogo';
 import DesktopHeader from './components/DesktopHeader';
 import ErrorList from './components/ErrorList';
 import GarageView from './components/GarageView';
@@ -290,16 +289,13 @@ export default function GarageApp() {
     </div>
   );
 
-  const titleBar = (title: string) => (
-    <TopBar avatarUrl={avatarUrl} email={email} onNavigate={view === 'more' ? undefined : setView}>
-      <h1 className={ui.pageTitle}>{title}</h1>
-    </TopBar>
-  );
-
   const logService = () => setDialog({ type: 'logService', task: null });
 
   return (
-    <div className={ui.page}>
+    // A column at least as tall as the screen, so the phone's bottom bar
+    // (sticky, not fixed, so it shares the page's width and doesn't shift
+    // when a scrollbar comes and goes) always sits at the bottom.
+    <div className="flex min-h-dvh flex-col bg-page text-fg">
       <DesktopHeader
         view={view}
         avatarUrl={avatarUrl}
@@ -309,18 +305,13 @@ export default function GarageApp() {
         canLogService={activeBike !== null}
       />
 
-      {/* Bottom padding keeps the last item clear of the phone's bottom bar. */}
-      <main
-        className={`mx-auto grid max-w-2xl gap-6 px-4 pb-[calc(7rem+env(safe-area-inset-bottom))] pt-4 md:px-8 md:pt-8 lg:pb-12 lg:pt-7 ${DESKTOP_WIDTH[view]}`}
-      >
+      {/* grid-cols-1 lets columns shrink below their longest unbroken line (a long bike name) instead of overflowing. */}
+      <main className={`mx-auto grid w-full max-w-2xl flex-1 grid-cols-1 content-start gap-6 px-4 pb-8 pt-4 md:px-8 md:pt-8 lg:pb-12 lg:pt-7 ${DESKTOP_WIDTH[view]}`}>
+        <TopBar avatarUrl={avatarUrl} email={email} onNavigate={setView} showAvatar={view !== 'more'} />
         {view === 'tasks' ? (
-          <TopBar avatarUrl={avatarUrl} email={email} onNavigate={setView} className="lg:hidden">
-            <h1>
-              <BrandLogo className="h-10 sm:h-12" />
-            </h1>
-          </TopBar>
+          <h1 className="sr-only">Your tasks</h1>
         ) : (
-          titleBar({ history: 'History', garage: 'Garage', more: 'More' }[view])
+          <h1 className={ui.pageTitle}>{{ history: 'History', garage: 'Garage', more: 'More' }[view]}</h1>
         )}
 
         <ErrorList
@@ -334,8 +325,8 @@ export default function GarageApp() {
 
         {view === 'tasks' && (activeBike ? (
           // Desktop: the bike and the garage in a left column that stays put, tasks on the right.
-          <div className="grid gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-7">
-            <aside className="grid gap-4 lg:sticky lg:top-24">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[340px_minmax(0,1fr)] lg:items-start lg:gap-7">
+            <aside className="grid grid-cols-1 gap-4 lg:sticky lg:top-24">
               <BikePanel
                 bikes={bikes}
                 activeBike={activeBike}
@@ -357,7 +348,7 @@ export default function GarageApp() {
               />
             </aside>
 
-            <div className="grid min-w-0 gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-6">
               {unappliedSchedule && (
                 <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${ui.infoBox}`}>
                   <span>

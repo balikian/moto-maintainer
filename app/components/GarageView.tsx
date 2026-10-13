@@ -54,7 +54,7 @@ export default function GarageView({ bikes, activeBikeId, allTasks, unitSystem, 
       {bikes.length === 0 ? (
         <div className={ui.emptyState}>Your garage is empty. Add your first bike to start tracking maintenance.</div>
       ) : (
-        <ul className="grid gap-2.5 lg:grid-cols-2">
+        <ul className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
           {bikes.map((bike) => {
             const name = `${bike.year} ${bike.make} ${bike.model}`;
             const isActive = bike.id === activeBikeId;
