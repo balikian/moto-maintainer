@@ -145,7 +145,16 @@ project: one (used for everything so far). Git: commit straight to `main`.
   logo and color can match it.
 - Includes: logo/app icon, splash screen, empty states, phone-first layouts.
 
-## 3. Hosting: test and production 💤 (before notifications and payments)
+## 3. Hosting: test and production 🔨 (before notifications and payments)
+
+- 🔨 Started 2026-10-13: owner signed up for Vercel (Pro trial). Plan: first
+  deploy `main` with the existing Supabase project as production, on a
+  `*.vercel.app` address, then add swingarm.app, then the test setup below.
+  Done in code: sign-in redirects use the site the rider is on (no
+  `NEXT_PUBLIC_SITE_URL`); a clean production build passes.
+  Watch for: Vercel caps a request at 4.5 MB, which a schedule import with
+  many manual pages can exceed (fix: upload pages to Supabase Storage
+  first); Claude calls must finish within the function time limit.
 
 - Proposed: **Vercel** for the Next.js app (made by the Next.js team; server
   actions and cron work without extra setup) and **two Supabase projects**:
