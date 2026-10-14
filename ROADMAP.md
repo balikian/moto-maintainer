@@ -173,6 +173,29 @@ project: one (used for everything so far). Git: commit straight to `main`.
 - Move migrations to the **Supabase CLI** so the same files apply to both
   databases in order (no more pasting into the SQL Editor twice).
 - Secrets per environment in Vercel (Supabase URL/key, `ANTHROPIC_API_KEY`).
+- 🔨 Test site + test database, plan (2026-10-14):
+  1. Owner: create Supabase project **swingarm-test** (free plan, same
+     region as prod); keep its database password in a password manager.
+  2. Baseline schema: the core tables (profiles, motorcycles,
+     maintenance_tasks, service_logs) were made in the dashboard before
+     migrations were kept, so the files can't build a fresh database.
+     With the Supabase CLI (`npx supabase`; owner runs `login` and enters
+     database passwords when prompted, never saved to files): dump prod's
+     schema (no data) into a baseline migration, check it against the
+     existing migrations, then push it to swingarm-test. From then on,
+     migrations apply to test first, then prod, with the CLI.
+  3. Test project setup: Google sign-in provider (same Google client;
+     add the test project's callback URL to the client in Google Cloud),
+     Auth URL Configuration for the test site and localhost, the owner in
+     `app_admins`, and optionally a copy of the shared reference data
+     (approved manuals, schedules, custom models).
+  4. Git: a `develop` branch. Work lands there and deploys to the test
+     site; merging to `main` releases to swingarm.app.
+  5. Vercel: environment variables split by environment: Production →
+     prod Supabase, Preview → swingarm-test. Domain **test.swingarm.app**
+     assigned to the `develop` branch (CNAME `test` in GoDaddy).
+  6. Local dev (`.env.local`) points at swingarm-test, so trying things on
+     the computer never touches real data (recommended).
 - 🔨 Email for **support@swingarm.app** (set up 2026-10-14; the home page
   and More → Help and feedback link to it). A real mailbox at **DreamHost**
   (where the owner's other email lives), read and answered in Thunderbird
