@@ -384,6 +384,23 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
     dragging brake, a clogged air filter) and could be pointed out.
   - Later: snap a photo of the pump or receipt and let Claude fill in the
     form.
+- **Upgrade wish list** (owner, 2026-10-14). Mods and accessories the rider
+  is thinking about for a bike: a different exhaust, hand guards, crash
+  bars, and so on. Each item has a name, an estimated cost, and links to
+  the products being considered (several per item, to compare).
+  - First thoughts: a per-bike list beside the maintenance tasks, but
+    separate from them (no intervals or due dates). Maybe a priority or
+    "next up" order, notes, and a total of the estimated costs.
+  - When an upgrade is done, mark it installed with the date, odometer and
+    actual cost, so it lands in the service history and the spending
+    summary (and the shared history, which helps at resale). Some upgrades
+    bring their own maintenance (a new chain, an aftermarket air filter),
+    which could become a task.
+  - Fits with the affiliate links idea above: a product link could carry an
+    affiliate tag. That needs a disclosure.
+  - Open: just links typed in by hand, or a preview (title, image, price)
+    fetched from the link? Fetching is nicer, but sites block it and
+    prices go stale.
 
 ## Smaller items and ideas
 
