@@ -34,6 +34,7 @@ import TopBar from './components/TopBar';
 import { ui } from './components/ui';
 import { useAuthUser } from './hooks/useAuthUser';
 import { usePreferences } from './hooks/usePreferences';
+import { useStoredId } from './hooks/useStoredId';
 import { useSupabaseQuery } from './hooks/useSupabaseQuery';
 import { useView, type View } from './hooks/useView';
 
@@ -71,7 +72,9 @@ export default function GarageApp() {
   const { preferences, updatePreferences } = usePreferences(supabase, userId, reportError);
   const { unitSystem, theme } = preferences;
 
-  const [selectedBikeId, setSelectedBikeId] = useState<string | null>(null);
+  // The bike you were looking at, remembered across reloads and sign-ins. An id that isn't
+  // one of your bikes (removed, or another rider's on a shared computer) falls back to the first.
+  const [selectedBikeId, setSelectedBikeId] = useStoredId('moto-maintain:active-bike');
   const [dialog, setDialog] = useState<OpenDialog>(null);
 
   const bikesQuery = useSupabaseQuery<Motorcycle[]>(userId, () =>

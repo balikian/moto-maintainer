@@ -109,21 +109,28 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
       onClose={onClose}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="log-task" className={ui.label}>Task</label>
-          <select
-            id="log-task"
-            value={selectedTaskId}
-            onChange={(event) => setSelectedTaskId(event.target.value)}
-            className={ui.input}
-            disabled={task !== null}
-          >
-            {tasks.map((option) => (
-              <option key={option.id} value={option.id}>{option.task_name}</option>
-            ))}
-            <option value={CUSTOM_ONE_OFF_VALUE}>+ Something else (one-off job)</option>
-          </select>
-        </div>
+        {task ? (
+          // Logging from a task card: the task is fixed, so show it as text rather than a locked dropdown.
+          <div>
+            <span className={ui.label}>Task</span>
+            <p className="rounded-xl bg-raised px-3 py-2.5 text-base font-bold sm:text-sm">{task.task_name}</p>
+          </div>
+        ) : (
+          <div>
+            <label htmlFor="log-task" className={ui.label}>Task</label>
+            <select
+              id="log-task"
+              value={selectedTaskId}
+              onChange={(event) => setSelectedTaskId(event.target.value)}
+              className={ui.input}
+            >
+              {tasks.map((option) => (
+                <option key={option.id} value={option.id}>{option.task_name}</option>
+              ))}
+              <option value={CUSTOM_ONE_OFF_VALUE}>+ Something else (one-off job)</option>
+            </select>
+          </div>
+        )}
 
         {related.length > 0 && selectedTask && (
           <fieldset className="rounded-xl border border-warn/30 bg-warn/5 px-3 py-2.5">
