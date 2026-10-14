@@ -34,7 +34,6 @@ import TopBar from './components/TopBar';
 import { ui } from './components/ui';
 import { useAuthUser } from './hooks/useAuthUser';
 import { usePreferences } from './hooks/usePreferences';
-import { useStoredId } from './hooks/useStoredId';
 import { useSupabaseQuery } from './hooks/useSupabaseQuery';
 import { useView, type View } from './hooks/useView';
 
@@ -69,12 +68,14 @@ export default function GarageApp() {
   const [errors, setErrors] = useState<string[]>([]);
   const reportError = (message: string) => setErrors((previous) => [...previous, message]);
 
-  const { preferences, updatePreferences } = usePreferences(supabase, userId, reportError);
+  const { preferences, updatePreferences, loading: preferencesLoading } = usePreferences(supabase, userId, reportError);
   const { unitSystem, theme } = preferences;
 
-  // The bike you were looking at, remembered across reloads and sign-ins. An id that isn't
-  // one of your bikes (removed, or another rider's on a shared computer) falls back to the first.
-  const [selectedBikeId, setSelectedBikeId] = useStoredId('moto-maintain:active-bike');
+  // The bike you last picked, saved to your profile so it follows you across devices and sign-ins.
+  // An id that isn't one of your bikes (e.g. just removed) falls back to the first.
+  const selectedBikeId = preferences.activeBikeId;
+  const setSelectedBikeId = (bikeId: string | null) => void updatePreferences({ activeBikeId: bikeId });
+
   const [dialog, setDialog] = useState<OpenDialog>(null);
 
   const bikesQuery = useSupabaseQuery<Motorcycle[]>(userId, () =>
@@ -268,7 +269,8 @@ export default function GarageApp() {
 
   // --- Render --------------------------------------------------------------
 
-  if (user === undefined || (userId && bikesQuery.loading)) {
+  // Waits for the profile too, so the saved active bike shows from the start instead of the first bike flashing up.
+  if (user === undefined || (userId && (bikesQuery.loading || preferencesLoading))) {
     return <LoadingScreen />;
   }
 

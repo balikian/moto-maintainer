@@ -7,14 +7,19 @@ import { isDarkTheme, parseTheme, THEME_STORAGE_KEY } from '@/lib/theme';
 import type { Theme, UnitSystem } from '@/lib/types';
 import { useSupabaseQuery } from './useSupabaseQuery';
 
-type Preferences = { unitSystem: UnitSystem; theme: Theme };
+type Preferences = {
+  unitSystem: UnitSystem;
+  theme: Theme;
+  /** The bike the rider last picked; null for "the first one". */
+  activeBikeId: string | null;
+};
 
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
-/** Units and theme, saved to the user's row in `profiles` so they survive reloads and devices. */
+/** Units, theme and active bike, saved to the user's row in `profiles` so they follow the rider across reloads and devices. */
 export function usePreferences(supabase: SupabaseClient, userId: string | null, onError: (message: string) => void) {
   const profile = useSupabaseQuery<Record<string, unknown>>(userId, (id) =>
-    // select('*') so this still works before the `theme` column migration has been run.
+    // select('*') so this still works before newer columns' migrations have been run.
     supabase.from('profiles').select('*').eq('id', id).maybeSingle()
   );
   const [overrides, setOverrides] = useState<Partial<Preferences>>({});
@@ -23,6 +28,9 @@ export function usePreferences(supabase: SupabaseClient, userId: string | null, 
   const preferences: Preferences = {
     unitSystem: overrides.unitSystem ?? (saved.unit_system === 'metric' || saved.unit_system === 'km' ? 'metric' : 'imperial'),
     theme: overrides.theme ?? parseTheme(saved.theme),
+    activeBikeId: overrides.activeBikeId !== undefined
+      ? overrides.activeBikeId
+      : typeof saved.active_bike_id === 'string' ? saved.active_bike_id : null,
   };
   // Until the profile loads, keep whatever the boot script in layout.tsx applied.
   const themeKnown = overrides.theme !== undefined || (userId !== null && !profile.loading);
@@ -51,5 +59,5 @@ export function usePreferences(supabase: SupabaseClient, userId: string | null, 
     if (result.error) onError(result.error);
   };
 
-  return { preferences, updatePreferences: update };
+  return { preferences, updatePreferences: update, loading: profile.loading };
 }

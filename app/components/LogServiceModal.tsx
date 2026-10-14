@@ -104,16 +104,16 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
   return (
     <Modal
       title="Log service"
-      description={`Record maintenance details for ${task?.task_name ?? 'this bike'}.`}
+      description={task ? 'Record when it was done and what it cost.' : 'Record maintenance details for this bike.'}
       size="lg"
       onClose={onClose}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {task ? (
-          // Logging from a task card: the task is fixed, so show it as text rather than a locked dropdown.
+          // Logging from a task card: the task is fixed, so it's plain text, not something that looks editable.
           <div>
-            <span className={ui.label}>Task</span>
-            <p className="rounded-xl bg-raised px-3 py-2.5 text-base font-bold sm:text-sm">{task.task_name}</p>
+            <span className="block text-sm font-semibold text-muted">Task</span>
+            <p className="text-lg font-extrabold leading-snug">{task.task_name}</p>
           </div>
         ) : (
           <div>

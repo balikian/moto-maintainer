@@ -5,12 +5,21 @@ import type { Theme, UnitSystem } from '../types';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
 
 export async function updatePreferencesAction(
-  preferences: { unitSystem?: UnitSystem; theme?: Theme }
+  preferences: { unitSystem?: UnitSystem; theme?: Theme; activeBikeId?: string | null }
 ): Promise<ActionResult> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
 
-  const changes: { unit_system?: UnitSystem; theme?: Theme } = {};
+  const changes: { unit_system?: UnitSystem; theme?: Theme; active_bike_id?: string | null } = {};
+  if (preferences.activeBikeId === null) {
+    changes.active_bike_id = null;
+  } else if (typeof preferences.activeBikeId === 'string') {
+    // Row-level security hides other riders' bikes, so this finds only the user's own.
+    const bike = await supabase.from('motorcycles').select('id').eq('id', preferences.activeBikeId).maybeSingle();
+    if (bike.error) return { error: `Couldn't save your settings: ${bike.error.message}` };
+    if (!bike.data) return { error: 'That bike isn’t in your garage.' };
+    changes.active_bike_id = preferences.activeBikeId;
+  }
   if (preferences.unitSystem === 'imperial' || preferences.unitSystem === 'metric') {
     changes.unit_system = preferences.unitSystem;
   }
