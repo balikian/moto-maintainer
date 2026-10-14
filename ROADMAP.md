@@ -178,15 +178,15 @@ project: one (used for everything so far). Git: commit straight to `main`.
      ref `hizfldkwauwhrgkmaphe`). It landed in **us-east-1**; prod is in
      us-west-2. Fine for testing; recreate it only if the test site feels
      slow.
-  2. 🔨 Baseline schema (2026-10-14): the core tables were made in the
+  2. ✅ Baseline schema (2026-10-14): the core tables were made in the
      dashboard before migrations were kept, so the files couldn't build a
      fresh database. Prod's schema was dumped with `pg_dump` (PostgreSQL 17
      command-line tools; `supabase db dump` needs Docker) into
      `supabase/migrations/20261014100000_baseline.sql`, plus the
      `on_auth_user_created` trigger on `auth.users`. The old migrations
      moved to `supabase/archive/`. ✅ Pushed to swingarm-test with the CLI;
-     a dump of test matches prod exactly. ⏳ Mark it applied on prod
-     (`migration repair`). From then on, migrations apply to test first,
+     a dump of test matches prod exactly. ✅ Marked applied on prod
+     (`migration repair`). From now on, migrations apply to test first,
      then prod, with the CLI (see CLAUDE.md).
      Cleanup for later, in a migration: prod still has an unused `bikes`
      table and `profiles.is_dark_mode`, and `handle_new_user()` is
