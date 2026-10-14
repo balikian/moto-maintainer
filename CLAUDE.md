@@ -47,7 +47,11 @@ Run Node commands in **PowerShell**: it has Node 22. Git Bash on this machine re
 
 ## Database migrations
 
-There's no Supabase CLI. The user applies each migration by pasting the file into the Supabase SQL Editor. Write migrations to be safe to re-run (`if not exists`, `drop policy if exists`), tell the user when a new one needs running, and don't assume it has run until they confirm.
+Two Supabase projects: **swingarm-test** (ref `hizfldkwauwhrgkmaphe`, us-east-1) and production **moto_maintain** (ref `rybecfzjvkgfblbxcpct`, us-west-2). Migrations in `supabase/migrations/` are applied with the Supabase CLI (`npx supabase`), to test first, then production. `20261014100000_baseline.sql` is the whole schema as of 2026-10-14; the older SQL Editor migrations in `supabase/archive/` are history only.
+
+The user runs the CLI commands, since they prompt for database passwords (never put a password in a file or command). For a new migration: write `supabase/migrations/<YYYYMMDDHHMMSS>_name.sql`, then the user runs `npx supabase link --project-ref <ref>` and `npx supabase db push` against test, and after testing, against production. Leave the link pointing at test. Tell the user when a migration needs pushing, and don't assume it has run until they confirm.
+
+To compare the two databases, the user dumps each with `pg_dump` (PostgreSQL 17 command-line tools, `C:\Program Files\PostgreSQL\17\bin`): `--schema-only --schema=public --no-owner`, through the project's session pooler URI. `supabase db dump` needs Docker, which isn't installed. Dumps go in `supabase/*-schema.sql` (gitignored).
 
 ## Secrets
 

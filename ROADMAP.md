@@ -174,16 +174,23 @@ project: one (used for everything so far). Git: commit straight to `main`.
   databases in order (no more pasting into the SQL Editor twice).
 - Secrets per environment in Vercel (Supabase URL/key, `ANTHROPIC_API_KEY`).
 - 🔨 Test site + test database, plan (2026-10-14):
-  1. Owner: create Supabase project **swingarm-test** (free plan, same
-     region as prod); keep its database password in a password manager.
-  2. Baseline schema: the core tables (profiles, motorcycles,
-     maintenance_tasks, service_logs) were made in the dashboard before
-     migrations were kept, so the files can't build a fresh database.
-     With the Supabase CLI (`npx supabase`; owner runs `login` and enters
-     database passwords when prompted, never saved to files): dump prod's
-     schema (no data) into a baseline migration, check it against the
-     existing migrations, then push it to swingarm-test. From then on,
-     migrations apply to test first, then prod, with the CLI.
+  1. ✅ Supabase project **swingarm-test** created (2026-10-14; free plan,
+     ref `hizfldkwauwhrgkmaphe`). It landed in **us-east-1**; prod is in
+     us-west-2. Fine for testing; recreate it only if the test site feels
+     slow.
+  2. 🔨 Baseline schema (2026-10-14): the core tables were made in the
+     dashboard before migrations were kept, so the files couldn't build a
+     fresh database. Prod's schema was dumped with `pg_dump` (PostgreSQL 17
+     command-line tools; `supabase db dump` needs Docker) into
+     `supabase/migrations/20261014100000_baseline.sql`, plus the
+     `on_auth_user_created` trigger on `auth.users`. The old migrations
+     moved to `supabase/archive/`. ✅ Pushed to swingarm-test with the CLI;
+     a dump of test matches prod exactly. ⏳ Mark it applied on prod
+     (`migration repair`). From then on, migrations apply to test first,
+     then prod, with the CLI (see CLAUDE.md).
+     Cleanup for later, in a migration: prod still has an unused `bikes`
+     table and `profiles.is_dark_mode`, and `handle_new_user()` is
+     security definer without a fixed `search_path`.
   3. Test project setup: Google sign-in provider (same Google client;
      add the test project's callback URL to the client in Google Cloud),
      Auth URL Configuration for the test site and localhost, the owner in
