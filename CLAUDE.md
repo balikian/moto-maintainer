@@ -45,6 +45,14 @@ Run Node commands in **PowerShell**: it has Node 22. Git Bash on this machine re
 - **Theme and colors:** use the design tokens from `app/globals.css` (`bg-page`, `bg-surface`, `bg-raised`, `border-line`, `text-fg`, `text-muted`, `bg-brand`/`text-on-brand`, `text-accent`, `text-danger`, `text-warn`, `text-good`, `text-info`), never raw Tailwind colors like `slate-500`. They switch with the `dark` class on `<html>`, so no `dark:` variants are needed; `.theme-light` keeps a section light (print and share pages). Font: Manrope. Labels and headings are sentence case.
 - Pure logic goes in `lib/` with tests next to it.
 
+## Environments
+
+- **Production:** `main` deploys to https://swingarm.app (Vercel project `swingarm`) on the production database.
+- **Test:** `develop` deploys to https://test.swingarm.app on swingarm-test. Vercel preview sites sit behind Vercel's login, so only the owner can open them (and Claude can't fetch them).
+- **Local:** `.env.local` points at swingarm-test.
+
+Work is committed to `develop`. Merging to `main` is a release, done only when the user asks.
+
 ## Database migrations
 
 Two Supabase projects: **swingarm-test** (ref `hizfldkwauwhrgkmaphe`, us-east-1) and production **moto_maintain** (ref `rybecfzjvkgfblbxcpct`, us-west-2). Migrations in `supabase/migrations/` are applied with the Supabase CLI (`npx supabase`), to test first, then production. `20261014100000_baseline.sql` is the whole schema as of 2026-10-14; the older SQL Editor migrations in `supabase/archive/` are history only.

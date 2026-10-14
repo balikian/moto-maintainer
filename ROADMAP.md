@@ -173,7 +173,7 @@ project: one (used for everything so far). Git: commit straight to `main`.
 - Move migrations to the **Supabase CLI** so the same files apply to both
   databases in order (no more pasting into the SQL Editor twice).
 - Secrets per environment in Vercel (Supabase URL/key, `ANTHROPIC_API_KEY`).
-- 🔨 Test site + test database, plan (2026-10-14):
+- ✅ Test site + test database (2026-10-14):
   1. ✅ Supabase project **swingarm-test** created (2026-10-14; free plan,
      ref `hizfldkwauwhrgkmaphe`). It landed in **us-east-1**; prod is in
      us-west-2. Fine for testing; recreate it only if the test site feels
@@ -191,18 +191,35 @@ project: one (used for everything so far). Git: commit straight to `main`.
      Cleanup for later, in a migration: prod still has an unused `bikes`
      table and `profiles.is_dark_mode`, and `handle_new_user()` is
      security definer without a fixed `search_path`.
-  3. Test project setup: Google sign-in provider (same Google client;
-     add the test project's callback URL to the client in Google Cloud),
-     Auth URL Configuration for the test site and localhost, the owner in
-     `app_admins`, and optionally a copy of the shared reference data
-     (approved manuals, schedules, custom models).
-  4. Git: a `develop` branch. Work lands there and deploys to the test
-     site; merging to `main` releases to swingarm.app.
-  5. Vercel: environment variables split by environment: Production →
-     prod Supabase, Preview → swingarm-test. Domain **test.swingarm.app**
-     assigned to the `develop` branch (CNAME `test` in GoDaddy).
-  6. Local dev (`.env.local`) points at swingarm-test, so trying things on
-     the computer never touches real data (recommended).
+  3. ✅ Test project setup (2026-10-14): Google sign-in with prod's Google
+     client (the test callback URL added in Google Cloud, and a second
+     client secret for test). Auth URL Configuration: Site URL
+     `https://test.swingarm.app`; redirect URLs for test.swingarm.app and
+     localhost:3000. Optional, for signing in on a deployment's own
+     `.vercel.app` address: add `https://swingarm-*-swing-arm.vercel.app/**`
+     (only this project's previews, not all of `*.vercel.app`). The owner
+     is in `app_admins` on test.
+     ⏳ Optional: copy the shared reference data (approved manuals,
+     schedules, custom models) from prod; `submitted_by` must be cleared,
+     since those users don't exist on test.
+  4. ✅ Git (2026-10-14): `develop` branch. Work lands there and deploys to
+     the test site; merging to `main` releases to swingarm.app.
+  5. ✅ Vercel (2026-10-14): `NEXT_PUBLIC_SUPABASE_URL` and
+     `NEXT_PUBLIC_SUPABASE_ANON_KEY` per environment (Production → prod,
+     Preview → swingarm-test; type Config, since Secret can't change
+     environments and warns on `NEXT_PUBLIC_` names).
+     `ANTHROPIC_API_KEY` is shared. **test.swingarm.app** is connected to
+     the `develop` branch (CNAME `test` in GoDaddy). Preview sites,
+     test.swingarm.app included, sit behind Vercel's login (Deployment
+     Protection), so only the Vercel team can open them. Checked: signing
+     in on test.swingarm.app gives an empty garage on the test database.
+     ⏳ Production hasn't been rebuilt since the split; check swingarm.app
+     still reads prod right after the next release (Vercel can roll back).
+     ⏳ Check Vercel's Function Region (Settings → Functions): prod's
+     database is in us-west-2, so Portland (`pdx1`) beats the default
+     Washington (`iad1`).
+  6. ✅ Local dev (`.env.local`) points at swingarm-test (2026-10-14), so
+     trying things on the computer never touches real data.
 - 🔨 Email for **support@swingarm.app** (set up 2026-10-14; the home page
   and More → Help and feedback link to it). A real mailbox at **DreamHost**
   (where the owner's other email lives), read and answered in Thunderbird
