@@ -312,6 +312,27 @@ project: one (used for everything so far). Git: commit straight to `main`.
   finished), privacy policy and terms URLs, in-app account deletion, store
   screenshots and descriptions, and in-app purchase if Pro is sold in-app.
 
+## 8. Analytics 💤 (before launch)
+
+Added by the owner (2026-10-15). First thoughts, nothing decided:
+
+- Two kinds, possibly both:
+  - **Site traffic:** visits, pages, where visitors come from, on the
+    home page and the app. **Vercel Web Analytics** is built into the host,
+    uses no cookies, and is one component in `app/layout.tsx`.
+  - **Product use:** what signed-in riders do (add a bike, log service,
+    apply a schedule, share a history), sign-up to first-service rates,
+    who comes back. Needs custom events: e.g. **PostHog** (generous free
+    tier; also does feature flags) or Vercel's custom events.
+- Privacy: send no names, emails or bike details, only anonymous IDs and
+  event names. The privacy policy (needed before launch anyway) must say
+  what's collected. Cookieless tools avoid a cookie banner in the EU and UK.
+- Works in the phone apps too, since they load the hosted site.
+- Track only on production, so the test site and local dev don't skew the
+  numbers.
+- **Open:** which questions it should answer (that decides the events),
+  and which tool.
+
 ## After launch 💤
 
 Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
@@ -463,7 +484,8 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
 
 1. Name → 2. design direction (can overlap) → 3. hosting with test + prod →
 4. settings + preferences → 5. email notifications → 6. paid tiers →
-7. phone apps (push, Apple sign-in, store submission).
+7. phone apps (push, Apple sign-in, store submission). 8. Analytics can
+go in any time before launch, ideally before the first public riders.
 
 Hosting comes before notifications and payments because both need a public
 URL, scheduled jobs, and webhooks, and should be tried on the test site first.
