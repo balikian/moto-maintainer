@@ -517,8 +517,10 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   (`BikeSwitcher.tsx`) should close when you click or tap outside them.
   Today modals close only with the X or Escape, and the bike switcher only
   with its own button. `ConfirmPopover` already closes on an outside click.
-  Open: in forms (add bike, log service), should an outside tap discard
-  what's typed, or ask first?
+  **Decided (2026-10-15):** the add bike form stays X-only (an outside tap
+  shouldn't throw away a half-filled form), even though that's
+  inconsistent. Open: the other forms (log service, edit bike, custom
+  task).
 - 💤 Save final drive / cooling on the bike so Edit Bike can change them.
 - 💤 NHTSA recall alerts per bike (free data; fits the notifications work).
 - 💤 Offline use of manuals in the phone app.
