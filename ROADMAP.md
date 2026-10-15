@@ -42,7 +42,7 @@ project: one (used for everything so far). Git: commit straight to `main`.
     Platform → Branding; done 2026-10-15). Add the logo, home page and
     privacy policy once the app is on swingarm.app (adding a logo can trigger Google's brand
     verification).
-  - Supabase sign-in emails: later. The templates are Supabase's generic
+  - ✅ Supabase sign-in emails (done 2026-10-15, below). The templates were Supabase's generic
     defaults (no old name in them) and are locked until custom SMTP is set
     up. Plan: Resend on `swingarm.app` (DNS records at GoDaddy), sender
     "SwingArm <noreply@swingarm.app>", then write branded Magic Link and
@@ -59,10 +59,12 @@ project: one (used for everything so far). Git: commit straight to `main`.
     midnight UTC. Pro has no daily cap: 50,000 emails a month for $20, or
     100,000 for $35. Sign-in links alone fit the free plan early on;
     reminder emails (step 5) will likely need Pro.
-    🔨 Set up 2026-10-15: Resend domain verified, SMTP and the templates
-    from `supabase/templates/` added on both projects. The test site's
-    Confirm signup email arrives branded. Production still sent the old
-    template: being checked.
+    ✅ Done 2026-10-15: Resend domain verified, SMTP and the templates
+    from `supabase/templates/` on both projects (one Resend API key each),
+    sender "SwingArm <noreply@swingarm.app>". Branded emails arrive on
+    test and production. (Production first sent an old copy; a fresh
+    link was fine, likely sent before the save took effect.) The icon is
+    a hosted PNG, so mail apps that block images show an empty box.
   - Before launch, consider a Supabase custom domain (paid add-on, e.g.
     auth.swingarm.app) so Google's sign-in screen stops showing the
     `*.supabase.co` address.
