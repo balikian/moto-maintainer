@@ -141,6 +141,8 @@ export default function GarageApp() {
     setDialog(null);
     bikesQuery.reload();
     allTasksQuery.reload();
+    // A make or model the rider typed in joins the form's lists right away.
+    customModelsQuery.reload();
     return null;
   };
 
@@ -149,6 +151,7 @@ export default function GarageApp() {
     if (result.error) return result.error;
     setDialog(null);
     bikesQuery.reload();
+    customModelsQuery.reload();
     return null;
   };
 

@@ -38,9 +38,9 @@ project: one (used for everything so far). Git: commit straight to `main`.
   The `moto-maintain:` localStorage keys stay (renaming them would reset
   riders' saved view settings). GitHub repo and folder rename are optional.
 - ⏳ Outside the code:
-  - Google OAuth consent screen: set the app name to SwingArm (Google Auth
-    Platform → Branding). Add the logo, home page and privacy policy once
-    the app is on swingarm.app (adding a logo can trigger Google's brand
+  - ✅ Google OAuth consent screen: app name set to SwingArm (Google Auth
+    Platform → Branding; done 2026-10-15). Add the logo, home page and
+    privacy policy once the app is on swingarm.app (adding a logo can trigger Google's brand
     verification).
   - Supabase sign-in emails: later. The templates are Supabase's generic
     defaults (no old name in them) and are locked until custom SMTP is set
@@ -221,7 +221,9 @@ project: one (used for everything so far). Git: commit straight to `main`.
      in on test.swingarm.app gives an empty garage on the test database.
      ⏳ Production hasn't been rebuilt since the split; check swingarm.app
      still reads prod right after the next release (Vercel can roll back).
-     ⏳ Check Vercel's Function Region (Settings → Functions): prod's
+     🔨 Function region (2026-10-15): `vercel.json` sets `pdx1` (it
+     overrides the dashboard setting, and covers the whole project, so the
+     test site runs there too, far from its us-east-1 database). Prod's
      database is in us-west-2, so Portland (`pdx1`) beats the default
      Washington (`iad1`).
   6. ✅ Local dev (`.env.local`) points at swingarm-test (2026-10-14), so
@@ -239,9 +241,7 @@ project: one (used for everything so far). Git: commit straight to `main`.
     DreamHost's DKIM key. Only one SPF record allowed on `@`: anything
     else that sends as swingarm.app must be added to it, or send from a
     subdomain (as Resend does).
-  - ✅ Sending from support@ works (2026-10-14). ⏳ Receiving: the first
-    test bounced off ImprovMX (old MX records still cached); retest after
-    the 1-hour TTL.
+  - ✅ Sending and receiving at support@ work (confirmed 2026-10-15).
   - Tried first and dropped: ImprovMX forwarding to frito@cheeseandbeer.com.
     DreamHost's inbound filter (MailChannels) rejected the forwarded mail
     ("[S10] Blocked").
@@ -503,7 +503,10 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
 
 ## Smaller items and ideas
 
-- ⏳ Re-test: Norden set to 2023 should show no schedule in Manual & schedule.
+- ✅ Re-test: Norden set to 2023 shows no schedule in Manual & schedule
+  (confirmed 2026-10-15).
+- ✅ Fixed (2026-10-15): a make or model typed into the bike form was saved
+  but didn't appear in the form's lists until the page was reloaded.
 - 💤 Save final drive / cooling on the bike so Edit Bike can change them.
 - 💤 NHTSA recall alerts per bike (free data; fits the notifications work).
 - 💤 Offline use of manuals in the phone app.
