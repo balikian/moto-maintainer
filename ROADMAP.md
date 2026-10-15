@@ -8,12 +8,19 @@ Status key: ✅ done · 🔨 in progress · ⏳ next · 💤 later
 
 ---
 
-## Where things stand (2026-10-08)
+## Where things stand (2026-10-15)
 
-Working web app on the dev machine only: bikes, maintenance tasks (distance +
-time), service log, export/share, owner's manual links, Claude schedule import
-(admin-only), task categories with batching hints, spend summary. Supabase
-project: one (used for everything so far). Git: commit straight to `main`.
+Live at https://swingarm.app (production database) with a test site at
+https://test.swingarm.app (swingarm-test database). Work goes to `develop`
+(test site); merging to `main` releases. Features: bikes, maintenance tasks
+(distance + time), service log, export/share, owner's manual links, Claude
+schedule import (admin-only), task categories, spend summary, the SwingArm
+design (phone and desktop layouts, Auto/Light/Dark theme), a public home
+page, branded sign-in emails through Resend.
+
+Next session, pick from: click or tap outside to close (smaller items), the
+instructions page, or step 4 (settings: account deletion and reminder
+preferences).
 
 ---
 
@@ -283,6 +290,15 @@ project: one (used for everything so far). Git: commit straight to `main`.
   phone apps (Firebase Cloud Messaging for Android, APNs for iOS).
 - Time-based due dates don't change with riding, so reminders work even when
   the odometer is stale — which is exactly why the odometer reminder matters.
+- Email cost (discussed 2026-10-15): keep Resend's free plan (100 a day,
+  3,000 a month) until reminders outgrow it. Send one daily summary per
+  rider ("2 tasks due on your Norden"), not one email per task, to keep
+  the count low. When it's outgrown, compare Resend Pro ($20 a month for
+  50,000) with Amazon SES (about $0.10 per 1,000, more setup); check
+  current prices then. Not DreamHost: low hourly sending cap, terms meant
+  for personal mailboxes, no delivery log, and app mail flagged as spam
+  would hurt support@ on the same domain. Templates stay in our code and
+  `supabase/templates/`, so switching providers is a settings change.
 
 ## 6. Paid tiers 💤
 
