@@ -46,8 +46,14 @@ project: one (used for everything so far). Git: commit straight to `main`.
     defaults (no old name in them) and are locked until custom SMTP is set
     up. Plan: Resend on `swingarm.app` (DNS records at GoDaddy), sender
     "SwingArm <noreply@swingarm.app>", then write branded Magic Link and
-    Confirm signup templates. Needed before launch anyway: the built-in
-    sender allows only a few emails an hour. Fits with step 3 or step 5.
+    Confirm signup templates. **Required before launch** (checked in
+    Supabase's docs, 2026-10-15): the built-in sender delivers only to
+    members of the Supabase team and only 2 emails an hour, so magic-link
+    sign-in doesn't work for real riders yet (Google sign-in does). With
+    custom SMTP, Supabase starts at 30 emails an hour, adjustable under
+    Authentication → Rate Limits; Resend's free plan also has daily and
+    monthly caps (check them when setting up). Set it up on both projects.
+    Fits with step 3 or step 5.
   - Before launch, consider a Supabase custom domain (paid add-on, e.g.
     auth.swingarm.app) so Google's sign-in screen stops showing the
     `*.supabase.co` address.
