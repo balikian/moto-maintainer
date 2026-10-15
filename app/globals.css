@@ -89,6 +89,15 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Tailwind 4 gives buttons the default arrow cursor; show the hand like links do. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary {
+    cursor: pointer;
+  }
+}
+
 /* Thin scrollbars in the theme's colors. Phones already show theirs only while scrolling. */
 * {
   scrollbar-width: thin;

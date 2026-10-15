@@ -51,9 +51,18 @@ project: one (used for everything so far). Git: commit straight to `main`.
     members of the Supabase team and only 2 emails an hour, so magic-link
     sign-in doesn't work for real riders yet (Google sign-in does). With
     custom SMTP, Supabase starts at 30 emails an hour, adjustable under
-    Authentication → Rate Limits; Resend's free plan also has daily and
-    monthly caps (check them when setting up). Set it up on both projects.
+    Authentication → Rate Limits. Set it up on both projects.
     Fits with step 3 or step 5.
+    Resend limits (checked by the owner, 2026-10-15): only the free plan
+    has a daily cap: **100 emails a day and 3,000 a month**. Sent and
+    received emails both count toward the daily cap, which resets at
+    midnight UTC. Pro has no daily cap: 50,000 emails a month for $20, or
+    100,000 for $35. Sign-in links alone fit the free plan early on;
+    reminder emails (step 5) will likely need Pro.
+    🔨 Set up 2026-10-15: Resend domain verified, SMTP and the templates
+    from `supabase/templates/` added on both projects. The test site's
+    Confirm signup email arrives branded. Production still sent the old
+    template: being checked.
   - Before launch, consider a Supabase custom domain (paid add-on, e.g.
     auth.swingarm.app) so Google's sign-in screen stops showing the
     `*.supabase.co` address.
@@ -521,6 +530,18 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   shouldn't throw away a half-filled form), even though that's
   inconsistent. Open: the other forms (log service, edit bike, custom
   task).
+- ✅ Hand cursor on every button (2026-10-15). Tailwind 4 gives buttons
+  the arrow cursor, so a base rule in `globals.css` sets the pointer
+  (reported on Sign out and the login page's buttons).
+- ⏳ Help pages for signed-in riders (owner, 2026-10-15):
+  - **About:** `/about` already shows the home page to signed-in riders
+    (More → About SwingArm). Open: is that enough, or should it be its own
+    page?
+  - **Instructions:** a how-to page: adding a bike, how tasks come due
+    (distance or time, whichever comes first), logging service, applying a
+    schedule, sharing a history. Linked from More → Help and feedback.
+  - **FAQ:** TBD. The home page has a short FAQ that could grow into its
+    own page.
 - 💤 Save final drive / cooling on the bike so Edit Bike can change them.
 - 💤 NHTSA recall alerts per bike (free data; fits the notifications work).
 - 💤 Offline use of manuals in the phone app.
