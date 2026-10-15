@@ -219,13 +219,13 @@ project: one (used for everything so far). Git: commit straight to `main`.
      test.swingarm.app included, sit behind Vercel's login (Deployment
      Protection), so only the Vercel team can open them. Checked: signing
      in on test.swingarm.app gives an empty garage on the test database.
-     ⏳ Production hasn't been rebuilt since the split; check swingarm.app
-     still reads prod right after the next release (Vercel can roll back).
-     🔨 Function region (2026-10-15): `vercel.json` sets `pdx1` (it
-     overrides the dashboard setting, and covers the whole project, so the
-     test site runs there too, far from its us-east-1 database). Prod's
-     database is in us-west-2, so Portland (`pdx1`) beats the default
-     Washington (`iad1`).
+     ✅ First release since the split (2026-10-15): swingarm.app reads the
+     production database (owner checked).
+     ✅ Function region (2026-10-15): `vercel.json` sets `pdx1`, next to
+     prod's us-west-2 database (the default was Washington, `iad1`); the
+     `x-vercel-id` header confirms it. It overrides the dashboard setting
+     and covers the whole project, so the test site runs there too, far
+     from its us-east-1 database.
   6. ✅ Local dev (`.env.local`) points at swingarm-test (2026-10-14), so
      trying things on the computer never touches real data.
 - 🔨 Email for **support@swingarm.app** (set up 2026-10-14; the home page
@@ -512,6 +512,13 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   review (pending manual links, schedules, and makes/models). The same
   count could sit next to "Admin review" in More. Open: also count approved
   manuals that still need a schedule imported?
+- ⏳ Click or tap outside to close (owner, 2026-10-15): modals
+  (`Modal.tsx`) and drop-down boxes such as the bike switcher
+  (`BikeSwitcher.tsx`) should close when you click or tap outside them.
+  Today modals close only with the X or Escape, and the bike switcher only
+  with its own button. `ConfirmPopover` already closes on an outside click.
+  Open: in forms (add bike, log service), should an outside tap discard
+  what's typed, or ask first?
 - 💤 Save final drive / cooling on the bike so Edit Bike can change them.
 - 💤 NHTSA recall alerts per bike (free data; fits the notifications work).
 - 💤 Offline use of manuals in the phone app.
