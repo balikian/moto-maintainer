@@ -330,8 +330,30 @@ Added by the owner (2026-10-15). First thoughts, nothing decided:
 - Works in the phone apps too, since they load the hosted site.
 - Track only on production, so the test site and local dev don't skew the
   numbers.
-- **Open:** which questions it should answer (that decides the events),
-  and which tool.
+- **Leaning (2026-10-15): GA4 through Google Tag Manager.** The owner has
+  used both, which counts for more than the differences between tools. Free,
+  with funnels and retention reports, and GTM lets the owner add or change
+  tags without a code release. Notes for building it:
+  - Next.js has `GoogleTagManager` and `sendGTMEvent` in
+    `@next/third-parties/google` (still marked experimental; see
+    `node_modules/next/dist/docs/01-app/02-guides/third-party-libraries.md`).
+    The container goes in `app/layout.tsx`; app events are pushed to the
+    `dataLayer` from the handlers (bike added, service logged, schedule
+    applied, history shared), and GTM turns them into GA4 events.
+  - The GTM ID goes in an environment variable set only for Production in
+    Vercel, so test and local send nothing.
+  - GA4's user ID can be the Supabase user ID (a random UUID, allowed);
+    never the email, which Google's terms forbid.
+  - GA4 sets cookies, so riders in the EU and UK need a consent banner and
+    Consent Mode before tracking. Possible: launch US-first and add consent
+    before marketing there.
+  - Ad blockers block GA, so numbers will run low, more so for tech-minded
+    riders.
+  - The phone apps' store privacy labels must list analytics. Apple's
+    tracking prompt (ATT) isn't needed as long as GA4's ads features
+    (Google signals, ads linking) stay off.
+- **Open:** confirm GA4 + GTM, and which questions it should answer (that
+  decides the events).
 
 ## After launch 💤
 
