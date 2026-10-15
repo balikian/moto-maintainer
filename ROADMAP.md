@@ -507,6 +507,11 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   (confirmed 2026-10-15).
 - ✅ Fixed (2026-10-15): a make or model typed into the bike form was saved
   but didn't appear in the form's lists until the page was reloaded.
+- 💤 Admin review badge (owner, 2026-10-15): for admins, a small count
+  badge on the bottom right of the avatar showing how many things wait for
+  review (pending manual links, schedules, and makes/models). The same
+  count could sit next to "Admin review" in More. Open: also count approved
+  manuals that still need a schedule imported?
 - 💤 Save final drive / cooling on the bike so Edit Bike can change them.
 - 💤 NHTSA recall alerts per bike (free data; fits the notifications work).
 - 💤 Offline use of manuals in the phone app.
