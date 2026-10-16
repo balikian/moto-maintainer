@@ -18,9 +18,9 @@ schedule import (admin-only), task categories, spend summary, the SwingArm
 design (phone and desktop layouts, Auto/Light/Dark theme), a public home
 page, branded sign-in emails through Resend.
 
-Step 4 (settings: reminder preferences, account deletion) is built on
-test; next it needs trying out, then its migration on production and a
-release. After that: the instructions page, or step 5 (reminder emails).
+Step 4 (settings: reminder preferences, account deletion) is released
+(2026-10-16). Next, pick from: the instructions page, step 5 (reminder
+emails), or importing data (with Download my data on More).
 
 ---
 
@@ -269,7 +269,7 @@ release. After that: the instructions page, or step 5 (reminder emails).
 - Also: custom domain, Google (and Apple) sign-in redirect URLs for both
   sites, error monitoring (e.g. Sentry), database backups on prod.
 
-## 4. Settings and communication preferences 🔨
+## 4. Settings and communication preferences ✅
 
 - A Settings page: units, theme (both exist, now in a menu), notification
   preferences, account deletion (**required by Apple** for apps with sign-up).
@@ -294,8 +294,8 @@ release. After that: the instructions page, or step 5 (reminder emails).
   (checked with a rolled-back dry run on test). More has a "Reminder
   emails" section with three switches ("Reminder emails start soon") and
   a Delete account button under Sign out.
-  **Before the next release:** push the migration to production first; the
-  switches and Delete account fail without it.
+  ✅ Released 2026-10-16: migration on production (checked: columns, and
+  the function callable only by signed-in riders), then `main`.
   Also (decided and built 2026-10-16): after deleting, the home page shows
   "Your account has been deleted" (`/?deleted=1`, dismissable); the delete
   dialog offers **Download my data**, one JSON file with the account's
@@ -583,8 +583,10 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   - **FAQ:** TBD. The home page has a short FAQ that could grow into its
     own page.
 - 💤 Import data (owner, 2026-10-16): load a "Download my data" file back
-  in, e.g. to restore after deleting or to move between accounts. First
-  thoughts: import adds bikes (with their tasks and history) as new ones,
+  in, e.g. to restore after deleting or to move between accounts. Goes
+  with a **Download my data** row on More (owner), outside the delete
+  dialog, so riders can back up any time; it reuses the dialog's export.
+  Import could sit next to it. First thoughts: import adds bikes (with their tasks and history) as new ones,
   never overwriting; a preview first ("3 bikes, 41 service records"), with
   a warning when a bike with the same year, make and model already
   exists. Checked on the server against a schema (Zod), through a server
