@@ -70,9 +70,9 @@ export default async function HelpPage() {
             distance or by time, whichever comes first.
           </p>
           <p className="text-muted">
-            On a phone, the bar at the bottom has <Ui>Tasks</Ui>, <Ui>History</Ui>, <Ui>Garage</Ui> and <Ui>More</Ui>,
-            with the red <Ui>Log service</Ui> button in the middle. On a computer they’re in the bar at the top, and your
-            avatar at the top right opens More.
+            On a phone, the navigation bar at the bottom has links to <Ui>Tasks</Ui>, <Ui>History</Ui>,{' '}
+            <Ui>Garage</Ui> and <Ui>More</Ui>, with the red <Ui>Log service</Ui> button in the middle. On a computer
+            they’re in the navigation bar at the top. Your avatar at the top right opens the <Ui>More</Ui> page.
           </p>
         </div>
 
