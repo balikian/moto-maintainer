@@ -8,7 +8,8 @@ import type { MaintenanceTask, UnitSystem } from './types';
 // Every reminder has a key, recorded in `notifications_sent` once sent, so it
 // goes only once:
 // - a task's "soon" and "overdue" emails, once each per service cycle (the
-//   key includes the task's baseline, so logging service starts a new cycle);
+//   key includes the task's baseline, so logging service starts a new cycle),
+//   starting a week after the bike was added;
 // - a bike's odometer check-in, every 30 days the reading stays unchanged;
 // - the monthly summary, once per month.
 
@@ -23,6 +24,8 @@ export type ReminderBike = {
   make: string;
   model: string;
   current_mileage: number;
+  /** Timestamp of when the bike was added. */
+  created_at: string;
   /** Timestamp of the last odometer entry or confirmation. */
   odometer_updated_at: string;
   tasks: ReminderTask[];
@@ -73,6 +76,13 @@ export type MonthlySummary = {
 /** Days without an odometer update before the check-in, and between repeats. */
 export const ODOMETER_CHECK_IN_DAYS = 30;
 
+/**
+ * No task reminders for a bike until it's been in the garage this long, so
+ * the rider can log past service, apply a schedule or change intervals
+ * before hearing that everything is overdue (tasks count from new).
+ */
+export const NEW_BIKE_GRACE_DAYS = 7;
+
 /** The monthly summary goes out on one of the month's first days (a missed run catches up). */
 const MONTHLY_SUMMARY_LAST_DAY = 3;
 
@@ -88,7 +98,9 @@ export function planDailyReminders(rider: ReminderRider, today: Date): DailyRemi
   const odometer: OdometerReminder[] = [];
 
   for (const bike of rider.bikes) {
-    if (rider.task_reminders) {
+    const added = parseIsoDate(bike.created_at);
+    const settledIn = !added || daysBetween(added, today) >= NEW_BIKE_GRACE_DAYS;
+    if (rider.task_reminders && settledIn) {
       for (const task of bike.tasks) {
         const dueState = getTaskDueState(task, bike.current_mileage, today);
         if (dueState.status === 'Healthy') continue;

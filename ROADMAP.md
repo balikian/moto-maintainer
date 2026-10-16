@@ -310,7 +310,10 @@ Step 4 (settings: reminder preferences, account deletion) is released
   Soon was skipped) and **Overdue**, once each per service cycle. Odometer
   check-in **every 30 days** the reading stays unchanged (saving the same
   reading counts as an update). Monthly summary on the 1st–3rd, about the
-  month before. At most one daily email per rider; the monthly summary is
+  month before. **No task reminders for a bike's first 7 days** (owner,
+  2026-10-16), so riders can log past service or apply a schedule first;
+  the odometer check-in already waits 30 days. At most one daily email per
+  rider; the monthly summary is
   its own email.
 - **Decided:** the job reads every rider's data through security definer
   functions (`reminder_job_data`, `claim_reminders`, `release_reminders`)

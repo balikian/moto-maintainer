@@ -21,6 +21,7 @@ const bike = (id: string, model: string, tasks: ReminderTask[], overrides: Parti
   make: 'Husqvarna',
   model,
   current_mileage: 3000,
+  created_at: '2026-01-15T18:00:00+00:00',
   odometer_updated_at: '2026-10-10T00:00:00Z',
   tasks,
   spent: null,

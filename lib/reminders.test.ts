@@ -28,6 +28,7 @@ const bike = (overrides: Partial<ReminderBike> = {}): ReminderBike => ({
   make: 'Husqvarna',
   model: 'Norden 901',
   current_mileage: 3000,
+  created_at: '2026-01-15T18:00:00+00:00',
   odometer_updated_at: '2026-10-10T18:00:00+00:00',
   tasks: [],
   spent: null,
@@ -83,6 +84,13 @@ describe('planDailyReminders', () => {
     const soonKey = planDailyReminders(rider({ bikes: [bike({ tasks: [soon] })] }), today)!.tasks[0].key;
     const overdue = planDailyReminders(rider({ sent: [soonKey], bikes: [bike({ current_mileage: 4000, tasks: [soon] })] }), today);
     assert.equal(overdue?.tasks[0].kind, 'overdue');
+  });
+
+  it('waits a week after a bike is added before task reminders', () => {
+    const overdue = [task('t', { interval_mileage: 2500 })];
+    const justAdded = bike({ created_at: '2026-10-12T18:00:00+00:00', tasks: overdue }); // 4 days ago
+    assert.equal(planDailyReminders(rider({ bikes: [justAdded] }), today), null);
+    assert.equal(planDailyReminders(rider({ bikes: [justAdded] }), new Date(2026, 9, 19))?.tasks.length, 1); // day 7
   });
 
   it('checks in on the odometer every 30 days it stays the same', () => {
