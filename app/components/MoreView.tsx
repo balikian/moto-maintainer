@@ -1,10 +1,11 @@
 'use client';
 
-import { useId, type ReactNode } from 'react';
+import { useId, useState, type ReactNode } from 'react';
 import { ChevronRight, LogOut } from 'lucide-react';
 import { logout } from '@/lib/actions/auth';
-import type { Theme, UnitSystem } from '@/lib/types';
+import type { ReminderPreferences, Theme, UnitSystem } from '@/lib/types';
 import Avatar from './Avatar';
+import DeleteAccountModal from './DeleteAccountModal';
 import { SUPPORT_EMAIL } from '@/lib/site';
 import { ui } from './ui';
 
@@ -15,10 +16,18 @@ type MoreViewProps = {
   provider: string | null;
   unitSystem: UnitSystem;
   theme: Theme;
+  reminders: ReminderPreferences;
   isAdmin: boolean;
   onChangeUnits: (unitSystem: UnitSystem) => void;
   onChangeTheme: (theme: Theme) => void;
+  onChangeReminders: (reminders: ReminderPreferences) => void;
 };
+
+const REMINDER_OPTIONS: { key: keyof ReminderPreferences; label: string; detail: string }[] = [
+  { key: 'taskReminders', label: 'Tasks coming due', detail: 'One email when tasks turn soon or overdue' },
+  { key: 'odometerReminders', label: 'Odometer check-in', detail: 'When a bike’s odometer hasn’t changed in 30 days' },
+  { key: 'monthlySummary', label: 'Monthly summary', detail: 'What’s coming up and what you spent' },
+];
 
 const UNIT_OPTIONS: { value: UnitSystem; label: string }[] = [
   { value: 'imperial', label: 'Miles' },
@@ -82,8 +91,56 @@ function Segmented<T extends string>({ label, options, value, onChange }: {
   );
 }
 
-/** Account, preferences, help and legal, admin tools, and sign out. */
-export default function MoreView({ email, avatarUrl, provider, unitSystem, theme, isAdmin, onChangeUnits, onChangeTheme }: MoreViewProps) {
+/** An on/off switch with a label and a line of detail, like "Tasks coming due". */
+function SwitchRow({ label, detail, checked, onChange }: {
+  label: string;
+  detail: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}) {
+  const labelId = useId();
+  const detailId = useId();
+  return (
+    <div className={`${rowClass} flex-nowrap`}>
+      <span className="min-w-0">
+        <span id={labelId} className="block text-base font-bold">{label}</span>
+        <span id={detailId} className="block text-sm font-medium text-muted">{detail}</span>
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-labelledby={labelId}
+        aria-describedby={detailId}
+        onClick={() => onChange(!checked)}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${checked ? 'bg-brand' : 'bg-line-strong'}`}
+      >
+        <span
+          aria-hidden="true"
+          className={`absolute left-0.5 top-0.5 h-6 w-6 rounded-full bg-on-brand shadow transition-transform ${
+            checked ? 'translate-x-5' : ''
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
+/** Account, preferences, reminders, help and legal, admin tools, sign out, and deleting the account. */
+export default function MoreView({
+  email,
+  avatarUrl,
+  provider,
+  unitSystem,
+  theme,
+  reminders,
+  isAdmin,
+  onChangeUnits,
+  onChangeTheme,
+  onChangeReminders,
+}: MoreViewProps) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
   return (
     <div className="space-y-6">
       <div className={`${ui.card} flex items-center gap-3 p-3.5`}>
@@ -97,11 +154,24 @@ export default function MoreView({ email, avatarUrl, provider, unitSystem, theme
       <Group title="Preferences">
         <Segmented label="Distance" options={UNIT_OPTIONS} value={unitSystem} onChange={onChangeUnits} />
         <Segmented label="Theme" options={THEME_OPTIONS} value={theme} onChange={onChangeTheme} />
-        <div className={rowClass}>
-          <span className="text-base font-bold">Reminders and notifications</span>
-          {comingSoon}
-        </div>
       </Group>
+
+      <div className="space-y-2">
+        <Group title="Reminder emails">
+          {REMINDER_OPTIONS.map((option) => (
+            <SwitchRow
+              key={option.key}
+              label={option.label}
+              detail={option.detail}
+              checked={reminders[option.key]}
+              onChange={(checked) => onChangeReminders({ ...reminders, [option.key]: checked })}
+            />
+          ))}
+        </Group>
+        <p className="mx-1 text-sm text-muted">
+          Reminder emails start soon{email && <>, sent to {email}</>}.
+        </p>
+      </div>
 
       <Group title="SwingArm">
         <a href="/about" className={`${rowClass} text-base font-bold`}>
@@ -134,6 +204,18 @@ export default function MoreView({ email, avatarUrl, provider, unitSystem, theme
           <LogOut size={16} aria-hidden="true" /> Sign out
         </button>
       </form>
+
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={() => setDeleteOpen(true)}
+          className="min-h-11 rounded-xl px-3 text-sm font-bold text-danger transition-colors hover:bg-danger/10"
+        >
+          Delete account
+        </button>
+      </div>
+
+      {deleteOpen && <DeleteAccountModal email={email} onClose={() => setDeleteOpen(false)} />}
     </div>
   );
 }

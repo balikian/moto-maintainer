@@ -7,6 +7,13 @@ export type UnitSystem = 'imperial' | 'metric';
 /** 'system' is Auto: follow the device's light or dark setting. */
 export type Theme = 'system' | 'light' | 'dark';
 
+/** Which reminder emails a rider wants; the `email_*` columns on `profiles`. */
+export interface ReminderPreferences {
+  taskReminders: boolean;
+  odometerReminders: boolean;
+  monthlySummary: boolean;
+}
+
 export interface Motorcycle {
   id: string;
   user_id: string;

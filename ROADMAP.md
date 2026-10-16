@@ -18,8 +18,9 @@ schedule import (admin-only), task categories, spend summary, the SwingArm
 design (phone and desktop layouts, Auto/Light/Dark theme), a public home
 page, branded sign-in emails through Resend.
 
-Next session, pick from: the instructions page, or step 4 (settings:
-account deletion and reminder preferences).
+Step 4 (settings: reminder preferences, account deletion) is built on
+test; next it needs trying out, then its migration on production and a
+release. After that: the instructions page, or step 5 (reminder emails).
 
 ---
 
@@ -268,7 +269,7 @@ account deletion and reminder preferences).
 - Also: custom domain, Google (and Apple) sign-in redirect URLs for both
   sites, error monitoring (e.g. Sentry), database backups on prod.
 
-## 4. Settings and communication preferences 💤
+## 4. Settings and communication preferences 🔨
 
 - A Settings page: units, theme (both exist, now in a menu), notification
   preferences, account deletion (**required by Apple** for apps with sign-up).
@@ -276,7 +277,27 @@ account deletion and reminder preferences).
   - task coming due / overdue
   - odometer reminder ("update your mileage", e.g. if not updated in 30 days)
   - optional: monthly summary, recall alerts (if built)
-- Needs a `notification_preferences` table (or columns on `profiles`).
+- **Decided (2026-10-16):** settings stay on the More screen (no separate
+  page). Preferences are columns on `profiles`, email only for now
+  (`email_task_reminders`, `email_odometer_reminders`,
+  `email_monthly_summary`); push gets its own columns in step 5 or 7.
+  Task and odometer reminders are **on by default** (every email will carry
+  an unsubscribe link); the monthly summary is off. The odometer check-in
+  is fixed at 30 days for now. Deleting an account takes typing DELETE in
+  a dialog (X-only).
+- 🔨 Built 2026-10-16, on test: migration
+  `20261016120000_reminders_and_account_deletion.sql` (the columns, and
+  `delete_my_account()`, a security definer function that deletes the
+  signed-in rider from `auth.users`, so the app still never uses the
+  service-role key). Everything the rider owns cascades away; manuals,
+  schedules and models they submitted stay, with `submitted_by` cleared
+  (checked with a rolled-back dry run on test). More has a "Reminder
+  emails" section with three switches ("Reminder emails start soon") and
+  a Delete account button under Sign out.
+  **Before the next release:** push the migration to production first; the
+  switches and Delete account fail without it.
+  Open: an "account deleted" note on the home page after deleting; offer a
+  download of all data before deleting (today: per-bike Export).
 
 ## 5. Notifications 💤
 

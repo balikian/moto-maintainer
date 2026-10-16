@@ -1,16 +1,33 @@
 'use server';
 
 import { getSignedInClient } from '../supabase/server';
-import type { Theme, UnitSystem } from '../types';
+import type { ReminderPreferences, Theme, UnitSystem } from '../types';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
 
+const REMINDER_COLUMNS = {
+  taskReminders: 'email_task_reminders',
+  odometerReminders: 'email_odometer_reminders',
+  monthlySummary: 'email_monthly_summary',
+} as const satisfies Record<keyof ReminderPreferences, string>;
+
+type ProfileChanges = {
+  unit_system?: UnitSystem;
+  theme?: Theme;
+  active_bike_id?: string | null;
+} & Partial<Record<(typeof REMINDER_COLUMNS)[keyof ReminderPreferences], boolean>>;
+
 export async function updatePreferencesAction(
-  preferences: { unitSystem?: UnitSystem; theme?: Theme; activeBikeId?: string | null }
+  preferences: {
+    unitSystem?: UnitSystem;
+    theme?: Theme;
+    activeBikeId?: string | null;
+    reminders?: Partial<ReminderPreferences>;
+  }
 ): Promise<ActionResult> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
 
-  const changes: { unit_system?: UnitSystem; theme?: Theme; active_bike_id?: string | null } = {};
+  const changes: ProfileChanges = {};
   if (preferences.activeBikeId === null) {
     changes.active_bike_id = null;
   } else if (typeof preferences.activeBikeId === 'string') {
@@ -25,6 +42,10 @@ export async function updatePreferencesAction(
   }
   if (preferences.theme === 'dark' || preferences.theme === 'light' || preferences.theme === 'system') {
     changes.theme = preferences.theme;
+  }
+  for (const key of Object.keys(REMINDER_COLUMNS) as (keyof ReminderPreferences)[]) {
+    const value = preferences.reminders?.[key];
+    if (typeof value === 'boolean') changes[REMINDER_COLUMNS[key]] = value;
   }
   if (Object.keys(changes).length === 0) return {};
 

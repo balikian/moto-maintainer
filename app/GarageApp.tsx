@@ -422,9 +422,11 @@ export default function GarageApp() {
             provider={(user.app_metadata?.provider as string | undefined) ?? null}
             unitSystem={unitSystem}
             theme={theme}
+            reminders={preferences.reminders}
             isAdmin={isAdmin}
             onChangeUnits={(next) => void updatePreferences({ unitSystem: next })}
             onChangeTheme={(next) => void updatePreferences({ theme: next })}
+            onChangeReminders={(next) => void updatePreferences({ reminders: next })}
           />
         )}
       </main>
