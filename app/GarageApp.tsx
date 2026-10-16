@@ -417,6 +417,8 @@ export default function GarageApp() {
 
         {view === 'more' && (
           <MoreView
+            supabase={supabase}
+            userId={user.id}
             email={email}
             avatarUrl={avatarUrl}
             provider={(user.app_metadata?.provider as string | undefined) ?? null}

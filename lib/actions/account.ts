@@ -20,7 +20,8 @@ export async function deleteAccountAction(confirmation: string): Promise<ActionR
   const { error } = await supabase.rpc('delete_my_account');
   if (error) return { error: `Couldn't delete your account: ${error.message}` };
 
-  // The account is gone; this clears the sign-in cookies.
+  // The account is gone; this clears the sign-in cookies. The home page
+  // shows an "account deleted" note for ?deleted.
   await supabase.auth.signOut();
-  redirect('/');
+  redirect('/?deleted=1');
 }

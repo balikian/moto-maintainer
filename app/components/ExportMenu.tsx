@@ -5,6 +5,7 @@ import { Download, FileDown, Link2, Printer } from 'lucide-react';
 import { buildServiceHistoryCsv, historyFileName } from '@/lib/historyExport';
 import type { Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
 import { useDismiss } from '../hooks/useDismiss';
+import { downloadFile } from './download';
 import { ui } from './ui';
 
 type ExportMenuProps = {
@@ -18,14 +19,7 @@ const menuItemClass =
   'flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-sm transition-colors hover:bg-raised';
 
 function downloadCsv(bike: Motorcycle, logs: ServiceLog[], unitSystem: UnitSystem) {
-  // The byte-order mark makes Excel read the file as UTF-8 (accents, symbols).
-  const blob = new Blob(['﻿', buildServiceHistoryCsv(bike, logs, unitSystem)], { type: 'text/csv;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = historyFileName(bike, 'csv');
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadFile(historyFileName(bike, 'csv'), buildServiceHistoryCsv(bike, logs, unitSystem), 'text/csv;charset=utf-8');
 }
 
 export default function ExportMenu({ bike, logs, unitSystem, onShare }: ExportMenuProps) {

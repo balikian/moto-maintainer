@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Check } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { SUPPORT_EMAIL } from '@/lib/site';
 import BrandLogo from './BrandLogo';
 import { ui } from './ui';
@@ -11,6 +11,8 @@ import { ui } from './ui';
 type HomePageProps = {
   /** Signed-in riders get "Open your garage" instead of "Sign in". */
   signedIn: boolean;
+  /** Shows a note at the top after a rider deleted their account. */
+  accountDeleted?: boolean;
 };
 
 const FEATURES = [
@@ -106,7 +108,7 @@ function PhonePreview() {
   );
 }
 
-export default function HomePage({ signedIn }: HomePageProps) {
+export default function HomePage({ signedIn, accountDeleted = false }: HomePageProps) {
   const primary = signedIn ? { href: '/', label: 'Open your garage' } : { href: '/login', label: 'Start free' };
   const sectionTitle = 'text-3xl font-extrabold tracking-tight sm:text-4xl';
   const wrap = 'mx-auto w-full max-w-[1120px] px-4 sm:px-8';
@@ -128,6 +130,20 @@ export default function HomePage({ signedIn }: HomePageProps) {
           </Link>
         </div>
       </header>
+
+      {accountDeleted && (
+        <div className={`${wrap} pt-6`}>
+          <div role="status" className={`${ui.successBox} flex items-center gap-3 py-3`}>
+            <p className="min-w-0 flex-1 text-base">
+              <span className="font-bold">Your account has been deleted.</span> Your bikes, tasks and service history
+              are gone for good. Thanks for riding with SwingArm.
+            </p>
+            <Link href="/" aria-label="Dismiss" className="-my-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl hover:bg-good/10">
+              <X size={18} />
+            </Link>
+          </div>
+        </div>
+      )}
 
       <main>
         <section className={`${wrap} grid grid-cols-1 items-center gap-14 py-14 sm:py-20 lg:grid-cols-[1.1fr_0.9fr]`}>

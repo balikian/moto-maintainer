@@ -296,8 +296,11 @@ release. After that: the instructions page, or step 5 (reminder emails).
   a Delete account button under Sign out.
   **Before the next release:** push the migration to production first; the
   switches and Delete account fail without it.
-  Open: an "account deleted" note on the home page after deleting; offer a
-  download of all data before deleting (today: per-bike Export).
+  Also (decided and built 2026-10-16): after deleting, the home page shows
+  "Your account has been deleted" (`/?deleted=1`, dismissable); the delete
+  dialog offers **Download my data**, one JSON file with the account's
+  settings and every bike's tasks and service history
+  (`lib/accountExport.ts`). Owner checked the rest of step 4 on test.
 
 ## 5. Notifications 💤
 

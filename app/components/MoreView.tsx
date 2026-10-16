@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { ChevronRight, LogOut } from 'lucide-react';
 import { logout } from '@/lib/actions/auth';
 import type { ReminderPreferences, Theme, UnitSystem } from '@/lib/types';
@@ -10,6 +11,8 @@ import { SUPPORT_EMAIL } from '@/lib/site';
 import { ui } from './ui';
 
 type MoreViewProps = {
+  supabase: SupabaseClient;
+  userId: string;
   email: string | null;
   avatarUrl: string | null;
   /** The sign-in provider from Supabase, e.g. "google" or "email". */
@@ -128,6 +131,8 @@ function SwitchRow({ label, detail, checked, onChange }: {
 
 /** Account, preferences, reminders, help and legal, admin tools, sign out, and deleting the account. */
 export default function MoreView({
+  supabase,
+  userId,
   email,
   avatarUrl,
   provider,
@@ -215,7 +220,9 @@ export default function MoreView({
         </button>
       </div>
 
-      {deleteOpen && <DeleteAccountModal email={email} onClose={() => setDeleteOpen(false)} />}
+      {deleteOpen && (
+        <DeleteAccountModal supabase={supabase} userId={userId} email={email} onClose={() => setDeleteOpen(false)} />
+      )}
     </div>
   );
 }
