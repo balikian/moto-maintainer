@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ChevronDown, Plus } from 'lucide-react';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
+import { useDismiss } from '../hooks/useDismiss';
 import { ui } from './ui';
 
 type BikeSwitcherProps = {
@@ -19,6 +20,8 @@ type BikeSwitcherProps = {
 /** The bike's name, large; opens a quick list to switch bikes or add one. */
 export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, onAdd, onManage }: BikeSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useDismiss(wrapperRef, isOpen, () => setIsOpen(false));
 
   const close = (then: () => void) => {
     setIsOpen(false);
@@ -26,7 +29,7 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
   };
 
   return (
-    <div className="relative">
+    <div ref={wrapperRef} className="relative">
       <button
         type="button"
         onClick={() => setIsOpen((previous) => !previous)}

@@ -73,7 +73,7 @@ export default function ShareHistoryModal({ supabase, bike, onClose }: ShareHist
     : undefined;
 
   return (
-    <Modal title="Share service history" description={bikeTitle(bike)} onClose={onClose}>
+    <Modal title="Share service history" description={bikeTitle(bike)} closeOnOutsideClick onClose={onClose}>
       <div className="space-y-4">
         <p className={`text-sm ${ui.muted}`}>
           Anyone with the link can view this bike&apos;s service history, including dates, odometer readings, costs,

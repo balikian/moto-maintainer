@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useDismiss } from '../hooks/useDismiss';
 import { ui } from './ui';
 
 type ConfirmPopoverProps = {
@@ -24,25 +25,10 @@ export default function ConfirmPopover({ message, confirmLabel, align = 'right',
   const wrapperRef = useRef<HTMLSpanElement>(null);
   const confirmRef = useRef<HTMLButtonElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    confirmRef.current?.focus();
+  useDismiss(wrapperRef, isOpen, () => setIsOpen(false));
 
-    // Capture phase, so Escape closes only this box and not a dialog behind it.
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
-      event.stopPropagation();
-      setIsOpen(false);
-    };
-    const handlePointerDown = (event: PointerEvent) => {
-      if (!wrapperRef.current?.contains(event.target as Node)) setIsOpen(false);
-    };
-    window.addEventListener('keydown', handleKeyDown, true);
-    window.addEventListener('pointerdown', handlePointerDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown, true);
-      window.removeEventListener('pointerdown', handlePointerDown);
-    };
+  useEffect(() => {
+    if (isOpen) confirmRef.current?.focus();
   }, [isOpen]);
 
   return (

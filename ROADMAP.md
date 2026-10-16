@@ -18,9 +18,8 @@ schedule import (admin-only), task categories, spend summary, the SwingArm
 design (phone and desktop layouts, Auto/Light/Dark theme), a public home
 page, branded sign-in emails through Resend.
 
-Next session, pick from: click or tap outside to close (smaller items), the
-instructions page, or step 4 (settings: account deletion and reminder
-preferences).
+Next session, pick from: the instructions page, or step 4 (settings:
+account deletion and reminder preferences).
 
 ---
 
@@ -539,15 +538,13 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   review (pending manual links, schedules, and makes/models). The same
   count could sit next to "Admin review" in More. Open: also count approved
   manuals that still need a schedule imported?
-- ⏳ Click or tap outside to close (owner, 2026-10-15): modals
-  (`Modal.tsx`) and drop-down boxes such as the bike switcher
-  (`BikeSwitcher.tsx`) should close when you click or tap outside them.
-  Today modals close only with the X or Escape, and the bike switcher only
-  with its own button. `ConfirmPopover` already closes on an outside click.
-  **Decided (2026-10-15):** the add bike form stays X-only (an outside tap
-  shouldn't throw away a half-filled form), even though that's
-  inconsistent. Open: the other forms (log service, edit bike, custom
-  task).
+- ✅ Click or tap outside to close (owner, 2026-10-15; done 2026-10-16).
+  The bike switcher, the Export menu and `ConfirmPopover` close on a click
+  or tap outside, or Escape (shared hook `useDismiss`). Dialogs opt in with
+  `Modal`'s `closeOnOutsideClick`: Share service history and Manual &
+  schedule do. **Decided:** forms stay X-only (and Escape), so a stray tap
+  doesn't throw away what was typed: add and edit bike, log service,
+  custom task, and the schedule import.
 - ✅ Hand cursor on every button (2026-10-15). Tailwind 4 gives buttons
   the arrow cursor, so a base rule in `globals.css` sets the pointer
   (reported on Sign out and the login page's buttons).

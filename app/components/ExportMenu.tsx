@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Download, FileDown, Link2, Printer } from 'lucide-react';
 import { buildServiceHistoryCsv, historyFileName } from '@/lib/historyExport';
 import type { Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
+import { useDismiss } from '../hooks/useDismiss';
 import { ui } from './ui';
 
 type ExportMenuProps = {
@@ -29,9 +30,11 @@ function downloadCsv(bike: Motorcycle, logs: ServiceLog[], unitSystem: UnitSyste
 
 export default function ExportMenu({ bike, logs, unitSystem, onShare }: ExportMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  useDismiss(wrapperRef, isOpen, () => setIsOpen(false));
 
   return (
-    <div className="relative">
+    <div ref={wrapperRef} className="relative">
       <button type="button" onClick={() => setIsOpen((previous) => !previous)} className={ui.chipButton} aria-expanded={isOpen}>
         <FileDown size={15} />
         Export
