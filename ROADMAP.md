@@ -302,7 +302,40 @@ Step 4 (settings: reminder preferences, account deletion) is released
   settings and every bike's tasks and service history
   (`lib/accountExport.ts`). Owner checked the rest of step 4 on test.
 
-## 5. Notifications 💤
+## 5. Notifications 🔨
+
+- **Decided (2026-10-16):** email first. A **Vercel Cron** (`vercel.json`,
+  daily at 15:00 UTC: 8 am Pacific in summer, 7 am in winter) calls
+  `/api/cron/reminders`. Task emails at **Soon** (Urgent counts as Soon if
+  Soon was skipped) and **Overdue**, once each per service cycle. Odometer
+  check-in **every 30 days** the reading stays unchanged (saving the same
+  reading counts as an update). Monthly summary on the 1st–3rd, about the
+  month before. At most one daily email per rider; the monthly summary is
+  its own email.
+- **Decided:** the job reads every rider's data through security definer
+  functions (`reminder_job_data`, `claim_reminders`, `release_reminders`)
+  that need a **job secret** kept in Supabase Vault
+  (`reminder_job_secret`, made by the migration, one per database). The app
+  has it as `CRON_SECRET`, which is also what Vercel Cron sends. The app
+  still never holds the service-role key.
+- 🔨 Built 2026-10-16, on test: migration
+  `20261016200000_reminder_emails.sql` (`motorcycles.odometer_updated_at`
+  plus a trigger, `profiles.email_token` for unsubscribe links,
+  `notifications_sent`, the job functions, `unsubscribe_reminders`). Code:
+  `lib/reminders.ts` (what to send, tested), `lib/reminderEmail.ts`
+  (templates, tested; lists cap at 8 tasks + "and N more"),
+  `lib/reminderJob.ts` (the run; claims before sending, releases on
+  failure, stops at 80 emails a run for Resend's free plan), `lib/email.ts`
+  (Resend API). Unsubscribe: a link to `/unsubscribe` (asks first) and
+  one-click `List-Unsubscribe` → `/api/unsubscribe`. Manual runs:
+  `?dry-run` previews; off production a real send needs `?only=<email>`
+  (the test database has friends' real addresses). Checked on test: dry
+  run, the guard, and the database functions (rolled-back test).
+  **Still to do:** a Resend API key for the app (`RESEND_API_KEY`) in
+  `.env.local` and Vercel; `CRON_SECRET` in Vercel (Production = prod
+  Vault's secret, Preview = test's); a real test send; then the migration
+  on production and a release. The first production run emails every
+  rider with reminders on about everything already due.
 
 - A daily scheduled job (Vercel Cron or Supabase `pg_cron` + Edge Function)
   finds tasks that just turned Soon/Urgent/Overdue and stale odometers, checks

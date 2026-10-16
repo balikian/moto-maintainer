@@ -1,0 +1,221 @@
+import { bikeTitle } from './historyExport';
+import type { DailyReminders, MonthlySummary, OdometerReminder, ReminderBike, TaskReminder } from './reminders';
+import { dueLabel } from './taskLabels';
+import type { UnitSystem } from './types';
+import { formatDistance } from './units';
+
+// The reminder emails' subject, HTML and plain text. Styled like the sign-in
+// emails in supabase/templates/: light, inline styles, table layout.
+
+export type Email = { subject: string; html: string; text: string };
+
+export type EmailLinks = {
+  /** Opens the app (Tasks). */
+  appUrl: string;
+  /** More, where the reminder switches are. */
+  settingsUrl: string;
+  /** Turns off this kind of email. */
+  unsubscribeUrl: string;
+};
+
+const COLORS = {
+  page: '#f4f1ec',
+  card: '#ffffff',
+  text: '#1c1f23',
+  muted: '#6b6460',
+  line: '#e7e1d8',
+  brand: '#8f1f18',
+  onBrand: '#f2e4c9',
+  arm: '#b5281f',
+  danger: '#b5281f',
+  warn: '#a15c00',
+};
+const FONT = "Manrope,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+
+const currency = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+/** Longer lists end with "And 12 more", so a first email about a used bike stays readable. */
+const MAX_TASKS_SHOWN = 8;
+
+export function escapeHtml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+/** "640 mi left", "3 days overdue", "Due today". */
+export function dueText(reminder: Pick<TaskReminder, 'dueState'>, units: UnitSystem): string {
+  const { value, caption } = dueLabel(reminder.dueState, units);
+  return value === 'Today' ? 'Due today' : `${value} ${caption}`;
+}
+
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
+export function dailySubject({ tasks, odometer }: DailyReminders): string {
+  if (tasks.length === 1) {
+    const [only] = tasks;
+    return `${only.kind === 'overdue' ? 'Overdue' : 'Coming up'}: ${only.task.task_name} on your ${only.bike.model}`;
+  }
+  if (tasks.length > 1) {
+    const overdue = tasks.filter((entry) => entry.kind === 'overdue').length;
+    return overdue > 0 ? `${plural(tasks.length, 'maintenance task')} need attention` : `${plural(tasks.length, 'maintenance task')} coming up`;
+  }
+  return odometer.length === 1 ? `Time to update your ${odometer[0].bike.model}’s odometer` : 'Time to update your odometers';
+}
+
+/** Groups items by bike, keeping the order bikes first appear in. */
+function byBike<T extends { bike: ReminderBike }>(items: T[]): { bike: ReminderBike; items: T[] }[] {
+  const groups = new Map<string, { bike: ReminderBike; items: T[] }>();
+  for (const item of items) {
+    const group = groups.get(item.bike.id) ?? { bike: item.bike, items: [] };
+    group.items.push(item);
+    groups.set(item.bike.id, group);
+  }
+  return [...groups.values()];
+}
+
+function odometerSentence(reminder: OdometerReminder, units: UnitSystem): string {
+  return `The odometer on your ${bikeTitle(reminder.bike)} was last updated ${plural(reminder.daysSince, 'day')} ago, at ${formatDistance(reminder.bike.current_mileage, units)}.`;
+}
+
+// --- HTML pieces ---
+
+const paragraph = (html: string, style = '') =>
+  `<tr><td style="font-size:15px;line-height:1.5;padding-bottom:16px;${style}">${html}</td></tr>`;
+
+const heading = (text: string) =>
+  `<tr><td style="font-size:17px;font-weight:700;padding:8px 0 8px;">${escapeHtml(text)}</td></tr>`;
+
+const bikeLabel = (bike: ReminderBike) =>
+  `<tr><td style="font-size:13px;font-weight:700;color:${COLORS.muted};padding:4px 0 6px;">${escapeHtml(bikeTitle(bike))}</td></tr>`;
+
+function itemRow(name: string, detail: string, detailColor: string): string {
+  return `<tr><td style="padding:0 0 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${COLORS.line};border-radius:8px;"><tr>
+<td style="padding:10px 12px;font-size:15px;font-weight:700;">${escapeHtml(name)}</td>
+<td align="right" style="padding:10px 12px;font-size:14px;font-weight:800;color:${detailColor};white-space:nowrap;">${escapeHtml(detail)}</td>
+</tr></table></td></tr>`;
+}
+
+const button = (href: string, label: string) =>
+  `<tr><td style="padding:8px 0 24px;"><a href="${escapeHtml(href)}" style="display:inline-block;background:${COLORS.brand};color:${COLORS.onBrand};font-size:15px;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;">${escapeHtml(label)}</a></td></tr>`;
+
+function layout(rows: string, footer: string): string {
+  return `<!doctype html><html><body style="margin:0;padding:0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COLORS.page};padding:32px 16px;font-family:${FONT};color:${COLORS.text};">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:${COLORS.card};border-radius:12px;padding:32px;">
+<tr><td style="padding-bottom:24px;">
+<img src="https://swingarm.app/brand/swingarm-icon-512.png" width="48" height="48" alt="" style="vertical-align:middle;border-radius:10px;">
+<span style="vertical-align:middle;margin-left:10px;font-size:22px;font-weight:800;letter-spacing:1px;">SWING<span style="color:${COLORS.arm};">ARM</span></span>
+</td></tr>
+${rows}
+<tr><td style="font-size:12px;line-height:1.5;color:${COLORS.muted};border-top:1px solid ${COLORS.line};padding-top:16px;">${footer}</td></tr>
+</table>
+<p style="font-size:12px;color:${COLORS.muted};margin:16px 0 0;">SwingArm · <a href="https://swingarm.app" style="color:${COLORS.muted};">swingarm.app</a></p>
+</td></tr>
+</table>
+</body></html>`;
+}
+
+function footer(reason: string, links: EmailLinks): { html: string; text: string } {
+  return {
+    html: `${escapeHtml(reason)} <a href="${escapeHtml(links.unsubscribeUrl)}" style="color:${COLORS.muted};">Turn off these emails</a> · <a href="${escapeHtml(links.settingsUrl)}" style="color:${COLORS.muted};">Email settings</a>`,
+    text: `${reason}\nTurn off these emails: ${links.unsubscribeUrl}\nEmail settings: ${links.settingsUrl}`,
+  };
+}
+
+export function dailyReminderEmail(reminders: DailyReminders, units: UnitSystem, links: EmailLinks): Email {
+  const rows: string[] = [];
+  const text: string[] = [];
+
+  if (reminders.tasks.length > 0) {
+    const overdue = reminders.tasks.some((entry) => entry.kind === 'overdue');
+    rows.push(heading(overdue ? 'Maintenance that needs attention' : 'Maintenance coming up'));
+    text.push(overdue ? 'MAINTENANCE THAT NEEDS ATTENTION' : 'MAINTENANCE COMING UP');
+    const shown = reminders.tasks.slice(0, MAX_TASKS_SHOWN);
+    for (const group of byBike(shown)) {
+      rows.push(bikeLabel(group.bike));
+      text.push('', bikeTitle(group.bike));
+      for (const entry of group.items) {
+        const detail = dueText(entry, units);
+        rows.push(itemRow(entry.task.task_name, detail, entry.kind === 'overdue' ? COLORS.danger : COLORS.warn));
+        text.push(`- ${entry.task.task_name}: ${detail}`);
+      }
+    }
+    const hidden = reminders.tasks.length - shown.length;
+    if (hidden > 0) {
+      const more = `And ${hidden} more. Open SwingArm to see them all.`;
+      rows.push(paragraph(escapeHtml(more), 'padding-bottom:8px;font-weight:700;'));
+      text.push('', more);
+    }
+    const tip =
+      'When it’s done, log the service so the countdown starts again. Tasks count from when the bike was new until you log one, so log the last service you know of.';
+    rows.push(paragraph(escapeHtml(tip), `padding-top:8px;color:${COLORS.muted};`));
+    text.push('', tip);
+  }
+
+  if (reminders.odometer.length > 0) {
+    rows.push(heading(reminders.odometer.length === 1 ? 'Time to update your odometer' : 'Time to update your odometers'));
+    text.push('', 'TIME TO UPDATE YOUR ODOMETER');
+    for (const entry of reminders.odometer) {
+      const sentence = odometerSentence(entry, units);
+      rows.push(paragraph(escapeHtml(sentence), 'padding-bottom:8px;'));
+      text.push(sentence);
+    }
+    const distance = units === 'metric' ? 'kilometers' : 'miles';
+    const why = `Distance-based tasks only count the ${distance} you’ve entered. Still the same? Tap Update and save the same reading, and we’ll check back in 30 days.`;
+    rows.push(paragraph(escapeHtml(why), `color:${COLORS.muted};`));
+    text.push(why);
+  }
+
+  rows.push(button(links.appUrl, 'Open SwingArm'));
+  text.push('', `Open SwingArm: ${links.appUrl}`);
+
+  const foot = footer('You get these because task and odometer reminders are on.', links);
+  text.push('', '--', foot.text);
+  return { subject: dailySubject(reminders), html: layout(rows.join('\n'), foot.html), text: text.join('\n') };
+}
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** "October 2026" from "2026-10". */
+export function monthName(month: string): string {
+  const [year, number] = month.split('-').map(Number);
+  return `${MONTHS[number - 1]} ${year}`;
+}
+
+export function monthlySummaryEmail(summary: MonthlySummary, units: UnitSystem, links: EmailLinks): Email {
+  const name = monthName(summary.month);
+  const rows: string[] = [paragraph(`<span style="font-size:20px;font-weight:700;">Your ${escapeHtml(name)} in SwingArm</span>`)];
+  const text: string[] = [`YOUR ${name.toUpperCase()} IN SWINGARM`];
+
+  for (const { bike, services, spent, needsAttention } of summary.bikes) {
+    rows.push(heading(bikeTitle(bike)));
+    text.push('', bikeTitle(bike));
+
+    const logged = services === 0 ? `No service logged in ${MONTHS[Number(summary.month.slice(5)) - 1]}.` : `${plural(services, 'service')} logged, ${currency.format(spent)} spent.`;
+    rows.push(paragraph(escapeHtml(`${logged} Odometer: ${formatDistance(bike.current_mileage, units)}.`), 'padding-bottom:8px;'));
+    text.push(`${logged} Odometer: ${formatDistance(bike.current_mileage, units)}.`);
+
+    if (needsAttention.length === 0) {
+      rows.push(paragraph('Nothing due soon.', `color:${COLORS.muted};`));
+      text.push('Nothing due soon.');
+      continue;
+    }
+    for (const { task, dueState } of needsAttention.slice(0, 5)) {
+      const detail = dueText({ dueState }, units);
+      rows.push(itemRow(task.task_name, detail, dueState.status === 'Overdue' ? COLORS.danger : COLORS.warn));
+      text.push(`- ${task.task_name}: ${detail}`);
+    }
+    if (needsAttention.length > 5) {
+      const more = `And ${needsAttention.length - 5} more.`;
+      rows.push(paragraph(more, `color:${COLORS.muted};`));
+      text.push(more);
+    }
+  }
+
+  rows.push(button(links.appUrl, 'Open SwingArm'));
+  text.push('', `Open SwingArm: ${links.appUrl}`);
+
+  const foot = footer('You get this because the monthly summary is on.', links);
+  text.push('', '--', foot.text);
+  return { subject: `Your ${name} in SwingArm`, html: layout(rows.join('\n'), foot.html), text: text.join('\n') };
+}

@@ -174,7 +174,7 @@ export default function MoreView({
           ))}
         </Group>
         <p className="mx-1 text-sm text-muted">
-          Reminder emails start soon{email && <>, sent to {email}</>}.
+          At most one email a day{email && <>, sent to {email}</>}.
         </p>
       </div>
 
