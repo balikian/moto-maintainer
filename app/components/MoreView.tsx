@@ -183,6 +183,10 @@ export default function MoreView({
           About SwingArm
           <ChevronRight size={18} className="text-muted" aria-hidden="true" />
         </a>
+        <a href="/help" className={`${rowClass} text-base font-bold`}>
+          How SwingArm works
+          <ChevronRight size={18} className="text-muted" aria-hidden="true" />
+        </a>
         <a href={`mailto:${SUPPORT_EMAIL}`} className={`${rowClass} text-base font-bold`}>
           Help and feedback
           <span className="text-sm font-semibold text-muted">{SUPPORT_EMAIL}</span>

@@ -19,8 +19,8 @@ design (phone and desktop layouts, Auto/Light/Dark theme), a public home
 page, branded sign-in emails through Resend.
 
 Step 4 (settings: reminder preferences, account deletion) is released
-(2026-10-16). Next, pick from: the instructions page, step 5 (reminder
-emails), or importing data (with Download my data on More).
+(2026-10-16). The instructions page (/help) is built on test. Next: step
+5 (reminder emails), then importing data (with Download my data on More).
 
 ---
 
@@ -577,9 +577,14 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   - **About:** `/about` already shows the home page to signed-in riders
     (More → About SwingArm). Open: is that enough, or should it be its own
     page?
-  - **Instructions:** a how-to page: adding a bike, how tasks come due
-    (distance or time, whichever comes first), logging service, applying a
-    schedule, sharing a history. Linked from More → Help and feedback.
+  - ✅ **Instructions** (built 2026-10-16): **/help**, "How SwingArm
+    works", public and server-rendered. Sections: add your bike, how tasks
+    come due (statuses, counting from new, keeping the odometer current),
+    log service, change your checklist, manual and schedule, history and
+    sharing, settings. Linked from More (its own row above Help and
+    feedback), the home page's Questions section and the footer. The
+    public pages share `SiteChrome.tsx` (header and footer). **Keep it in
+    step with the app** when buttons or behavior change.
   - **FAQ:** TBD. The home page has a short FAQ that could grow into its
     own page.
 - 💤 Import data (owner, 2026-10-16): load a "Download my data" file back

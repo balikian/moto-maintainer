@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Check, X } from 'lucide-react';
 import { SUPPORT_EMAIL } from '@/lib/site';
-import BrandLogo from './BrandLogo';
+import { SITE_WRAP, SiteFooter, SiteHeader } from './SiteChrome';
 import { ui } from './ui';
 
 // The public page about SwingArm: what signed-out visitors see at "/", and
@@ -111,25 +111,20 @@ function PhonePreview() {
 export default function HomePage({ signedIn, accountDeleted = false }: HomePageProps) {
   const primary = signedIn ? { href: '/', label: 'Open your garage' } : { href: '/login', label: 'Start free' };
   const sectionTitle = 'text-3xl font-extrabold tracking-tight sm:text-4xl';
-  const wrap = 'mx-auto w-full max-w-[1120px] px-4 sm:px-8';
+  const wrap = SITE_WRAP;
 
   return (
     <div className={ui.page}>
-      <header className="border-b border-line bg-surface">
-        <div className={`${wrap} flex h-[4.25rem] items-center gap-8`}>
-          <Link href="/" aria-label="SwingArm home">
-            <BrandLogo className="h-9" />
-          </Link>
-          <nav aria-label="Page" className="hidden gap-6 text-[15px] font-bold text-muted md:flex">
+      <SiteHeader
+        signedIn={signedIn}
+        nav={
+          <>
             <a href="#features" className="hover:text-fg">Features</a>
             <a href="#pricing" className="hover:text-fg">Pricing</a>
             <a href="#apps" className="hover:text-fg">Get the app</a>
-          </nav>
-          <Link href={signedIn ? '/' : '/login'} className={`ml-auto ${ui.secondaryButton} min-h-11`}>
-            {signedIn ? 'Your garage' : 'Sign in'}
-          </Link>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       {accountDeleted && (
         <div className={`${wrap} pt-6`}>
@@ -246,7 +241,11 @@ export default function HomePage({ signedIn, accountDeleted = false }: HomePageP
             ))}
           </div>
           <p className="text-[15px] text-muted">
-            Something else? Write to{' '}
+            Step by step:{' '}
+            <Link href="/help" className="font-bold text-accent hover:underline">
+              how SwingArm works
+            </Link>
+            . Something else? Write to{' '}
             <a href={`mailto:${SUPPORT_EMAIL}`} className="font-bold text-accent hover:underline">
               {SUPPORT_EMAIL}
             </a>
@@ -255,14 +254,7 @@ export default function HomePage({ signedIn, accountDeleted = false }: HomePageP
         </section>
       </main>
 
-      <footer className="border-t border-line">
-        <div className={`${wrap} flex flex-wrap justify-between gap-5 pb-9 pt-7 text-sm font-semibold text-muted`}>
-          <span>© {new Date().getFullYear()} SwingArm</span>
-          <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-fg">
-            Contact
-          </a>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }
