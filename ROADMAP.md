@@ -582,6 +582,16 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
     schedule, sharing a history. Linked from More → Help and feedback.
   - **FAQ:** TBD. The home page has a short FAQ that could grow into its
     own page.
+- 💤 Import data (owner, 2026-10-16): load a "Download my data" file back
+  in, e.g. to restore after deleting or to move between accounts. First
+  thoughts: import adds bikes (with their tasks and history) as new ones,
+  never overwriting; a preview first ("3 bikes, 41 service records"), with
+  a warning when a bike with the same year, make and model already
+  exists. Checked on the server against a schema (Zod), through a server
+  action like every write. Category labels in the file map back to
+  category ids. The file carries `format_version: 1` so later layouts can
+  still read old files. Later, maybe: import from a spreadsheet or other
+  apps.
 - 💤 Save final drive / cooling on the bike so Edit Bike can change them.
 - 💤 NHTSA recall alerts per bike (free data; fits the notifications work).
 - 💤 Offline use of manuals in the phone app.

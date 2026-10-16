@@ -31,6 +31,8 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, exporte
   const saved = profile ?? {};
   return {
     app: 'SwingArm',
+    // Bump when the layout changes, so a future import can read older files.
+    format_version: 1,
     exported_on: exportedOn,
     note: 'Distances are in miles. Dates are calendar days (YYYY-MM-DD).',
     account: {
