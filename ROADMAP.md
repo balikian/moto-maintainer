@@ -541,10 +541,11 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
 - ✅ Click or tap outside to close (owner, 2026-10-15; done 2026-10-16).
   The bike switcher, the Export menu and `ConfirmPopover` close on a click
   or tap outside, or Escape (shared hook `useDismiss`). Dialogs opt in with
-  `Modal`'s `closeOnOutsideClick`: Share service history and Manual &
-  schedule do. **Decided:** forms stay X-only (and Escape), so a stray tap
-  doesn't throw away what was typed: add and edit bike, log service,
-  custom task, and the schedule import.
+  `Modal`'s `closeOnOutsideClick`; only Share service history does.
+  **Decided:** forms stay X-only (and Escape), so a stray tap doesn't throw
+  away what was typed: add and edit bike, log service, custom task, the
+  schedule import, and Manual & schedule (a rider reaching for Save link
+  could miss and close it).
 - ✅ Hand cursor on every button (2026-10-15). Tailwind 4 gives buttons
   the arrow cursor, so a base rule in `globals.css` sets the pointer
   (reported on Sign out and the login page's buttons).

@@ -98,7 +98,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
   };
 
   return (
-    <Modal title="Manual & schedule" description={bikeTitle(bike)} size="lg" closeOnOutsideClick onClose={onClose}>
+    <Modal title="Manual & schedule" description={bikeTitle(bike)} size="lg" onClose={onClose}>
       <div className="flex items-center justify-between gap-3">
         <h2 className={`inline-flex items-center gap-1.5 ${ui.subTitle}`}>
           <BookOpen size={14} className="text-accent" />
