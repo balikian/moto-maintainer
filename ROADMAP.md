@@ -338,10 +338,15 @@ Step 4 (settings: reminder preferences, account deletion) is released
   `?dry-run` previews; off production a real send needs `?only=<email>`
   (the test database has friends' real addresses). Checked on test: dry
   run, the guard, and the database functions (rolled-back test).
-  **Still to do:** a Resend API key for the app (`RESEND_API_KEY`) in
-  `.env.local` and Vercel; `CRON_SECRET` in Vercel (Production = prod
-  Vault's secret, Preview = test's); a real test send; then the migration
-  on production and a release. The first production run emails every
+  ✅ 2026-10-17: Resend keys (swingarm-app-test, swingarm-app-prod) in
+  `.env.local` and Vercel (type **Secret**; saved as Config first, which
+  Vercel flags "Needs Attention"). Real test sends to the owner: within
+  the first week nothing sent, after it one email, a repeat run nothing.
+  Email resized for phones after the first one. ✅ Both reminder
+  migrations on production (checked: Vault secret, grants, RLS on
+  `notifications_sent`, trigger, every profile has a token).
+  **Still to do:** `CRON_SECRET` in Vercel as a Secret (Production = prod
+  Vault's secret, Preview = test's), then a release. The first production run emails every
   rider with reminders on about everything already due.
 
 - A daily scheduled job (Vercel Cron or Supabase `pg_cron` + Edge Function)
