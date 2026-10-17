@@ -56,7 +56,7 @@ Work is committed to `develop`. Merging to `main` is a release, done only when t
 
 ## Database migrations
 
-Two Supabase projects: **swingarm-test** (ref `hizfldkwauwhrgkmaphe`, us-east-1) and production **moto_maintain** (ref `rybecfzjvkgfblbxcpct`, us-west-2). Migrations in `supabase/migrations/` are applied with the Supabase CLI (`npx supabase`), to test first, then production. `20261014100000_baseline.sql` is the whole schema as of 2026-10-14; the older SQL Editor migrations in `supabase/archive/` are history only.
+Two Supabase projects: **swingarm-test** (ref `hizfldkwauwhrgkmaphe`, us-east-1) and production **swingarm-prod** (ref `rybecfzjvkgfblbxcpct`, us-west-2). Migrations in `supabase/migrations/` are applied with the Supabase CLI (`npx supabase`), to test first, then production. `20261014100000_baseline.sql` is the whole schema as of 2026-10-14; the older SQL Editor migrations in `supabase/archive/` are history only.
 
 The CLI is signed in to the user's account and linked to test (`supabase/.temp/project-ref`), and reaches the linked database without a password (it makes a temporary login role), so Claude can run `npx supabase migration list` and `npx supabase db push` against test. Never put a database password in a file or command. For a new migration: write `supabase/migrations/<YYYYMMDDHHMMSS>_name.sql`, push it to test, and check it there. Production only with the user's go-ahead: `npx supabase link --project-ref rybecfzjvkgfblbxcpct`, `db push`, then link back to test. Pushing to `main` deploys to production, so code that needs a migration ships only after the migration is on production.
 

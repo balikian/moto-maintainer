@@ -42,7 +42,7 @@ Built with Next.js (App Router), React, Tailwind CSS, and Supabase (auth + Postg
 | --- | --- | --- | --- |
 | Local | your working copy | http://localhost:3000 | swingarm-test |
 | Test | `develop` branch | https://test.swingarm.app | swingarm-test |
-| Production | `main` branch | https://swingarm.app | moto_maintain (prod) |
+| Production | `main` branch | https://swingarm.app | swingarm-prod |
 
 Hosting is Vercel (project `swingarm`), databases are Supabase.
 

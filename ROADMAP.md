@@ -273,6 +273,15 @@ my data on More), or the admin review badge.
     subdomain so they don't touch the SPF record above.
 - Also: custom domain, Google (and Apple) sign-in redirect URLs for both
   sites, error monitoring (e.g. Sentry), database backups on prod.
+- 2026-10-17: the production Supabase project is renamed
+  **swingarm-prod** (was moto_maintain; display name only, the ref and URL
+  are unchanged). 🔨 Backups: prod is on the free plan, which has no
+  backups you can restore. The owner is moving it to **Pro** (about $25 a
+  month per organization, daily backups kept 7 days, no pausing; check
+  supabase.com/pricing). Each project in a Pro organization adds compute
+  (about $10 a month after the per-project credit), so swingarm-test can
+  move to its own free organization first. Wanted before inviting
+  friends to try the app, since they'll enter real service history.
 
 ## 4. Settings and communication preferences ✅
 
