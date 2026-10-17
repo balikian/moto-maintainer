@@ -72,6 +72,10 @@ Step 4 (settings: reminder preferences, account deletion) is released
     test and production. (Production first sent an old copy; a fresh
     link was fine, likely sent before the save took effect.) The icon is
     a hosted PNG, so mail apps that block images show an empty box.
+    2026-10-17: templates resized to match the reminder emails (32px
+    logo, 14px text, less padding), pasted into both projects. Again the
+    first emails after saving used the old template for a few minutes:
+    **after changing a template, wait a few minutes before testing.**
   - Before launch, consider a Supabase custom domain (paid add-on, e.g.
     auth.swingarm.app) so Google's sign-in screen stops showing the
     `*.supabase.co` address.
