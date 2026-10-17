@@ -348,7 +348,7 @@ my data on More), or the admin review badge.
   `notifications_sent`, trigger, every profile has a token).
   ✅ Released 2026-10-17: `CRON_SECRET` in Vercel as a Secret (Production
   = prod Vault's secret, read in prod's SQL Editor; Preview = test's), then
-  `main`. First daily run 2026-10-17 at 15:00 UTC; on release day 3 riders
+  `main` (16:00 UTC). First daily run 2026-10-18 at 15:00 UTC; on release day 3 riders
   had bikes past their first week. Next: watch the first runs in Vercel's
   logs (Cron Jobs) and Resend's dashboard; then web push. The first production run emails every
   rider with reminders on about everything already due.
