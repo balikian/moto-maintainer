@@ -78,38 +78,43 @@ function odometerSentence(reminder: OdometerReminder, units: UnitSystem): string
 
 // --- HTML pieces ---
 
+// Sized for phones first: mail apps show this at the screen's width, so the
+// padding is modest and each item stacks its due text under its name.
+
 const paragraph = (html: string, style = '') =>
-  `<tr><td style="font-size:15px;line-height:1.5;padding-bottom:16px;${style}">${html}</td></tr>`;
+  `<tr><td style="font-size:14px;line-height:1.5;padding-bottom:14px;${style}">${html}</td></tr>`;
 
 const heading = (text: string) =>
-  `<tr><td style="font-size:17px;font-weight:700;padding:8px 0 8px;">${escapeHtml(text)}</td></tr>`;
+  `<tr><td style="font-size:16px;font-weight:700;line-height:1.3;padding:4px 0 8px;">${escapeHtml(text)}</td></tr>`;
 
 const bikeLabel = (bike: ReminderBike) =>
-  `<tr><td style="font-size:13px;font-weight:700;color:${COLORS.muted};padding:4px 0 6px;">${escapeHtml(bikeTitle(bike))}</td></tr>`;
+  `<tr><td style="font-size:12px;font-weight:700;color:${COLORS.muted};padding:2px 0 6px;">${escapeHtml(bikeTitle(bike))}</td></tr>`;
 
 function itemRow(name: string, detail: string, detailColor: string): string {
-  return `<tr><td style="padding:0 0 8px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${COLORS.line};border-radius:8px;"><tr>
-<td style="padding:10px 12px;font-size:15px;font-weight:700;">${escapeHtml(name)}</td>
-<td align="right" style="padding:10px 12px;font-size:14px;font-weight:800;color:${detailColor};white-space:nowrap;">${escapeHtml(detail)}</td>
+  return `<tr><td style="padding:0 0 6px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${COLORS.line};border-radius:8px;"><tr>
+<td style="padding:8px 10px;">
+<div style="font-size:14px;font-weight:700;line-height:1.3;">${escapeHtml(name)}</div>
+<div style="font-size:12px;font-weight:800;line-height:1.3;color:${detailColor};padding-top:2px;">${escapeHtml(detail)}</div>
+</td>
 </tr></table></td></tr>`;
 }
 
 const button = (href: string, label: string) =>
-  `<tr><td style="padding:8px 0 24px;"><a href="${escapeHtml(href)}" style="display:inline-block;background:${COLORS.brand};color:${COLORS.onBrand};font-size:15px;font-weight:700;text-decoration:none;padding:12px 24px;border-radius:8px;">${escapeHtml(label)}</a></td></tr>`;
+  `<tr><td style="padding:6px 0 20px;"><a href="${escapeHtml(href)}" style="display:inline-block;background:${COLORS.brand};color:${COLORS.onBrand};font-size:14px;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px;">${escapeHtml(label)}</a></td></tr>`;
 
 function layout(rows: string, footer: string): string {
-  return `<!doctype html><html><body style="margin:0;padding:0;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COLORS.page};padding:32px 16px;font-family:${FONT};color:${COLORS.text};">
+  return `<!doctype html><html><head><meta name="viewport" content="width=device-width, initial-scale=1"></head><body style="margin:0;padding:0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${COLORS.page};padding:16px 8px;font-family:${FONT};color:${COLORS.text};">
 <tr><td align="center">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:${COLORS.card};border-radius:12px;padding:32px;">
-<tr><td style="padding-bottom:24px;">
-<img src="https://swingarm.app/brand/swingarm-icon-512.png" width="48" height="48" alt="" style="vertical-align:middle;border-radius:10px;">
-<span style="vertical-align:middle;margin-left:10px;font-size:22px;font-weight:800;letter-spacing:1px;">SWING<span style="color:${COLORS.arm};">ARM</span></span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:${COLORS.card};border-radius:12px;padding:20px 16px;">
+<tr><td style="padding-bottom:16px;">
+<img src="https://swingarm.app/brand/swingarm-icon-512.png" width="32" height="32" alt="" style="vertical-align:middle;border-radius:7px;">
+<span style="vertical-align:middle;margin-left:8px;font-size:17px;font-weight:800;letter-spacing:1px;">SWING<span style="color:${COLORS.arm};">ARM</span></span>
 </td></tr>
 ${rows}
 <tr><td style="font-size:12px;line-height:1.5;color:${COLORS.muted};border-top:1px solid ${COLORS.line};padding-top:16px;">${footer}</td></tr>
 </table>
-<p style="font-size:12px;color:${COLORS.muted};margin:16px 0 0;">SwingArm · <a href="https://swingarm.app" style="color:${COLORS.muted};">swingarm.app</a></p>
+<p style="font-size:12px;color:${COLORS.muted};margin:12px 0 0;">SwingArm · <a href="https://swingarm.app" style="color:${COLORS.muted};">swingarm.app</a></p>
 </td></tr>
 </table>
 </body></html>`;
@@ -184,7 +189,7 @@ export function monthName(month: string): string {
 
 export function monthlySummaryEmail(summary: MonthlySummary, units: UnitSystem, links: EmailLinks): Email {
   const name = monthName(summary.month);
-  const rows: string[] = [paragraph(`<span style="font-size:20px;font-weight:700;">Your ${escapeHtml(name)} in SwingArm</span>`)];
+  const rows: string[] = [paragraph(`<span style="font-size:18px;font-weight:700;">Your ${escapeHtml(name)} in SwingArm</span>`)];
   const text: string[] = [`YOUR ${name.toUpperCase()} IN SWINGARM`];
 
   for (const { bike, services, spent, needsAttention } of summary.bikes) {

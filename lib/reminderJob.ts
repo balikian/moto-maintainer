@@ -1,5 +1,4 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { toIsoDate } from './dates';
 import { sendEmail } from './email';
 import { dailyReminderEmail, monthlySummaryEmail, type Email, type EmailLinks } from './reminderEmail';
 import {
@@ -133,7 +132,6 @@ export async function runReminderJob({ secret, today, baseUrl, dryRun, onlyEmail
         'List-Unsubscribe': `<${links.oneClickUrl}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       },
-      idempotencyKey: `reminder-${item.kind}-${item.rider.user_id}-${toIsoDate(today)}`,
     });
 
     if (sent.error) {

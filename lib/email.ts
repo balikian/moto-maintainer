@@ -10,8 +10,6 @@ export type OutgoingEmail = {
   html: string;
   text: string;
   headers?: Record<string, string>;
-  /** Resend ignores a repeat with the same key for 24 hours, so a retried run can't double-send. */
-  idempotencyKey?: string;
 };
 
 export async function sendEmail(email: OutgoingEmail): Promise<{ error?: string }> {
@@ -24,7 +22,6 @@ export async function sendEmail(email: OutgoingEmail): Promise<{ error?: string 
       headers: {
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        ...(email.idempotencyKey ? { 'Idempotency-Key': email.idempotencyKey } : {}),
       },
       body: JSON.stringify({
         from: FROM,
