@@ -18,9 +18,10 @@ schedule import (admin-only), task categories, spend summary, the SwingArm
 design (phone and desktop layouts, Auto/Light/Dark theme), a public home
 page, branded sign-in emails through Resend.
 
-Step 4 (settings: reminder preferences, account deletion) is released
-(2026-10-16). The instructions page (/help) is built on test. Next: step
-5 (reminder emails), then importing data (with Download my data on More).
+Released 2026-10-17: step 4 (settings, account deletion), the
+instructions page (/help) and reminder emails (step 5, email part).
+Next: watch the first reminder runs; then importing data (with Download
+my data on More), or the admin review badge.
 
 ---
 
@@ -306,7 +307,7 @@ Step 4 (settings: reminder preferences, account deletion) is released
   settings and every bike's tasks and service history
   (`lib/accountExport.ts`). Owner checked the rest of step 4 on test.
 
-## 5. Notifications 🔨
+## 5. Notifications 🔨 (email ✅, push later)
 
 - **Decided (2026-10-16):** email first. A **Vercel Cron** (`vercel.json`,
   daily at 15:00 UTC: 8 am Pacific in summer, 7 am in winter) calls
@@ -345,8 +346,11 @@ Step 4 (settings: reminder preferences, account deletion) is released
   Email resized for phones after the first one. ✅ Both reminder
   migrations on production (checked: Vault secret, grants, RLS on
   `notifications_sent`, trigger, every profile has a token).
-  **Still to do:** `CRON_SECRET` in Vercel as a Secret (Production = prod
-  Vault's secret, Preview = test's), then a release. The first production run emails every
+  ✅ Released 2026-10-17: `CRON_SECRET` in Vercel as a Secret (Production
+  = prod Vault's secret, read in prod's SQL Editor; Preview = test's), then
+  `main`. First daily run 2026-10-17 at 15:00 UTC; on release day 3 riders
+  had bikes past their first week. Next: watch the first runs in Vercel's
+  logs (Cron Jobs) and Resend's dashboard; then web push. The first production run emails every
   rider with reminders on about everything already due.
 
 - A daily scheduled job (Vercel Cron or Supabase `pg_cron` + Edge Function)
