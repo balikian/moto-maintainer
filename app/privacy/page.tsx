@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { COMPANY_NAME } from '@/lib/site';
 import { getSignedInClient } from '@/lib/supabase/server';
 import { Bullets, LegalPage, LegalSection, PageLink, SupportLink } from '../components/LegalPage';
 
@@ -22,8 +23,8 @@ export default async function PrivacyPage() {
       intro={
         <>
           <p>
-            SwingArm is a motorcycle maintenance tracker at swingarm.app. This policy explains what we collect, why, who
-            helps us run the app, and the choices you have.
+            SwingArm is a motorcycle maintenance tracker at swingarm.app, run by {COMPANY_NAME} (“we”, “us”). This
+            policy explains what we collect, why, who helps us run the app, and the choices you have.
           </p>
           <p>
             The short version: we keep what’s needed to track your bikes, we don’t sell it, we don’t show ads, and you can

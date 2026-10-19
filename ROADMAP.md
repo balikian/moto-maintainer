@@ -24,9 +24,12 @@ The first reminder runs checked out (2026-10-19).
 🔨 Privacy policy and terms of use (drafted 2026-10-19, on `develop`, owner
 reviewing): **/privacy** and **/terms**, public pages like /help, linked
 from the footer, More (replacing "Coming soon") and the sign-in card ("By
-signing in, you agree to…"). Plain language; not lawyer-reviewed. Open for
-the owner: who "we" is (a name or business), a governing-law state for the
-terms, and whether a lawyer should look before launch. Google's OAuth
+signing in, you agree to…"). Plain language; not lawyer-reviewed.
+**Decided:** SwingArm is a brand of **Cheese and Beer LLC** (`COMPANY_NAME`
+in `lib/site.ts`), registered in **Washington State**, whose law governs
+the terms. "Advance notice" in the terms means closing SwingArm for good;
+maintenance and outages can happen without warning. Open: whether a
+lawyer should look before launch. Google's OAuth
 consent screen gets the privacy and terms URLs once they're on production.
 Next: Download my data on More, the admin review badge, then importing
 data.
@@ -696,6 +699,14 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   category ids. The file carries `format_version: 1` so later layouts can
   still read old files. Later, maybe: import from a spreadsheet or other
   apps.
+- 💤 Announcements (2026-10-19): the privacy policy and terms promise
+  notice "by email or in the app" before significant changes, and notice
+  before closing SwingArm for good. Build when first needed: a
+  dismissible banner in the app (one stored message, plus who dismissed
+  it), and for big changes an email to every rider (an admin-only send
+  through Resend; reaching every address needs a security definer
+  function like the reminder job's). It's a service email, so it goes to
+  riders with reminders off too. Resend's free plan sends 100 a day.
 - 💤 Save final drive / cooling on the bike so Edit Bike can change them.
 - 💤 NHTSA recall alerts per bike (free data; fits the notifications work).
 - 💤 Offline use of manuals in the phone app.

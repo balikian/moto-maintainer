@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { COMPANY_NAME } from '@/lib/site';
 import { getSignedInClient } from '@/lib/supabase/server';
 import { Bullets, LegalPage, LegalSection, PageLink } from '../components/LegalPage';
 
@@ -19,9 +20,9 @@ export default async function TermsPage() {
       signedIn={user !== null}
       intro={
         <p>
-          These terms cover your use of SwingArm, the motorcycle maintenance tracker at swingarm.app. By using SwingArm,
-          you agree to them and to our <PageLink href="/privacy">privacy policy</PageLink>. If you don’t agree, please
-          don’t use SwingArm.
+          These terms are an agreement between you and {COMPANY_NAME} (“we”, “us”), a Washington company that runs
+          SwingArm, the motorcycle maintenance tracker at swingarm.app. By using SwingArm, you agree to them and to our{' '}
+          <PageLink href="/privacy">privacy policy</PageLink>. If you don’t agree, please don’t use SwingArm.
         </p>
       }
     >
@@ -91,8 +92,12 @@ export default async function TermsPage() {
 
       <LegalSection title="Changes, and ending your account">
         <p>
-          We may change, pause or remove features as SwingArm grows. If we ever shut SwingArm down, we’ll tell you in
-          advance so you can download your data.
+          We may change, pause or remove features as SwingArm grows. If we ever close SwingArm for good, we’ll tell you
+          in advance so you can download your data.
+        </p>
+        <p>
+          SwingArm may also be unavailable now and then, for maintenance or because of a problem at one of our
+          providers. We keep that as short as we can, but we can’t always warn you first.
         </p>
         <p>
           You can delete your account at any time from the More page. We may suspend or close an account that breaks
@@ -114,6 +119,14 @@ export default async function TermsPage() {
           damage, injury or loss that comes from relying on SwingArm’s maintenance information or reminders. Our total
           liability for any claim about SwingArm is limited to the greater of what you paid us in the 12 months before
           the claim, or US$50. Some places don’t allow these limits, so they may not all apply to you.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="Governing law">
+        <p>
+          The laws of Washington State govern these terms, without regard to its conflict-of-law rules. Any dispute
+          about SwingArm will be handled in the state or federal courts in Washington, unless the law where you live
+          gives you the right to bring it where you are.
         </p>
       </LegalSection>
 
