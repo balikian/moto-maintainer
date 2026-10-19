@@ -21,8 +21,9 @@ page, branded sign-in emails through Resend.
 Released 2026-10-17: step 4 (settings, account deletion), the
 instructions page (/help) and reminder emails (step 5, email part).
 The first reminder runs checked out (2026-10-19).
-🔨 Privacy policy and terms of use (drafted 2026-10-19, on `develop`, owner
-reviewing): **/privacy** and **/terms**, public pages like /help, linked
+✅ Privacy policy and terms of use (written and reviewed by the owner
+2026-10-19; on `develop`, not yet released): **/privacy** and **/terms**,
+public pages like /help, linked
 from the footer, More (replacing "Coming soon") and the sign-in card ("By
 signing in, you agree to…"). Plain language; not lawyer-reviewed.
 **Decided:** SwingArm is a brand of **Cheese and Beer LLC** (`COMPANY_NAME`
