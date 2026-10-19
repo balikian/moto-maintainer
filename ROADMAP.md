@@ -20,8 +20,10 @@ page, branded sign-in emails through Resend.
 
 Released 2026-10-17: step 4 (settings, account deletion), the
 instructions page (/help) and reminder emails (step 5, email part).
-Next: watch the first reminder runs; then importing data (with Download
-my data on More), or the admin review badge.
+The first reminder runs checked out (2026-10-19). Next: privacy policy
+and terms pages (needed before launch, for Google sign-in verification and
+the app stores), Download my data on More, the admin review badge, then
+importing data.
 
 User testing with friends (2026-10-19): the invite and feedback texts are
 in `docs/user-testing.md`.
@@ -364,9 +366,11 @@ in `docs/user-testing.md`.
   ✅ Released 2026-10-17: `CRON_SECRET` in Vercel as a Secret (Production
   = prod Vault's secret, read in prod's SQL Editor; Preview = test's), then
   `main` (16:00 UTC). First daily run 2026-10-18 at 15:00 UTC; on release day 3 riders
-  had bikes past their first week. Next: watch the first runs in Vercel's
-  logs (Cron Jobs) and Resend's dashboard; then web push. The first production run emails every
+  had bikes past their first week. The first production run emails every
   rider with reminders on about everything already due.
+  ✅ Checked 2026-10-19: the first two daily runs (10-18, 10-19) finished
+  without errors in Vercel's Cron Jobs logs, and the emails arrived.
+  Next: web push.
 
 - A daily scheduled job (Vercel Cron or Supabase `pg_cron` + Edge Function)
   finds tasks that just turned Soon/Urgent/Overdue and stale odometers, checks
