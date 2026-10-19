@@ -614,6 +614,30 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   - Open: just links typed in by hand, or a preview (title, image, price)
     fetched from the link? Fetching is nicer, but sites block it and
     prices go stale.
+- **Bike specs** (owner, 2026-10-19). The numbers a rider looks up again
+  and again, saved on the bike: fuel grade (octane, ethanol limit) and tank
+  size, tire sizes and pressures (front and rear, solo and with a passenger
+  or load), engine oil grade and capacity (with and without a filter
+  change), oil filter part number, coolant, brake fluid (DOT 4 etc.), fork
+  oil, final drive (chain size and length, sprockets, or shaft oil), spark
+  plugs and gap, battery type, bulbs.
+  - First thoughts: a "Specs" card on the bike in Garage, quick to pull up
+    on a phone at the pump or the air hose. Common fields with suggested
+    labels, plus free-form rows (label + value) for anything else.
+  - Prefill from the manual: shared per-model specs, submitted `pending`
+    and approved like manuals and schedules, which the rider can override
+    per bike (different tires after a mod). The schedule import could read
+    the manual's specifications page at the same time.
+  - Units: tire pressure in psi, bar or kPa and capacities in quarts or
+    liters, so units need more settings. Store one unit and convert at
+    display, like distances.
+  - Use them elsewhere: show the oil spec on the oil-change task and when
+    logging it ("10W-40, 3.2 L with filter"), include specs in the shared
+    history (useful for a shop or a buyer), match affiliate links to the
+    exact part, and feed the battery-type field in the battery reminder idea.
+  - Torque values are tempting but safety-critical: only from the manual,
+    with the source shown.
+  - Open: Free or Pro.
 
 ## Smaller items and ideas
 
