@@ -23,6 +23,9 @@ instructions page (/help) and reminder emails (step 5, email part).
 Next: watch the first reminder runs; then importing data (with Download
 my data on More), or the admin review badge.
 
+User testing with friends (2026-10-19): the invite and feedback texts are
+in `docs/user-testing.md`.
+
 ---
 
 ## 1. Name and brand 🔨
