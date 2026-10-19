@@ -275,13 +275,16 @@ my data on More), or the admin review badge.
   sites, error monitoring (e.g. Sentry), database backups on prod.
 - 2026-10-17: the production Supabase project is renamed
   **swingarm-prod** (was moto_maintain; display name only, the ref and URL
-  are unchanged). 🔨 Backups: prod is on the free plan, which has no
-  backups you can restore. The owner is moving it to **Pro** (about $25 a
-  month per organization, daily backups kept 7 days, no pausing; check
-  supabase.com/pricing). Each project in a Pro organization adds compute
-  (about $10 a month after the per-project credit), so swingarm-test can
-  move to its own free organization first. Wanted before inviting
-  friends to try the app, since they'll enter real service history.
+  are unchanged). ✅ Backups (2026-10-19): the organization holding
+  swingarm-prod is on **Pro** (about $25 a month; automatic daily backups
+  kept 7 days, restored from Database → Backups; no pausing). Point-in-Time
+  Recovery (~$100 a month) skipped for now. Backups don't include Storage,
+  which the app doesn't use, and can't be downloaded; for an off-site copy,
+  `pg_dump` the data now and then. swingarm-test was transferred to its own
+  **free** organization (same ref, URL and settings; the CLI still reaches
+  it), since each project in a Pro organization adds compute. Free projects
+  pause after about a week without activity: restore it from the dashboard.
+  This was the prerequisite for inviting friends to test the app.
 
 ## 4. Settings and communication preferences ✅
 
