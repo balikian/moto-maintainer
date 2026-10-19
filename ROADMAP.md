@@ -41,8 +41,8 @@ support@ and we'll look into it". Later, if wanted: register an agent
 (copyright.gov/dmca-directory, $6, renew every 3 years) using a virtual
 mailbox or a registered-agent service's address, and add the formal
 notice requirements back. Open: whether a lawyer should look before
-launch. Google's OAuth
-consent screen gets the privacy and terms URLs once they're on production.
+launch. ✅ Google's OAuth consent screen (Branding → App domain) has the
+home page, privacy and terms URLs (2026-10-19).
 Next: Download my data on More, the admin review badge, then importing
 data.
 
