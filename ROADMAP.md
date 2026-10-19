@@ -28,8 +28,15 @@ signing in, you agree to…"). Plain language; not lawyer-reviewed.
 **Decided:** SwingArm is a brand of **Cheese and Beer LLC** (`COMPANY_NAME`
 in `lib/site.ts`), registered in **Washington State**, whose law governs
 the terms. "Advance notice" in the terms means closing SwingArm for good;
-maintenance and outages can happen without warning. Open: whether a
-lawyer should look before launch. Google's OAuth
+maintenance and outages can happen without warning. Added at the owner's
+request: a business-transfer section in the privacy policy, a note that
+Anthropic doesn't train on API data (its commercial terms), and in the
+terms a copyright reporting section, a "claims caused by your use"
+(indemnification) section, and General (whole agreement, severability, no
+waiver, assignment). ⏳ Before launch, for DMCA safe harbor: register a
+designated agent with the US Copyright Office (copyright.gov/dmca-directory,
+$6, renew every 3 years) and add the agent's name and postal address to
+the copyright section. Open: whether a lawyer should look before launch. Google's OAuth
 consent screen gets the privacy and terms URLs once they're on production.
 Next: Download my data on More, the admin review badge, then importing
 data.

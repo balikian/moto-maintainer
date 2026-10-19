@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { COMPANY_NAME } from '@/lib/site';
 import { getSignedInClient } from '@/lib/supabase/server';
-import { Bullets, LegalPage, LegalSection, PageLink } from '../components/LegalPage';
+import { Bullets, LegalPage, LegalSection, PageLink, SupportLink } from '../components/LegalPage';
 
 export const metadata: Metadata = {
   title: 'Terms of use · SwingArm',
@@ -83,6 +83,29 @@ export default async function TermsPage() {
         </Bullets>
       </LegalSection>
 
+      <LegalSection title="Reporting copyright problems">
+        <p>
+          We respect copyright. Manual links that riders send in point to other websites; we review them before other
+          riders see them, but we don’t host the manuals. If you believe a link or anything else on SwingArm infringes
+          your copyright, email <SupportLink /> with:
+        </p>
+        <Bullets>
+          <li>your name, address, phone number and email;</li>
+          <li>the copyrighted work you believe is being infringed;</li>
+          <li>the link or page on SwingArm, so we can find it;</li>
+          <li>a statement that you believe in good faith the use isn’t authorized by the owner, its agent or the law;</li>
+          <li>
+            a statement, under penalty of perjury, that your notice is accurate and that you’re the copyright owner or
+            authorized to act for them;
+          </li>
+          <li>your physical or electronic signature.</li>
+        </Bullets>
+        <p>
+          We’ll remove or disable the material, and we close the accounts of repeat infringers. If something you sent in
+          was removed and you believe that was a mistake, write to us and tell us why.
+        </p>
+      </LegalSection>
+
       <LegalSection title="Other websites">
         <p>
           SwingArm links to other sites, such as manufacturers’ owner’s manuals. We don’t control those sites and
@@ -122,6 +145,14 @@ export default async function TermsPage() {
         </p>
       </LegalSection>
 
+      <LegalSection title="Claims caused by your use">
+        <p>
+          As far as the law allows, you agree to defend and cover {COMPANY_NAME} against any claims, damages, losses and
+          costs, including reasonable legal fees, that come from what you send in or share through SwingArm, your misuse
+          of SwingArm, or your breaking these terms or the law.
+        </p>
+      </LegalSection>
+
       <LegalSection title="Governing law">
         <p>
           The laws of Washington State govern these terms, without regard to its conflict-of-law rules. Any dispute
@@ -136,6 +167,23 @@ export default async function TermsPage() {
           we’ll tell you by email or in the app before they take effect. If you keep using SwingArm after that, you
           accept the new terms.
         </p>
+      </LegalSection>
+
+      <LegalSection title="General">
+        <Bullets>
+          <li>
+            These terms and the <PageLink href="/privacy">privacy policy</PageLink> are the whole agreement between you
+            and us about SwingArm.
+          </li>
+          <li>
+            If a court finds any part of these terms unenforceable, the rest stays in effect.
+          </li>
+          <li>If we don’t enforce part of these terms right away, we haven’t given up the right to enforce it later.</li>
+          <li>
+            We may transfer these terms to a new owner as part of a merger, acquisition or sale of SwingArm. You can’t
+            transfer your account or these terms to someone else.
+          </li>
+        </Bullets>
       </LegalSection>
     </LegalPage>
   );

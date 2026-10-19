@@ -97,6 +97,14 @@ export default async function PrivacyPage() {
         <p>We may also share information if the law requires it, for example to answer a valid court order.</p>
       </LegalSection>
 
+      <LegalSection title="If SwingArm changes hands">
+        <p>
+          If {COMPANY_NAME} is part of a merger or acquisition, or sells SwingArm, your information may pass to the new
+          owner as part of that deal. The new owner must follow this policy for the information it receives, or tell you
+          before any change takes effect, so you have time to download your data or delete your account.
+        </p>
+      </LegalSection>
+
       <LegalSection title="Services that help us run SwingArm">
         <p>These companies handle data for us, only to provide their service:</p>
         <Bullets>
@@ -115,7 +123,8 @@ export default async function PrivacyPage() {
           <li>
             <strong>Anthropic:</strong> when we add a manufacturer’s maintenance schedule from an owner’s manual, the
             manual pages we pick are sent to Anthropic’s Claude to read the schedule. Those pages come from the
-            manufacturer’s manual and don’t include your account or bike details.
+            manufacturer’s manual and don’t include your account or bike details. Under Anthropic’s commercial terms,
+            what we send through its API isn’t used to train its AI models.
           </li>
         </Bullets>
         <p>Your information is stored in the United States.</p>
