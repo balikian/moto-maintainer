@@ -33,10 +33,14 @@ request: a business-transfer section in the privacy policy, a note that
 Anthropic doesn't train on API data (its commercial terms), and in the
 terms a copyright reporting section, a "claims caused by your use"
 (indemnification) section, and General (whole agreement, severability, no
-waiver, assignment). ⏳ Before launch, for DMCA safe harbor: register a
-designated agent with the US Copyright Office (copyright.gov/dmca-directory,
-$6, renew every 3 years) and add the agent's name and postal address to
-the copyright section. Open: whether a lawyer should look before launch. Google's OAuth
+waiver, assignment). **Decided (2026-10-19):** no DMCA designated agent
+for now (it needs a public postal address, and the owner has no PO box
+and won't publish a home address). The copyright section is just "email
+support@ and we'll look into it". Later, if wanted: register an agent
+(copyright.gov/dmca-directory, $6, renew every 3 years) using a virtual
+mailbox or a registered-agent service's address, and add the formal
+notice requirements back. Open: whether a lawyer should look before
+launch. Google's OAuth
 consent screen gets the privacy and terms URLs once they're on production.
 Next: Download my data on More, the admin review badge, then importing
 data.

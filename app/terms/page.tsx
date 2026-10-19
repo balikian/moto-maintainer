@@ -87,22 +87,8 @@ export default async function TermsPage() {
         <p>
           We respect copyright. Manual links that riders send in point to other websites; we review them before other
           riders see them, but we don’t host the manuals. If you believe a link or anything else on SwingArm infringes
-          your copyright, email <SupportLink /> with:
-        </p>
-        <Bullets>
-          <li>your name, address, phone number and email;</li>
-          <li>the copyrighted work you believe is being infringed;</li>
-          <li>the link or page on SwingArm, so we can find it;</li>
-          <li>a statement that you believe in good faith the use isn’t authorized by the owner, its agent or the law;</li>
-          <li>
-            a statement, under penalty of perjury, that your notice is accurate and that you’re the copyright owner or
-            authorized to act for them;
-          </li>
-          <li>your physical or electronic signature.</li>
-        </Bullets>
-        <p>
-          We’ll remove or disable the material, and we close the accounts of repeat infringers. If something you sent in
-          was removed and you believe that was a mistake, write to us and tell us why.
+          your copyright, email <SupportLink /> with the link or page and the work it concerns, and we’ll look into it
+          and remove it if needed.
         </p>
       </LegalSection>
 
