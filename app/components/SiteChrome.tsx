@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { SUPPORT_EMAIL } from '@/lib/site';
+import { COMPANY_NAME, SUPPORT_EMAIL } from '@/lib/site';
 import BrandLogo from './BrandLogo';
 import { ui } from './ui';
 
@@ -38,7 +38,7 @@ export function SiteFooter() {
   return (
     <footer className="border-t border-line">
       <div className={`${SITE_WRAP} flex flex-wrap justify-between gap-5 pb-9 pt-7 text-sm font-semibold text-muted`}>
-        <span>© {new Date().getFullYear()} SwingArm</span>
+        <span>© {new Date().getFullYear()} {COMPANY_NAME}</span>
         <span className="flex flex-wrap gap-x-5 gap-y-2">
           <Link href="/help" className="hover:text-fg">
             How it works

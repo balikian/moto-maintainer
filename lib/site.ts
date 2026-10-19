@@ -2,7 +2,7 @@
 
 export const SUPPORT_EMAIL = 'support@swingarm.app';
 
-/** The company behind the SwingArm brand, named in the privacy policy and terms. */
+/** The company behind the SwingArm brand, named in the privacy policy, terms and footer. */
 export const COMPANY_NAME = 'Cheese and Beer LLC';
 
 /** The production site, for links in emails sent from production. */
