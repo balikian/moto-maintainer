@@ -122,6 +122,18 @@ export default function LoginCard() {
 
           {error && <p className={ui.errorBox}>{error}</p>}
         </div>
+
+        <p className="mt-6 text-center text-xs text-muted">
+          By signing in, you agree to the{' '}
+          <Link href="/terms" className="font-bold hover:text-fg">
+            terms of use
+          </Link>{' '}
+          and{' '}
+          <Link href="/privacy" className="font-bold hover:text-fg">
+            privacy policy
+          </Link>
+          .
+        </p>
       </div>
       <Link href="/" className="mt-5 text-sm font-bold text-muted hover:text-fg">
         ← What&apos;s SwingArm?

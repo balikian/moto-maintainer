@@ -20,10 +20,16 @@ page, branded sign-in emails through Resend.
 
 Released 2026-10-17: step 4 (settings, account deletion), the
 instructions page (/help) and reminder emails (step 5, email part).
-The first reminder runs checked out (2026-10-19). Next: privacy policy
-and terms pages (needed before launch, for Google sign-in verification and
-the app stores), Download my data on More, the admin review badge, then
-importing data.
+The first reminder runs checked out (2026-10-19).
+🔨 Privacy policy and terms of use (drafted 2026-10-19, on `develop`, owner
+reviewing): **/privacy** and **/terms**, public pages like /help, linked
+from the footer, More (replacing "Coming soon") and the sign-in card ("By
+signing in, you agree to…"). Plain language; not lawyer-reviewed. Open for
+the owner: who "we" is (a name or business), a governing-law state for the
+terms, and whether a lawyer should look before launch. Google's OAuth
+consent screen gets the privacy and terms URLs once they're on production.
+Next: Download my data on More, the admin review badge, then importing
+data.
 
 User testing with friends (2026-10-19): the invite and feedback texts are
 in `docs/user-testing.md`.
@@ -147,9 +153,8 @@ in `docs/user-testing.md`.
     during early access"** (no Pro yet; "paid plans may come later, you'll
     hear before anything changes"), "Coming soon" App Store and Google
     Play tiles, a short FAQ, and contact **support@swingarm.app** (also
-    More → Help and feedback). Privacy and terms links get added when
-    those pages exist (needed before launch, and for Google's sign-in
-    branding).
+    More → Help and feedback). ✅ Privacy and terms pages (drafted
+    2026-10-19, see "Where things stand").
 - 🔨 Mockups (2026-10-12): three directions, each as a phone dashboard
   (clickable: open a task, collapse "All good", switch light/dark) and a task
   card in all its states, on the design canvas

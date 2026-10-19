@@ -44,8 +44,6 @@ const THEME_OPTIONS: { value: Theme; label: string }[] = [
 ];
 
 const rowClass = 'flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line py-2 last:border-b-0';
-const comingSoon = <span className="text-xs font-bold text-muted">Coming soon</span>;
-
 function providerLabel(provider: string | null) {
   if (provider === 'google') return 'Signed in with Google';
   if (provider === 'apple') return 'Signed in with Apple';
@@ -191,12 +189,14 @@ export default function MoreView({
           Help and feedback
           <span className="text-sm font-semibold text-muted">{SUPPORT_EMAIL}</span>
         </a>
-        {['Privacy policy', 'Terms of use'].map((label) => (
-          <div key={label} className={rowClass}>
-            <span className="text-base font-bold">{label}</span>
-            {comingSoon}
-          </div>
-        ))}
+        <a href="/privacy" className={`${rowClass} text-base font-bold`}>
+          Privacy policy
+          <ChevronRight size={18} className="text-muted" aria-hidden="true" />
+        </a>
+        <a href="/terms" className={`${rowClass} text-base font-bold`}>
+          Terms of use
+          <ChevronRight size={18} className="text-muted" aria-hidden="true" />
+        </a>
       </Group>
 
       {isAdmin && (

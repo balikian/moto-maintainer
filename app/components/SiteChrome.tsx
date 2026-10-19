@@ -4,7 +4,8 @@ import { SUPPORT_EMAIL } from '@/lib/site';
 import BrandLogo from './BrandLogo';
 import { ui } from './ui';
 
-// The header and footer of the public pages (home, /about, /help).
+// The header and footer of the public pages (home, /about, /help, /privacy,
+// /terms).
 
 /** The width and side padding of the public pages' content. */
 export const SITE_WRAP = 'mx-auto w-full max-w-[1120px] px-4 sm:px-8';
@@ -38,9 +39,15 @@ export function SiteFooter() {
     <footer className="border-t border-line">
       <div className={`${SITE_WRAP} flex flex-wrap justify-between gap-5 pb-9 pt-7 text-sm font-semibold text-muted`}>
         <span>© {new Date().getFullYear()} SwingArm</span>
-        <span className="flex gap-5">
+        <span className="flex flex-wrap gap-x-5 gap-y-2">
           <Link href="/help" className="hover:text-fg">
             How it works
+          </Link>
+          <Link href="/privacy" className="hover:text-fg">
+            Privacy
+          </Link>
+          <Link href="/terms" className="hover:text-fg">
+            Terms
           </Link>
           <a href={`mailto:${SUPPORT_EMAIL}`} className="hover:text-fg">
             Contact
