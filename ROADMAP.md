@@ -22,7 +22,7 @@ Released 2026-10-17: step 4 (settings, account deletion), the
 instructions page (/help) and reminder emails (step 5, email part).
 The first reminder runs checked out (2026-10-19).
 ✅ Privacy policy and terms of use (written and reviewed by the owner
-2026-10-19; on `develop`, not yet released): **/privacy** and **/terms**,
+2026-10-19; released 2026-10-19): **/privacy** and **/terms**,
 public pages like /help, linked
 from the footer, More (replacing "Coming soon") and the sign-in card ("By
 signing in, you agree to…"). Plain language; not lawyer-reviewed.
