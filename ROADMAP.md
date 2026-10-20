@@ -45,8 +45,8 @@ launch. ✅ Google's OAuth consent screen (Branding → App domain) has the
 home page, privacy and terms URLs (2026-10-19).
 ✅ Download my data on More, the admin review badge and Import a backup
 (owner checked on test; released 2026-10-20).
-🔨 Add to Home Screen (manifest, install row on More) is on test, not
-released; check it on a real iPhone (step 5). **Next: web push** (step 5;
+✅ Add to Home Screen (manifest, install row on More; owner checked on
+an iPhone; released 2026-10-20). **Next: web push** (step 5;
 the owner wants it for a web-only launch). Also suggested: join the Apple
 Developer Program as Cheese and Beer LLC (D-U-N-S number first) for Sign
 in with Apple (step 7).
