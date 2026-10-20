@@ -43,8 +43,8 @@ mailbox or a registered-agent service's address, and add the formal
 notice requirements back. Open: whether a lawyer should look before
 launch. ✅ Google's OAuth consent screen (Branding → App domain) has the
 home page, privacy and terms URLs (2026-10-19).
-Next: Download my data on More, the admin review badge, then importing
-data.
+✅ Download my data on More (2026-10-20, on test). Next: the admin
+review badge, then importing data.
 
 User testing with friends (2026-10-19): the invite and feedback texts are
 in `docs/user-testing.md`.
@@ -699,11 +699,11 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
     step with the app** when buttons or behavior change.
   - **FAQ:** TBD. The home page has a short FAQ that could grow into its
     own page.
-- 💤 Import data (owner, 2026-10-16): load a "Download my data" file back
-  in, e.g. to restore after deleting or to move between accounts. Goes
-  with a **Download my data** row on More (owner), outside the delete
-  dialog, so riders can back up any time; it reuses the dialog's export.
-  Import could sit next to it. First thoughts: import adds bikes (with their tasks and history) as new ones,
+- ⏳ Import data (owner, 2026-10-16): load a "Download my data" file back
+  in, e.g. to restore after deleting or to move between accounts.
+  ✅ Built 2026-10-20: More has a **Your data** group ("Download a copy",
+  the same export as the delete dialog, shared as `DownloadDataButton`),
+  so riders can back up any time. Import goes in the same group. First thoughts: import adds bikes (with their tasks and history) as new ones,
   never overwriting; a preview first ("3 bikes, 41 service records"), with
   a warning when a bike with the same year, make and model already
   exists. Checked on the server against a schema (Zod), through a server

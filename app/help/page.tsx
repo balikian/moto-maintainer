@@ -247,6 +247,9 @@ export default async function HelpPage() {
               days, and a monthly summary. Turn each on or off.
             </li>
             <li>
+              <Ui>Download my data</Ui>: every bike, task and service record in one file, to keep as a backup.
+            </li>
+            <li>
               <Ui>Delete account</Ui>: erases your bikes, tasks and history for good. The dialog lets you download a copy
               of your data first.
             </li>

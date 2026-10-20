@@ -7,6 +7,7 @@ import { logout } from '@/lib/actions/auth';
 import type { ReminderPreferences, Theme, UnitSystem } from '@/lib/types';
 import Avatar from './Avatar';
 import DeleteAccountModal from './DeleteAccountModal';
+import DownloadDataButton from './DownloadDataButton';
 import { SUPPORT_EMAIL } from '@/lib/site';
 import { ui } from './ui';
 
@@ -127,7 +128,7 @@ function SwitchRow({ label, detail, checked, onChange }: {
   );
 }
 
-/** Account, preferences, reminders, help and legal, admin tools, sign out, and deleting the account. */
+/** Account, preferences, reminders, downloading your data, help and legal, admin tools, sign out, and deleting the account. */
 export default function MoreView({
   supabase,
   userId,
@@ -143,6 +144,7 @@ export default function MoreView({
   onChangeReminders,
 }: MoreViewProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
 
   return (
     <div className="space-y-6">
@@ -174,6 +176,19 @@ export default function MoreView({
         <p className="mx-1 text-sm text-muted">
           At most one email a day{email && <>, sent to {email}</>}.
         </p>
+      </div>
+
+      <div className="space-y-2">
+        <Group title="Your data">
+          <div className={rowClass}>
+            <span className="min-w-0">
+              <span className="block text-base font-bold">Download a copy</span>
+              <span className="block text-sm font-medium text-muted">Every bike, task and service record, in one file</span>
+            </span>
+            <DownloadDataButton supabase={supabase} userId={userId} email={email} onError={setDownloadError} />
+          </div>
+        </Group>
+        {downloadError && <p className={ui.errorBox}>{downloadError}</p>}
       </div>
 
       <Group title="SwingArm">

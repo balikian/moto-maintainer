@@ -2,12 +2,9 @@
 
 import { useId, useState, type SubmitEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Download, Trash2 } from 'lucide-react';
-import { accountExportFileName, buildAccountExport } from '@/lib/accountExport';
+import { Trash2 } from 'lucide-react';
 import { deleteAccountAction } from '@/lib/actions/account';
-import { todayIsoDate } from '@/lib/dates';
-import type { MaintenanceTask, Motorcycle, ServiceLog } from '@/lib/types';
-import { downloadFile } from './download';
+import DownloadDataButton from './DownloadDataButton';
 import Modal from './Modal';
 import { ui } from './ui';
 
@@ -18,30 +15,6 @@ type DeleteAccountModalProps = {
   onClose: () => void;
 };
 
-/** Reads everything the rider has (row-level security limits it to theirs) and saves it as one JSON file. */
-async function downloadAllData(supabase: SupabaseClient, userId: string, email: string | null): Promise<string | null> {
-  const [profile, bikes, tasks, logs] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-    supabase.from('motorcycles').select('*').order('created_at'),
-    supabase.from('maintenance_tasks').select('*').order('created_at'),
-    supabase.from('service_logs').select('*'),
-  ]);
-  const failed = [profile, bikes, tasks, logs].find((result) => result.error);
-  if (failed?.error) return `Couldn't gather your data: ${failed.error.message}`;
-
-  const exportedOn = todayIsoDate();
-  const data = buildAccountExport({
-    email,
-    profile: profile.data,
-    bikes: (bikes.data ?? []) as Motorcycle[],
-    tasks: (tasks.data ?? []) as MaintenanceTask[],
-    logs: (logs.data ?? []) as ServiceLog[],
-    exportedOn,
-  });
-  downloadFile(accountExportFileName(exportedOn), JSON.stringify(data, null, 2), 'application/json');
-  return null;
-}
-
 // The server action checks the same word.
 const CONFIRM_WORD = 'DELETE';
 
@@ -50,17 +23,8 @@ export default function DeleteAccountModal({ supabase, userId, email, onClose }:
   const inputId = useId();
   const [typed, setTyped] = useState('');
   const [deleting, setDeleting] = useState(false);
-  const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const confirmed = typed.trim() === CONFIRM_WORD;
-
-  const handleDownload = async () => {
-    setDownloading(true);
-    setError(null);
-    const failure = await downloadAllData(supabase, userId, email);
-    setDownloading(false);
-    if (failure) setError(failure);
-  };
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
@@ -95,10 +59,7 @@ export default function DeleteAccountModal({ supabase, userId, email, onClose }:
             <span className="block font-bold">Want a copy first?</span>
             <span className={ui.muted}>Every bike, task and service record, in one file.</span>
           </p>
-          <button type="button" onClick={() => void handleDownload()} disabled={downloading} className={ui.chipButton}>
-            <Download size={15} aria-hidden="true" />
-            {downloading ? 'Preparing…' : 'Download my data'}
-          </button>
+          <DownloadDataButton supabase={supabase} userId={userId} email={email} onError={setError} />
         </div>
 
         <div>
