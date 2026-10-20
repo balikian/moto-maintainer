@@ -390,7 +390,20 @@ in `docs/user-testing.md`.
   rider with reminders on about everything already due.
   ✅ Checked 2026-10-19: the first two daily runs (10-18, 10-19) finished
   without errors in Vercel's Cron Jobs logs, and the emails arrived.
-  Next: web push.
+- **Decided (2026-10-20): no web push.** On iPhone it only works after
+  Add to Home Screen, and the store apps (step 7) will use native push.
+  Email covers the web until then. Instead, built 2026-10-20 (on test):
+  **Add to Home Screen.** A web app manifest (`app/manifest.ts`; icons in
+  `public/icons/`, rendered from `public/brand/`, the maskable one zoomed
+  out so Android's circle crop keeps the swingarm), iPhone Home Screen
+  tags and theme colors in `app/layout.tsx`. More → SwingArm shows
+  **Install SwingArm** where the browser offers an install prompt (Chrome,
+  Edge, Android; `useInstallPrompt`), the Share-menu steps on iPhone and
+  iPad, and nothing once installed or where the browser can't. To check
+  on a real iPhone: the status bar color, and whether sign-in carries over
+  to the Home Screen app (iOS may keep its storage apart from Safari's, and
+  magic links open in Safari). If it doesn't, consider a 6-digit sign-in
+  code in the email as well as the link, typed into the app.
 
 - A daily scheduled job (Vercel Cron or Supabase `pg_cron` + Edge Function)
   finds tasks that just turned Soon/Urgent/Overdue and stale odometers, checks
@@ -458,6 +471,24 @@ in `docs/user-testing.md`.
   **Sign in with Apple** (required when Google sign-in is offered; never
   finished), privacy policy and terms URLs, in-app account deletion, store
   screenshots and descriptions, and in-app purchase if Pro is sold in-app.
+- **Open (owner, 2026-10-20):** are the store apps worth it if the web app
+  (with Add to Home Screen) is enough? Discussed: the stores bring
+  discoverability, trust and native push on iPhone, and are needed for the
+  auto-odometer and offline manuals ideas; the cost is $99 a year (Apple)
+  plus $25 once (Google), the Capacitor work, sign-in inside the app
+  (Google blocks its sign-in in embedded web views, so it needs the
+  system browser and a link back into the app), store review and
+  listings, and Apple's cut of in-app Pro sales. Google Play makes new
+  personal accounts run a closed test with testers for two weeks before
+  release; organization accounts (Cheese and Beer LLC, which needs a free
+  D-U-N-S number, as Apple's organization enrollment does) skip it. Check
+  current rules when starting.
+- **Sign in with Apple** needs the Apple Developer Program ($99 a year)
+  even on the web, so it can come before the apps. Notes: Supabase
+  supports it; the web client secret is a signed key that expires every 6
+  months and must be renewed; riders can hide their email behind Apple's
+  relay address, and reminder emails only reach those if swingarm.app's
+  sending domain is registered with Apple's private email relay.
 
 ## 8. Analytics 💤 (before launch)
 

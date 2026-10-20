@@ -2,7 +2,8 @@
 
 import { useId, useState, type ReactNode } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronRight, LogOut, Upload } from 'lucide-react';
+import { ChevronRight, LogOut, Share, SquarePlus, Upload } from 'lucide-react';
+import { useInstallPrompt } from '../hooks/useInstallPrompt';
 import { logout } from '@/lib/actions/auth';
 import type { Motorcycle, ReminderPreferences, Theme, UnitSystem } from '@/lib/types';
 import Avatar from './Avatar';
@@ -139,6 +140,39 @@ function SwitchRow({ label, detail, checked, onChange }: {
   );
 }
 
+/** Install SwingArm (browsers with an install prompt) or how to add it to the Home Screen (iPhone, iPad); nothing once it's installed. */
+function InstallRow() {
+  const { option, install } = useInstallPrompt();
+  if (option === 'prompt') {
+    return (
+      <div className={sideControlRowClass}>
+        <span className="min-w-0">
+          <span className="block text-base font-bold">Install SwingArm</span>
+          <span className="block text-sm font-medium text-muted">Opens in its own window, like an app</span>
+        </span>
+        <button type="button" onClick={() => void install()} className={`${ui.chipButton} shrink-0`}>
+          <SquarePlus size={15} aria-hidden="true" />
+          Install
+        </button>
+      </div>
+    );
+  }
+  if (option === 'ios') {
+    return (
+      <div className={rowClass}>
+        <span className="min-w-0">
+          <span className="block text-base font-bold">Add to Home Screen</span>
+          <span className="block text-sm font-medium text-muted">
+            Open Safari’s Share menu <Share size={14} className="inline align-[-2px]" aria-hidden="true" />, then tap Add to
+            Home Screen. SwingArm opens full screen, like an app.
+          </span>
+        </span>
+      </div>
+    );
+  }
+  return null;
+}
+
 /** Account, preferences, reminders, downloading your data, help and legal, admin tools, sign out, and deleting the account. */
 export default function MoreView({
   supabase,
@@ -219,6 +253,7 @@ export default function MoreView({
       </div>
 
       <Group title="SwingArm">
+        <InstallRow />
         <a href="/about" className={`${rowClass} text-base font-bold`}>
           About SwingArm
           <ChevronRight size={18} className="text-muted" aria-hidden="true" />

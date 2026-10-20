@@ -11,12 +11,24 @@ const manrope = Manrope({
 export const metadata: Metadata = {
   title: "SwingArm",
   description: "Your digital garage: track motorcycle maintenance by mileage and time.",
+  // Added to an iPhone's Home Screen, SwingArm opens full screen under this
+  // name (the manifest, app/manifest.ts, covers other browsers).
+  appleWebApp: {
+    capable: true,
+    title: "SwingArm",
+    statusBarStyle: "default",
+  },
 };
 
 // viewport-fit=cover lets the bottom bar sit behind the iPhone home indicator
-// and pad itself with env(safe-area-inset-bottom).
+// and pad itself with env(safe-area-inset-bottom). The theme color tints the
+// browser bar and the installed app's status bar to match the page.
 export const viewport: Viewport = {
   viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ece6dc" },
+    { media: "(prefers-color-scheme: dark)", color: "#141619" },
+  ],
 };
 
 export default function RootLayout({

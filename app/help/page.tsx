@@ -247,6 +247,11 @@ export default async function HelpPage() {
               days, and a monthly summary. Turn each on or off.
             </li>
             <li>
+              <Ui>Add to Home Screen</Ui>: SwingArm then opens full screen from its own icon, like an app. On an iPhone or
+              iPad, open Safari’s Share menu and tap <Ui>Add to Home Screen</Ui>; in Chrome or Edge, use{' '}
+              <Ui>Install SwingArm</Ui> on More.
+            </li>
+            <li>
               <Ui>Download my data</Ui>: every bike, task and service record in one file, to keep as a backup.
             </li>
             <li>
