@@ -160,12 +160,14 @@ export async function runReminderJob({ secret, today, baseUrl, dryRun, onlyEmail
       else result.push.removed += gone.length;
     }
 
+    // Logged even when another device got it, so a device that keeps failing shows up.
+    for (const send of sends) if (send.error && !send.gone) result.errors.push(`push to ${rider.user_id}: ${send.error}`);
+
     if (sends.some((send) => !send.error)) {
       result.push.sent += 1;
     } else {
       // Nothing arrived. Try again tomorrow (devices that were gone are deleted by then).
       if (gone.length < sends.length) result.push.failed += 1;
-      for (const send of sends) if (!send.gone) result.errors.push(`push to ${rider.user_id}: ${send.error}`);
       await supabase.rpc('release_reminders', { job_secret: secret, rider: rider.user_id, keys: [...claimed] });
     }
   }

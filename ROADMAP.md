@@ -436,10 +436,15 @@ in `docs/user-testing.md`.
     `.env.local`), Production gets its own. `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
     and `VAPID_PRIVATE_KEY` (type Secret). The public key is built into
     the page, so add it before the deploy or redeploy after.
-  - ⏳ To do: owner adds the Preview keys in Vercel and checks on test:
-    Chrome or Edge on a computer, Android, and the iPhone Home Screen app
-    (turn on, Test, a real run with `?only=<email>`, a tap opens SwingArm,
-    sign out turns it off). Release: generate a production pair
+  - ✅ Preview keys in Vercel (2026-10-20; a variable's environments are
+    behind a click on "Environments", and the build needs a fresh
+    deploy). Checked on test 2026-10-20: Test arrived on Android (Chrome)
+    and the iPhone Home Screen app (Apple's push service); a real run
+    (from the local server, same database and keys) pushed "10
+    maintenance tasks need attention" to Android, and a repeat run found
+    nothing to send. ⏳ Still to check: a tap opens SwingArm, sign out
+    turns push off on that device, a real reminder on the iPhone (its
+    account is a week from its first task reminders). Release: generate a production pair
     (`npx web-push generate-vapid-keys`) into Vercel Production, migration
     on production, then `main`; set the privacy policy date to the
     release day if it's later.
