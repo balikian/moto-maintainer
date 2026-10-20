@@ -113,6 +113,18 @@ export default function GarageApp() {
   const adminQuery = useSupabaseQuery<boolean>(userId, () => supabase.rpc('is_app_admin'));
   const isAdmin = adminQuery.data === true;
 
+  // Admins: rider submissions waiting on the review page (manual links, makes and models), as a badge on the
+  // avatar and in More. Refreshes when the dashboard loads again, e.g. coming back from the review page.
+  const reviewCountQuery = useSupabaseQuery<number>(isAdmin ? userId : null, async () => {
+    const [manuals, models] = await Promise.all([
+      supabase.from('bike_manuals').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      supabase.from('custom_models').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+    ]);
+    const error = manuals.error ?? models.error;
+    return { data: error ? null : (manuals.count ?? 0) + (models.count ?? 0), error };
+  });
+  const reviewCount = reviewCountQuery.data ?? 0;
+
   // Makes/models riders added; approved ones (and your own) join the bike form's lists.
   const customModelsQuery = useSupabaseQuery<CustomModel[]>(userId, () =>
     supabase.from('custom_models').select('make,model').neq('status', 'rejected')
@@ -308,6 +320,7 @@ export default function GarageApp() {
         view={view}
         avatarUrl={avatarUrl}
         email={email}
+        reviewCount={reviewCount}
         onNavigate={setView}
         onLogService={logService}
         canLogService={activeBike !== null}
@@ -315,7 +328,7 @@ export default function GarageApp() {
 
       {/* grid-cols-1 lets columns shrink below their longest unbroken line (a long bike name) instead of overflowing. */}
       <main className={`mx-auto grid w-full max-w-2xl flex-1 grid-cols-1 content-start gap-6 px-4 pb-8 pt-4 md:px-8 md:pt-8 lg:pb-12 lg:pt-7 ${DESKTOP_WIDTH[view]}`}>
-        <TopBar avatarUrl={avatarUrl} email={email} onNavigate={setView} showAvatar={view !== 'more'} />
+        <TopBar avatarUrl={avatarUrl} email={email} reviewCount={reviewCount} onNavigate={setView} showAvatar={view !== 'more'} />
         {view === 'tasks' ? (
           <h1 className="sr-only">Your tasks</h1>
         ) : (
@@ -426,6 +439,7 @@ export default function GarageApp() {
             theme={theme}
             reminders={preferences.reminders}
             isAdmin={isAdmin}
+            reviewCount={reviewCount}
             onChangeUnits={(next) => void updatePreferences({ unitSystem: next })}
             onChangeTheme={(next) => void updatePreferences({ theme: next })}
             onChangeReminders={(next) => void updatePreferences({ reminders: next })}

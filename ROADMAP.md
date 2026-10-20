@@ -43,8 +43,8 @@ mailbox or a registered-agent service's address, and add the formal
 notice requirements back. Open: whether a lawyer should look before
 launch. ✅ Google's OAuth consent screen (Branding → App domain) has the
 home page, privacy and terms URLs (2026-10-19).
-✅ Download my data on More (2026-10-20, on test). Next: the admin
-review badge, then importing data.
+✅ Download my data on More and the admin review badge (2026-10-20, on
+test). Next: importing data.
 
 User testing with friends (2026-10-19): the invite and feedback texts are
 in `docs/user-testing.md`.
@@ -669,11 +669,14 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   (confirmed 2026-10-15).
 - ✅ Fixed (2026-10-15): a make or model typed into the bike form was saved
   but didn't appear in the form's lists until the page was reloaded.
-- 💤 Admin review badge (owner, 2026-10-15): for admins, a small count
-  badge on the bottom right of the avatar showing how many things wait for
-  review (pending manual links, schedules, and makes/models). The same
-  count could sit next to "Admin review" in More. Open: also count approved
-  manuals that still need a schedule imported?
+- ✅ Admin review badge (owner, 2026-10-15; built 2026-10-20, on test):
+  for admins, a red count on the bottom right of the avatar (phone and
+  desktop) and next to "Review submissions" in More: pending manual links
+  plus pending makes/models, the things on the review page. **Decided:**
+  approved manuals still needing a schedule don't count (the owner's to-do,
+  nobody waiting; a rider's bike saves either way), and pending schedules
+  don't either (import is admin-only, so they're approved on save). The
+  count reloads when the dashboard loads, e.g. back from the review page.
 - ✅ Click or tap outside to close (owner, 2026-10-15; done 2026-10-16).
   The bike switcher, the Export menu and `ConfirmPopover` close on a click
   or tap outside, or Escape (shared hook `useDismiss`). Dialogs opt in with

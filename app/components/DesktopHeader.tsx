@@ -5,6 +5,7 @@ import type { View } from '../hooks/useView';
 import { NAV_TABS } from './AppNav';
 import Avatar from './Avatar';
 import BrandLogo from './BrandLogo';
+import CountBadge, { accountLinkLabel } from './CountBadge';
 import ViewLink from './ViewLink';
 import { ui } from './ui';
 
@@ -12,13 +13,15 @@ type DesktopHeaderProps = {
   view: View;
   avatarUrl: string | null;
   email: string | null;
+  /** Admins only: submissions waiting for review, shown as a badge on the avatar. */
+  reviewCount: number;
   onNavigate: (view: View) => void;
   onLogService: () => void;
   canLogService: boolean;
 };
 
 /** Desktop's bar across the top: logo, screens, Log service, and the avatar, which opens More. Phones use AppNav. */
-export default function DesktopHeader({ view, avatarUrl, email, onNavigate, onLogService, canLogService }: DesktopHeaderProps) {
+export default function DesktopHeader({ view, avatarUrl, email, reviewCount, onNavigate, onLogService, canLogService }: DesktopHeaderProps) {
   return (
     <header className="sticky top-0 z-30 hidden border-b border-line bg-surface print:hidden lg:block">
       <div className="mx-auto flex h-[4.25rem] max-w-[1180px] items-center gap-9 px-8">
@@ -52,14 +55,15 @@ export default function DesktopHeader({ view, avatarUrl, email, onNavigate, onLo
             view="more"
             onNavigate={onNavigate}
             aria-current={view === 'more' ? 'page' : undefined}
-            className="flex h-11 w-11 items-center justify-center rounded-full"
-            aria-label={email ? `Signed in as ${email}. Account and settings` : 'Account and settings'}
+            className="relative flex h-11 w-11 items-center justify-center rounded-full"
+            aria-label={accountLinkLabel(email, reviewCount)}
             title={email ?? undefined}
           >
             <Avatar
               url={avatarUrl}
               className={`h-9 w-9 ring-2 ring-offset-2 ring-offset-surface ${view === 'more' ? 'ring-accent' : 'ring-line'}`}
             />
+            <CountBadge count={reviewCount} className="absolute -bottom-1 -right-1.5 ring-surface" />
           </ViewLink>
         </div>
       </div>

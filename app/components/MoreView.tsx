@@ -6,6 +6,7 @@ import { ChevronRight, LogOut } from 'lucide-react';
 import { logout } from '@/lib/actions/auth';
 import type { ReminderPreferences, Theme, UnitSystem } from '@/lib/types';
 import Avatar from './Avatar';
+import CountBadge from './CountBadge';
 import DeleteAccountModal from './DeleteAccountModal';
 import DownloadDataButton from './DownloadDataButton';
 import { SUPPORT_EMAIL } from '@/lib/site';
@@ -22,6 +23,8 @@ type MoreViewProps = {
   theme: Theme;
   reminders: ReminderPreferences;
   isAdmin: boolean;
+  /** Admins only: submissions waiting for review. */
+  reviewCount: number;
   onChangeUnits: (unitSystem: UnitSystem) => void;
   onChangeTheme: (theme: Theme) => void;
   onChangeReminders: (reminders: ReminderPreferences) => void;
@@ -142,6 +145,7 @@ export default function MoreView({
   theme,
   reminders,
   isAdmin,
+  reviewCount,
   onChangeUnits,
   onChangeTheme,
   onChangeReminders,
@@ -223,7 +227,11 @@ export default function MoreView({
         <Group title="Admins only">
           <a href="/admin" className={`${rowClass} text-base font-bold`}>
             Review submissions
-            <ChevronRight size={18} className="text-muted" aria-hidden="true" />
+            <span className="flex items-center gap-2">
+              <CountBadge count={reviewCount} className="ring-transparent" />
+              {reviewCount > 0 && <span className="sr-only">{reviewCount} waiting</span>}
+              <ChevronRight size={18} className="text-muted" aria-hidden="true" />
+            </span>
           </a>
         </Group>
       )}
