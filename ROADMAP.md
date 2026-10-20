@@ -45,6 +45,11 @@ launch. ✅ Google's OAuth consent screen (Branding → App domain) has the
 home page, privacy and terms URLs (2026-10-19).
 ✅ Download my data on More, the admin review badge and Import a backup
 (owner checked on test; released 2026-10-20).
+🔨 Add to Home Screen (manifest, install row on More) is on test, not
+released; check it on a real iPhone (step 5). **Next: web push** (step 5;
+the owner wants it for a web-only launch). Also suggested: join the Apple
+Developer Program as Cheese and Beer LLC (D-U-N-S number first) for Sign
+in with Apple (step 7).
 
 User testing with friends (2026-10-19): the invite and feedback texts are
 in `docs/user-testing.md`.
@@ -390,10 +395,17 @@ in `docs/user-testing.md`.
   rider with reminders on about everything already due.
   ✅ Checked 2026-10-19: the first two daily runs (10-18, 10-19) finished
   without errors in Vercel's Cron Jobs logs, and the emails arrived.
-- **Decided (2026-10-20): no web push.** On iPhone it only works after
-  Add to Home Screen, and the store apps (step 7) will use native push.
-  Email covers the web until then. Instead, built 2026-10-20 (on test):
-  **Add to Home Screen.** A web app manifest (`app/manifest.ts`; icons in
+- **Decided (2026-10-20, owner): web push stays in.** If SwingArm launches
+  as a web app only (store apps undecided, step 7), riders should still
+  get push. ⏳ **Next.** Plan: a service worker, VAPID keys (private key a
+  Vercel Secret), a `push_subscriptions` table (one row per device, RLS),
+  a per-device push switch on More, the reminder job sending push next to
+  email and deleting subscriptions the push service reports gone, and a
+  privacy policy update (device push address; Google, Apple and Mozilla
+  carry the messages). On iPhone it only works from the Home Screen app,
+  so More should point there. The preference and job parts carry over to
+  native push if the store apps happen. First step, built 2026-10-20 (on
+  test): **Add to Home Screen.** A web app manifest (`app/manifest.ts`; icons in
   `public/icons/`, rendered from `public/brand/`, the maskable one zoomed
   out so Android's circle crop keeps the swingarm), iPhone Home Screen
   tags and theme colors in `app/layout.tsx`. More → SwingArm shows
