@@ -44,7 +44,7 @@ notice requirements back. Open: whether a lawyer should look before
 launch. ✅ Google's OAuth consent screen (Branding → App domain) has the
 home page, privacy and terms URLs (2026-10-19).
 ✅ Download my data on More, the admin review badge and Import a backup
-(2026-10-20, on test; not released yet).
+(2026-10-20, on test; owner checked import there; not released yet).
 
 User testing with friends (2026-10-19): the invite and feedback texts are
 in `docs/user-testing.md`.
