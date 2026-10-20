@@ -14,6 +14,12 @@ export interface ReminderPreferences {
   monthlySummary: boolean;
 }
 
+/** Which reminders go by push, to the devices the rider turned push on for; the `push_*` columns on `profiles`. */
+export interface PushPreferences {
+  taskReminders: boolean;
+  odometerReminders: boolean;
+}
+
 export interface Motorcycle {
   id: string;
   user_id: string;

@@ -18,7 +18,7 @@ export default async function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy policy"
-      updated="October 19, 2026"
+      updated="October 20, 2026"
       signedIn={user !== null}
       intro={
         <>
@@ -44,15 +44,20 @@ export default async function PrivacyPage() {
             maintenance tasks and intervals, and the service you log (dates, odometer readings, costs and notes).
           </li>
           <li>
-            <strong>Your settings:</strong> distance units, theme, which reminder emails you want, and which bike you had
-            open last.
+            <strong>Your settings:</strong> distance units, theme, which reminder emails and push notifications you want,
+            and which bike you had open last.
+          </li>
+          <li>
+            <strong>Push addresses:</strong> when you turn on push notifications on a device, your browser gives us an
+            address for sending notifications to that device. Turning push off there, or signing out on it, deletes it.
           </li>
           <li>
             <strong>Things you send in for all riders:</strong> owner’s manual links, and makes or models that weren’t in
             our list.
           </li>
           <li>
-            <strong>Email records:</strong> which reminder emails we’ve sent you, so we don’t send the same one twice.
+            <strong>Reminder records:</strong> which reminder emails and notifications we’ve sent you, so we don’t send
+            the same one twice.
           </li>
           <li>
             <strong>Technical information:</strong> like most websites, our hosting providers log requests, including
@@ -67,7 +72,10 @@ export default async function PrivacyPage() {
       <LegalSection title="How we use it">
         <Bullets>
           <li>To run SwingArm for you: show your garage and work out which maintenance is due.</li>
-          <li>To send the emails you ask for: sign-in links, and the reminder emails you’ve turned on.</li>
+          <li>
+            To send the emails and notifications you ask for: sign-in links, and the reminder emails and push
+            notifications you’ve turned on.
+          </li>
           <li>To show a bike’s history to people you share it with, when you create a share link.</li>
           <li>To review manual links and bike models before other riders see them.</li>
           <li>To keep SwingArm secure, fix problems, and answer you when you write to us.</li>
@@ -118,6 +126,12 @@ export default async function PrivacyPage() {
             <strong>Resend:</strong> sends sign-in and reminder emails.
           </li>
           <li>
+            <strong>Push services:</strong> if you turn on push notifications, the company behind your browser delivers
+            them to your device: Google (Chrome and Android), Apple (Safari, iPhone and iPad), Microsoft (Edge) or
+            Mozilla (Firefox). The notification’s text is encrypted on the way, so they can’t read it; they see your
+            device’s push address and when a notification is sent.
+          </li>
+          <li>
             <strong>Google:</strong> if you choose Sign in with Google.
           </li>
           <li>
@@ -133,25 +147,30 @@ export default async function PrivacyPage() {
       <LegalSection title="Cookies and browser storage">
         <p>
           SwingArm uses cookies to keep you signed in. Your browser also stores your theme and which sections you’ve
-          collapsed, so the app looks right the moment it opens. We don’t use advertising or tracking cookies, and we
-          don’t use analytics. If that changes, we’ll update this policy first.
+          collapsed, so the app looks right the moment it opens. If you turn on push notifications, your browser keeps a
+          small SwingArm script (a service worker) that shows them. We don’t use advertising or tracking cookies, and
+          we don’t use analytics. If that changes, we’ll update this policy first.
         </p>
       </LegalSection>
 
-      <LegalSection title="Emails">
+      <LegalSection title="Emails and notifications">
         <p>
           Reminder emails about tasks coming due and odometer check-ins are on when you sign up. The monthly summary is
           off until you turn it on. Turn any of them off under <strong>Reminder emails</strong> on the More page, or with
           the unsubscribe link in every reminder. We may also email you about your account or important changes to
           SwingArm.
         </p>
+        <p>
+          Push notifications are off until you turn them on for a device under <strong>Push notifications</strong> on
+          the More page. Turn them off there, or in your browser’s or device’s settings.
+        </p>
       </LegalSection>
 
       <LegalSection title="How long we keep it, and deleting it">
         <p>
           We keep your information while you have an account. To delete it, open <strong>More</strong>, then{' '}
-          <strong>Delete account</strong>. That erases your profile, bikes, tasks, service history and share links right
-          away. The same dialog lets you download a copy of your data first.
+          <strong>Delete account</strong>. That erases your profile, bikes, tasks, service history, share links and push
+          addresses right away. The same dialog lets you download a copy of your data first.
         </p>
         <Bullets>
           <li>Our database backups are kept for 7 days, so deleted data is gone from them within a week.</li>

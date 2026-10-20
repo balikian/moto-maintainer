@@ -12,6 +12,9 @@ import type { MaintenanceTask, UnitSystem } from './types';
 //   starting a week after the bike was added;
 // - a bike's odometer check-in, every 30 days the reading stays unchanged;
 // - the monthly summary, once per month.
+//
+// Push sends the same task and odometer reminders, under its own switches,
+// with the keys prefixed `push:`, so each goes once by email and once by push.
 
 export type ReminderTask = Pick<
   MaintenanceTask,
@@ -41,10 +44,17 @@ export type ReminderRider = {
   task_reminders: boolean;
   odometer_reminders: boolean;
   monthly_summary: boolean;
+  push_task_reminders: boolean;
+  push_odometer_reminders: boolean;
+  /** The devices the rider turned push on for. */
+  push: PushDevice[];
   /** Keys of reminders already sent. */
   sent: string[];
   bikes: ReminderBike[];
 };
+
+/** A browser's push address (its PushSubscription), saved in `push_subscriptions`. */
+export type PushDevice = { endpoint: string; p256dh: string; auth: string };
 
 export type TaskReminder = {
   key: string;
@@ -83,6 +93,9 @@ export const ODOMETER_CHECK_IN_DAYS = 30;
  */
 export const NEW_BIKE_GRACE_DAYS = 7;
 
+/** Push reminders' keys are the email's with this in front. */
+export const PUSH_KEY_PREFIX = 'push:';
+
 /** The monthly summary goes out on one of the month's first days (a missed run catches up). */
 const MONTHLY_SUMMARY_LAST_DAY = 3;
 
@@ -91,8 +104,26 @@ function taskKey(task: ReminderTask, kind: TaskReminder['kind']): string {
   return `task:${task.id}:${baseline}:${kind}`;
 }
 
-/** The new task and odometer reminders for one rider today, or null if there are none. */
+/** The new task and odometer reminders for one rider's email today, or null if there are none. */
 export function planDailyReminders(rider: ReminderRider, today: Date): DailyReminders | null {
+  return planDaily(rider, today, { tasks: rider.task_reminders, odometer: rider.odometer_reminders, keyPrefix: '' });
+}
+
+/** The same for push, or null if there are none or the rider has no push devices. */
+export function planPushReminders(rider: ReminderRider, today: Date): DailyReminders | null {
+  if (rider.push.length === 0) return null;
+  return planDaily(rider, today, {
+    tasks: rider.push_task_reminders,
+    odometer: rider.push_odometer_reminders,
+    keyPrefix: PUSH_KEY_PREFIX,
+  });
+}
+
+function planDaily(
+  rider: ReminderRider,
+  today: Date,
+  channel: { tasks: boolean; odometer: boolean; keyPrefix: string }
+): DailyReminders | null {
   const sent = new Set(rider.sent);
   const tasks: TaskReminder[] = [];
   const odometer: OdometerReminder[] = [];
@@ -100,21 +131,21 @@ export function planDailyReminders(rider: ReminderRider, today: Date): DailyRemi
   for (const bike of rider.bikes) {
     const added = parseIsoDate(bike.created_at);
     const settledIn = !added || daysBetween(added, today) >= NEW_BIKE_GRACE_DAYS;
-    if (rider.task_reminders && settledIn) {
+    if (channel.tasks && settledIn) {
       for (const task of bike.tasks) {
         const dueState = getTaskDueState(task, bike.current_mileage, today);
         if (dueState.status === 'Healthy') continue;
         const kind = dueState.status === 'Overdue' ? 'overdue' : 'soon';
-        const key = taskKey(task, kind);
+        const key = channel.keyPrefix + taskKey(task, kind);
         if (!sent.has(key)) tasks.push({ key, kind, bike, task, dueState });
       }
     }
 
-    if (rider.odometer_reminders) {
+    if (channel.odometer) {
       const updated = parseIsoDate(bike.odometer_updated_at);
       const daysSince = updated ? daysBetween(updated, today) : 0;
       const period = Math.floor(daysSince / ODOMETER_CHECK_IN_DAYS);
-      const key = `odometer:${bike.id}:${bike.odometer_updated_at}:${period}`;
+      const key = `${channel.keyPrefix}odometer:${bike.id}:${bike.odometer_updated_at}:${period}`;
       if (period >= 1 && !sent.has(key)) odometer.push({ key, bike, daysSince });
     }
   }

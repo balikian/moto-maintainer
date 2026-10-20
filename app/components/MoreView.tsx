@@ -2,10 +2,11 @@
 
 import { useId, useState, type ReactNode } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronRight, LogOut, Share, SquarePlus, Upload } from 'lucide-react';
+import { BellRing, ChevronRight, LogOut, Share, SquarePlus, Upload } from 'lucide-react';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
+import { turnOffPushOnThisDevice, usePush } from '../hooks/usePush';
 import { logout } from '@/lib/actions/auth';
-import type { Motorcycle, ReminderPreferences, Theme, UnitSystem } from '@/lib/types';
+import type { Motorcycle, PushPreferences, ReminderPreferences, Theme, UnitSystem } from '@/lib/types';
 import Avatar from './Avatar';
 import CountBadge from './CountBadge';
 import DeleteAccountModal from './DeleteAccountModal';
@@ -24,6 +25,7 @@ type MoreViewProps = {
   unitSystem: UnitSystem;
   theme: Theme;
   reminders: ReminderPreferences;
+  push: PushPreferences;
   isAdmin: boolean;
   /** Admins only: submissions waiting for review. */
   reviewCount: number;
@@ -32,6 +34,7 @@ type MoreViewProps = {
   onChangeUnits: (unitSystem: UnitSystem) => void;
   onChangeTheme: (theme: Theme) => void;
   onChangeReminders: (reminders: ReminderPreferences) => void;
+  onChangePush: (push: PushPreferences) => void;
   /** After Import a backup adds bikes. */
   onImported: (bikeIds: string[]) => void;
 };
@@ -40,6 +43,11 @@ const REMINDER_OPTIONS: { key: keyof ReminderPreferences; label: string; detail:
   { key: 'taskReminders', label: 'Tasks coming due', detail: 'One email when tasks turn soon or overdue' },
   { key: 'odometerReminders', label: 'Odometer check-in', detail: 'When a bike’s odometer hasn’t changed in 30 days' },
   { key: 'monthlySummary', label: 'Monthly summary', detail: 'What’s coming up and what you spent' },
+];
+
+const PUSH_OPTIONS: { key: keyof PushPreferences; label: string; detail: string }[] = [
+  { key: 'taskReminders', label: 'Tasks coming due', detail: 'When tasks turn soon or overdue' },
+  { key: 'odometerReminders', label: 'Odometer check-in', detail: 'When a bike’s odometer hasn’t changed in 30 days' },
 ];
 
 const UNIT_OPTIONS: { value: UnitSystem; label: string }[] = [
@@ -106,11 +114,12 @@ function Segmented<T extends string>({ label, options, value, onChange }: {
 }
 
 /** An on/off switch with a label and a line of detail, like "Tasks coming due". */
-function SwitchRow({ label, detail, checked, onChange }: {
+function SwitchRow({ label, detail, checked, onChange, disabled = false }: {
   label: string;
   detail: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
+  disabled?: boolean;
 }) {
   const labelId = useId();
   const detailId = useId();
@@ -126,8 +135,9 @@ function SwitchRow({ label, detail, checked, onChange }: {
         aria-checked={checked}
         aria-labelledby={labelId}
         aria-describedby={detailId}
+        disabled={disabled}
         onClick={() => onChange(!checked)}
-        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${checked ? 'bg-brand' : 'bg-line-strong'}`}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-50 ${checked ? 'bg-brand' : 'bg-line-strong'}`}
       >
         <span
           aria-hidden="true"
@@ -136,6 +146,96 @@ function SwitchRow({ label, detail, checked, onChange }: {
           }`}
         />
       </button>
+    </div>
+  );
+}
+
+/** A row with a label and a line of detail and no control, e.g. why push isn't available here. */
+function NoteRow({ label, detail }: { label: string; detail: ReactNode }) {
+  return (
+    <div className={rowClass}>
+      <span className="min-w-0">
+        <span className="block text-base font-bold">{label}</span>
+        <span className="block text-sm font-medium text-muted">{detail}</span>
+      </span>
+    </div>
+  );
+}
+
+const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
+
+/** Push on this device, and which reminders go by push (account-wide, shown once any device has push). */
+function PushGroup({ supabase, preferences, onChange }: {
+  supabase: SupabaseClient;
+  preferences: PushPreferences;
+  onChange: (push: PushPreferences) => void;
+}) {
+  const push = usePush(supabase);
+  const anyDevice = push.status === 'on' || push.otherDevices > 0;
+
+  let deviceRow: ReactNode;
+  if (push.status === 'home-screen') {
+    deviceRow = (
+      <NoteRow
+        label="Add SwingArm to your Home Screen first"
+        detail="On iPhone and iPad, notifications work in the Home Screen app. Add it from Safari’s Share menu, open it from its icon, then come back here."
+      />
+    );
+  } else if (push.status === 'unsupported') {
+    deviceRow = <NoteRow label="Not available in this browser" detail="This browser can’t show notifications from websites." />;
+  } else if (push.status === 'blocked') {
+    deviceRow = (
+      <NoteRow
+        label="Notifications are blocked"
+        detail="Allow notifications for SwingArm in this browser’s or device’s settings, then come back here."
+      />
+    );
+  } else {
+    deviceRow = (
+      <SwitchRow
+        label="On this device"
+        detail={push.status === 'on' ? 'Reminders show up here as notifications' : 'Get reminders here as notifications'}
+        checked={push.status === 'on'}
+        disabled={push.status === 'loading' || push.busy}
+        onChange={(checked) => void (checked ? push.turnOn() : push.turnOff())}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <Group title="Push notifications">
+        {deviceRow}
+        {push.status === 'on' && (
+          <div className={sideControlRowClass}>
+            <span className="min-w-0">
+              <span className="block text-base font-bold">Send a test</span>
+              <span className="block text-sm font-medium text-muted">
+                {push.testSent ? 'Sent. It should show up in a few seconds.' : 'Check that notifications reach this device'}
+              </span>
+            </span>
+            <button type="button" onClick={() => void push.sendTest()} disabled={push.busy} className={`${ui.chipButton} shrink-0`}>
+              <BellRing size={15} aria-hidden="true" />
+              Test
+            </button>
+          </div>
+        )}
+        {anyDevice &&
+          PUSH_OPTIONS.map((option) => (
+            <SwitchRow
+              key={option.key}
+              label={option.label}
+              detail={option.detail}
+              checked={preferences[option.key]}
+              onChange={(checked) => onChange({ ...preferences, [option.key]: checked })}
+            />
+          ))}
+      </Group>
+      {push.error && <p className={ui.errorBox}>{push.error}</p>}
+      <p className="mx-1 text-sm text-muted">
+        At most one a day, on each device where you turn them on.
+        {push.otherDevices > 0 && <> On for {plural(push.otherDevices, 'other device')}.</>}
+      </p>
     </div>
   );
 }
@@ -183,12 +283,14 @@ export default function MoreView({
   unitSystem,
   theme,
   reminders,
+  push,
   isAdmin,
   reviewCount,
   bikes,
   onChangeUnits,
   onChangeTheme,
   onChangeReminders,
+  onChangePush,
   onImported,
 }: MoreViewProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -226,6 +328,8 @@ export default function MoreView({
           At most one email a day{email && <>, sent to {email}</>}.
         </p>
       </div>
+
+      <PushGroup supabase={supabase} preferences={push} onChange={onChangePush} />
 
       <div className="space-y-2">
         <Group title="Your data">
@@ -289,7 +393,13 @@ export default function MoreView({
         </Group>
       )}
 
-      <form action={logout}>
+      <form
+        action={async () => {
+          // So whoever uses this device next doesn't get this rider's reminders.
+          await turnOffPushOnThisDevice();
+          await logout();
+        }}
+      >
         <button type="submit" className={`w-full min-h-12 ${ui.secondaryButton} text-base`}>
           <LogOut size={16} aria-hidden="true" /> Sign out
         </button>

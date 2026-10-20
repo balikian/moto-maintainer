@@ -44,6 +44,10 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, exporte
         odometer_check_in: flag(saved.email_odometer_reminders, true),
         monthly_summary: flag(saved.email_monthly_summary, false),
       },
+      push_notifications: {
+        tasks_coming_due: flag(saved.push_task_reminders, true),
+        odometer_check_in: flag(saved.push_odometer_reminders, true),
+      },
     },
     bikes: bikes.map((bike) => ({
       year: bike.year,

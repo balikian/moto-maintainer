@@ -446,6 +446,7 @@ export default function GarageApp() {
             unitSystem={unitSystem}
             theme={theme}
             reminders={preferences.reminders}
+            push={preferences.push}
             isAdmin={isAdmin}
             reviewCount={reviewCount}
             bikes={bikes}
@@ -453,6 +454,7 @@ export default function GarageApp() {
             onChangeUnits={(next) => void updatePreferences({ unitSystem: next })}
             onChangeTheme={(next) => void updatePreferences({ theme: next })}
             onChangeReminders={(next) => void updatePreferences({ reminders: next })}
+            onChangePush={(next) => void updatePreferences({ push: next })}
           />
         )}
       </main>

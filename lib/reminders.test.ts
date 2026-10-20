@@ -5,6 +5,7 @@ import {
   lastMonthRange,
   planDailyReminders,
   planMonthlySummary,
+  planPushReminders,
   type ReminderBike,
   type ReminderRider,
   type ReminderTask,
@@ -43,6 +44,9 @@ const rider = (overrides: Partial<ReminderRider> = {}): ReminderRider => ({
   task_reminders: true,
   odometer_reminders: true,
   monthly_summary: false,
+  push_task_reminders: true,
+  push_odometer_reminders: true,
+  push: [],
   sent: [],
   bikes: [bike()],
   ...overrides,
@@ -109,6 +113,40 @@ describe('planDailyReminders', () => {
     assert.equal(planDailyReminders(rider({ task_reminders: false, odometer_reminders: false, bikes: [stale] }), today), null);
     assert.equal(planDailyReminders(rider({ task_reminders: false, bikes: [stale] }), today)?.tasks.length, 0);
     assert.equal(planDailyReminders(rider({ odometer_reminders: false, bikes: [stale] }), today)?.odometer.length, 0);
+  });
+});
+
+describe('planPushReminders', () => {
+  const device = { endpoint: 'https://push.example.com/abc', p256dh: 'key', auth: 'secret' };
+  const stale = bike({ odometer_updated_at: '2026-09-10T18:00:00+00:00', tasks: [task('t', { interval_mileage: 2500 })] });
+
+  it('sends nothing without a push device', () => {
+    assert.equal(planPushReminders(rider({ bikes: [stale] }), today), null);
+  });
+
+  it('sends the same reminders as email, under their own keys', () => {
+    const withDevice = rider({ push: [device], bikes: [stale] });
+    const email = planDailyReminders(withDevice, today)!;
+    const push = planPushReminders(withDevice, today)!;
+    assert.deepEqual(
+      push.tasks.map((entry) => entry.key),
+      email.tasks.map((entry) => `push:${entry.key}`)
+    );
+    assert.equal(push.odometer[0].key, `push:${email.odometer[0].key}`);
+
+    // Sending the email doesn't count as the push, and the other way around.
+    const emailSent = [...email.tasks, ...email.odometer].map((entry) => entry.key);
+    assert.equal(planPushReminders({ ...withDevice, sent: emailSent }, today)?.tasks.length, 1);
+    const pushSent = [...push.tasks, ...push.odometer].map((entry) => entry.key);
+    assert.equal(planDailyReminders({ ...withDevice, sent: pushSent }, today)?.tasks.length, 1);
+    assert.equal(planPushReminders({ ...withDevice, sent: pushSent }, today), null);
+  });
+
+  it('follows the push switches, not the email ones', () => {
+    const emailOff = rider({ push: [device], task_reminders: false, odometer_reminders: false, bikes: [stale] });
+    assert.equal(planPushReminders(emailOff, today)?.tasks.length, 1);
+    assert.equal(planPushReminders({ ...emailOff, push_task_reminders: false }, today)?.tasks.length, 0);
+    assert.equal(planPushReminders({ ...emailOff, push_task_reminders: false, push_odometer_reminders: false }, today), null);
   });
 });
 

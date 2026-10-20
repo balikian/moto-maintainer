@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server';
 import { runReminderJob } from '@/lib/reminderJob';
 import { SITE_URL } from '@/lib/site';
 
-// The daily reminder email run. Vercel Cron calls it (vercel.json) with
+// The daily reminder run (email and push). Vercel Cron calls it (vercel.json) with
 // "Authorization: Bearer <CRON_SECRET>"; CRON_SECRET is also the job secret
 // the database checks (Vault's reminder_job_secret), so it must match that
 // environment's database. Cron runs only on production; to try it on the

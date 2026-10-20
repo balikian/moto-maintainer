@@ -69,6 +69,7 @@ describe('buildAccountExport', () => {
       distance_units: 'kilometers',
       theme: 'auto',
       reminder_emails: { tasks_coming_due: false, odometer_check_in: true, monthly_summary: false },
+      push_notifications: { tasks_coming_due: true, odometer_check_in: true },
     });
   });
 

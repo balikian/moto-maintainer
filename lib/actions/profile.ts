@@ -1,7 +1,7 @@
 'use server';
 
 import { getSignedInClient } from '../supabase/server';
-import type { ReminderPreferences, Theme, UnitSystem } from '../types';
+import type { PushPreferences, ReminderPreferences, Theme, UnitSystem } from '../types';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
 
 const REMINDER_COLUMNS = {
@@ -10,11 +10,17 @@ const REMINDER_COLUMNS = {
   monthlySummary: 'email_monthly_summary',
 } as const satisfies Record<keyof ReminderPreferences, string>;
 
+const PUSH_COLUMNS = {
+  taskReminders: 'push_task_reminders',
+  odometerReminders: 'push_odometer_reminders',
+} as const satisfies Record<keyof PushPreferences, string>;
+
 type ProfileChanges = {
   unit_system?: UnitSystem;
   theme?: Theme;
   active_bike_id?: string | null;
-} & Partial<Record<(typeof REMINDER_COLUMNS)[keyof ReminderPreferences], boolean>>;
+} & Partial<Record<(typeof REMINDER_COLUMNS)[keyof ReminderPreferences], boolean>>
+  & Partial<Record<(typeof PUSH_COLUMNS)[keyof PushPreferences], boolean>>;
 
 export async function updatePreferencesAction(
   preferences: {
@@ -22,6 +28,7 @@ export async function updatePreferencesAction(
     theme?: Theme;
     activeBikeId?: string | null;
     reminders?: Partial<ReminderPreferences>;
+    push?: Partial<PushPreferences>;
   }
 ): Promise<ActionResult> {
   const { supabase, user } = await getSignedInClient();
@@ -46,6 +53,10 @@ export async function updatePreferencesAction(
   for (const key of Object.keys(REMINDER_COLUMNS) as (keyof ReminderPreferences)[]) {
     const value = preferences.reminders?.[key];
     if (typeof value === 'boolean') changes[REMINDER_COLUMNS[key]] = value;
+  }
+  for (const key of Object.keys(PUSH_COLUMNS) as (keyof PushPreferences)[]) {
+    const value = preferences.push?.[key];
+    if (typeof value === 'boolean') changes[PUSH_COLUMNS[key]] = value;
   }
   if (Object.keys(changes).length === 0) return {};
 

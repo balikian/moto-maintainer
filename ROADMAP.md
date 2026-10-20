@@ -46,8 +46,9 @@ home page, privacy and terms URLs (2026-10-19).
 ✅ Download my data on More, the admin review badge and Import a backup
 (owner checked on test; released 2026-10-20).
 ✅ Add to Home Screen (manifest, install row on More; owner checked on
-an iPhone; released 2026-10-20). **Next: web push** (step 5;
-the owner wants it for a web-only launch). Also suggested: join the Apple
+an iPhone; released 2026-10-20). 🔨 **Web push** built 2026-10-20, on
+test (step 5); needs the VAPID keys in Vercel and the owner's check on
+devices before release. Also suggested: join the Apple
 Developer Program as Cheese and Beer LLC (D-U-N-S number first) for Sign
 in with Apple (step 7).
 
@@ -349,7 +350,7 @@ in `docs/user-testing.md`.
   settings and every bike's tasks and service history
   (`lib/accountExport.ts`). Owner checked the rest of step 4 on test.
 
-## 5. Notifications 🔨 (email ✅, push later)
+## 5. Notifications 🔨 (email ✅, web push 🔨)
 
 - **Decided (2026-10-16):** email first. A **Vercel Cron** (`vercel.json`,
   daily at 15:00 UTC: 8 am Pacific in summer, 7 am in winter) calls
@@ -397,15 +398,52 @@ in `docs/user-testing.md`.
   without errors in Vercel's Cron Jobs logs, and the emails arrived.
 - **Decided (2026-10-20, owner): web push stays in.** If SwingArm launches
   as a web app only (store apps undecided, step 7), riders should still
-  get push. ⏳ **Next.** Plan: a service worker, VAPID keys (private key a
-  Vercel Secret), a `push_subscriptions` table (one row per device, RLS),
-  a per-device push switch on More, the reminder job sending push next to
-  email and deleting subscriptions the push service reports gone, and a
-  privacy policy update (device push address; Google, Apple and Mozilla
-  carry the messages). On iPhone it only works from the Home Screen app,
-  so More should point there. The preference and job parts carry over to
-  native push if the store apps happen. First step, built 2026-10-20 (on
-  test): **Add to Home Screen.** A web app manifest (`app/manifest.ts`; icons in
+  get push. The preference and job parts carry over to native push if the
+  store apps happen. First step, **Add to Home Screen** (released
+  2026-10-20, below). 🔨 **Web push built 2026-10-20, on test.**
+  - Migration `20261020120000_web_push.sql` (pushed to test; checked with
+    a rolled-back test: the job sees a device, RLS hides it from other
+    riders, a second account signing in on the same browser takes it over,
+    removal works): `profiles.push_task_reminders` and
+    `push_odometer_reminders` (default on), `push_subscriptions` (one row
+    per device; riders read and delete their own; saved through
+    `save_push_subscription`, a security definer function, because an
+    endpoint may still be another account's), `remove_push_subscriptions`
+    for the job, and `reminder_job_data` with each rider's push switches
+    and devices (riders with only push count too).
+  - **Decided (Claude, 2026-10-20; owner can change):** push carries the
+    daily reminders (tasks coming due, odometer check-in), not the monthly
+    summary. Its switches are separate from the email ones, so
+    unsubscribing from email leaves push alone. Keys are the email's with
+    `push:` in front, so each reminder goes once per channel. At most one
+    push a day, to every device the rider turned on. Signing out turns
+    push off on that device.
+  - Code: `lib/reminders.ts` (`planPushReminders`), `lib/pushMessage.ts`
+    (the notification text, tested), `lib/push.ts` (web-push library;
+    404/410 → the device is deleted), `lib/reminderJob.ts` (push before
+    email, not under the 80-email cap; `push` counts in the result and the
+    dry run), `lib/actions/push.ts` (save, remove, send a test),
+    `app/hooks/usePush.ts`, `public/sw.js` (shows the notification, a tap
+    opens or focuses SwingArm; no caching; served no-cache from
+    `next.config.ts`), `public/icons/badge-96.png` (Android's status bar
+    icon). More → **Push notifications**: "On this device" switch, Send a
+    test, and the two type switches once any device has push; on iPhone
+    in Safari it says to add SwingArm to the Home Screen first. Privacy
+    policy (push addresses, push services, service worker; dated
+    2026-10-20), help page and Download my data updated.
+  - **VAPID keys:** devices subscribe to one key pair, so environments on
+    the same database share one: local and Preview use test's pair (in
+    `.env.local`), Production gets its own. `NEXT_PUBLIC_VAPID_PUBLIC_KEY`
+    and `VAPID_PRIVATE_KEY` (type Secret). The public key is built into
+    the page, so add it before the deploy or redeploy after.
+  - ⏳ To do: owner adds the Preview keys in Vercel and checks on test:
+    Chrome or Edge on a computer, Android, and the iPhone Home Screen app
+    (turn on, Test, a real run with `?only=<email>`, a tap opens SwingArm,
+    sign out turns it off). Release: generate a production pair
+    (`npx web-push generate-vapid-keys`) into Vercel Production, migration
+    on production, then `main`; set the privacy policy date to the
+    release day if it's later.
+  - Details of Add to Home Screen: A web app manifest (`app/manifest.ts`; icons in
   `public/icons/`, rendered from `public/brand/`, the maskable one zoomed
   out so Android's circle crop keeps the swingarm), iPhone Home Screen
   tags and theme colors in `app/layout.tsx`. More → SwingArm shows

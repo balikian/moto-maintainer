@@ -32,6 +32,7 @@ Run Node commands in **PowerShell**: it has Node 22. Git Bash on this machine re
 - `lib/bikeCatalog.ts`: the make/model dropdown lists: `lib/data/motorcycles.json` plus approved rider-added names from `custom_models`.
 - `lib/scheduleExtraction.ts`: server-only Claude call that reads a maintenance schedule from manual page images.
 - Reminder emails: `lib/reminders.ts` (what each rider gets), `lib/reminderEmail.ts` (templates), `lib/reminderJob.ts` (the daily run, called by Vercel Cron at `app/api/cron/reminders`), `lib/email.ts` (Resend). Unsubscribe links go to `app/unsubscribe` and `app/api/unsubscribe`.
+- Web push: the same daily job also pushes (`lib/pushMessage.ts` text, `lib/push.ts` sending). Devices are rows in `push_subscriptions`, turned on per device on More (`app/hooks/usePush.ts`, `lib/actions/push.ts`); `public/sw.js` is the service worker that shows them.
 - `supabase/migrations/`: SQL for the schema and row-level security.
 
 ## Conventions
@@ -64,7 +65,7 @@ To compare the two databases, the user dumps each with `pg_dump` (PostgreSQL 17 
 
 ## Secrets
 
-`.env.local` (gitignored) holds `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the publishable key, safe in the browser), `ANTHROPIC_API_KEY` and `RESEND_API_KEY` (server-only; never prefix them with `NEXT_PUBLIC_`), and `CRON_SECRET`: the reminder email job's secret, which must equal the database's Vault `reminder_job_secret` (local and Preview: test's; Production: prod's). The app never uses the Supabase secret or service-role key; the reminder job gets into riders' data through security definer functions that check the job secret. Don't put secrets in files, commits or notes.
+`.env.local` (gitignored) holds `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the publishable key, safe in the browser), `ANTHROPIC_API_KEY` and `RESEND_API_KEY` (server-only; never prefix them with `NEXT_PUBLIC_`), and `CRON_SECRET`: the reminder email job's secret, which must equal the database's Vault `reminder_job_secret` (local and Preview: test's; Production: prod's). Web push needs `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` (server-only), one pair per database for the same reason: devices subscribe to one public key. The app never uses the Supabase secret or service-role key; the reminder job gets into riders' data through security definer functions that check the job secret. Don't put secrets in files, commits or notes.
 
 ## Claude API
 
