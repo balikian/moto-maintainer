@@ -44,7 +44,10 @@ const THEME_OPTIONS: { value: Theme; label: string }[] = [
   { value: 'dark', label: 'Dark' },
 ];
 
-const rowClass = 'flex min-h-14 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-line py-2 last:border-b-0';
+const rowBase = 'flex min-h-14 items-center justify-between gap-x-3 gap-y-2 border-b border-line py-2 last:border-b-0';
+const rowClass = `${rowBase} flex-wrap`;
+/** A row whose control stays on the right while the label and detail wrap beside it. */
+const sideControlRowClass = `${rowBase} flex-nowrap`;
 function providerLabel(provider: string | null) {
   if (provider === 'google') return 'Signed in with Google';
   if (provider === 'apple') return 'Signed in with Apple';
@@ -103,7 +106,7 @@ function SwitchRow({ label, detail, checked, onChange }: {
   const labelId = useId();
   const detailId = useId();
   return (
-    <div className={`${rowClass} flex-nowrap`}>
+    <div className={sideControlRowClass}>
       <span className="min-w-0">
         <span id={labelId} className="block text-base font-bold">{label}</span>
         <span id={detailId} className="block text-sm font-medium text-muted">{detail}</span>
@@ -180,12 +183,14 @@ export default function MoreView({
 
       <div className="space-y-2">
         <Group title="Your data">
-          <div className={rowClass}>
+          <div className={sideControlRowClass}>
             <span className="min-w-0">
               <span className="block text-base font-bold">Download a copy</span>
               <span className="block text-sm font-medium text-muted">Every bike, task and service record, in one file</span>
             </span>
-            <DownloadDataButton supabase={supabase} userId={userId} email={email} onError={setDownloadError} />
+            <div className="shrink-0">
+              <DownloadDataButton supabase={supabase} userId={userId} email={email} onError={setDownloadError} />
+            </div>
           </div>
         </Group>
         {downloadError && <p className={ui.errorBox}>{downloadError}</p>}
