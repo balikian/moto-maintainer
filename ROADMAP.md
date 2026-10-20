@@ -43,8 +43,8 @@ mailbox or a registered-agent service's address, and add the formal
 notice requirements back. Open: whether a lawyer should look before
 launch. ✅ Google's OAuth consent screen (Branding → App domain) has the
 home page, privacy and terms URLs (2026-10-19).
-✅ Download my data on More and the admin review badge (2026-10-20, on
-test). Next: importing data.
+✅ Download my data on More, the admin review badge and Import a backup
+(2026-10-20, on test; not released yet).
 
 User testing with friends (2026-10-19): the invite and feedback texts are
 in `docs/user-testing.md`.
@@ -444,6 +444,9 @@ in `docs/user-testing.md`.
   the App Store/Play must use their in-app purchase for digital subscriptions;
   **RevenueCat** can unify Stripe + Apple + Google into one "is Pro" status.
 - Opening manual import to non-admins happens here (pending review stays).
+- Any bike limit (e.g. Free = 1 bike) must also be checked in
+  `importAccountDataAction`, which adds bikes without going through
+  `addBikeAction`.
 
 ## 7. Phone apps (iOS and Android) 💤
 
@@ -702,18 +705,27 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
     step with the app** when buttons or behavior change.
   - **FAQ:** TBD. The home page has a short FAQ that could grow into its
     own page.
-- ⏳ Import data (owner, 2026-10-16): load a "Download my data" file back
-  in, e.g. to restore after deleting or to move between accounts.
-  ✅ Built 2026-10-20: More has a **Your data** group ("Download a copy",
-  the same export as the delete dialog, shared as `DownloadDataButton`),
-  so riders can back up any time. Import goes in the same group. First thoughts: import adds bikes (with their tasks and history) as new ones,
-  never overwriting; a preview first ("3 bikes, 41 service records"), with
-  a warning when a bike with the same year, make and model already
-  exists. Checked on the server against a schema (Zod), through a server
-  action like every write. Category labels in the file map back to
-  category ids. The file carries `format_version: 1` so later layouts can
-  still read old files. Later, maybe: import from a spreadsheet or other
-  apps.
+- ✅ Import data (owner, 2026-10-16; built 2026-10-20, on test): load a
+  "Download my data" file back in, e.g. to restore after deleting or to
+  move between accounts. More has a **Your data** group: "Download a
+  copy" (the delete dialog's export, shared as `DownloadDataButton`) and
+  "Import a backup" (`ImportDataModal`). **Decided:** import always adds
+  bikes as new ones with their tasks and history, never overwriting; a
+  preview lists each bike ("12 tasks · 31 service records") with a
+  checkbox, and bikes already in the garage (same year, make and model)
+  start unticked (owner's pick over skipping them). Settings in the file
+  are ignored. Routine services link to the imported task with the same
+  name. All or nothing: if a bike fails, the bikes this import added are
+  removed. Imported bikes are new, so reminders wait their first 7 days.
+  Security (discussed 2026-10-20): the file is untrusted, so
+  `lib/accountImport.ts` checks it in the browser and again on the server
+  (Zod; `format_version: 1` only; years, distances, dates, categories and
+  text lengths; at most 50 bikes, 200 tasks and 2,000 service records a
+  bike, 5 MB). Ids, owners and emails in the file are never used, and
+  import never touches the shared make/model, manual or schedule lists.
+  The CSV export now neutralizes spreadsheet formulas (a leading `'` on
+  text starting with = + - @). Later, maybe: import from a spreadsheet or
+  other apps.
 - 💤 Announcements (2026-10-19): the privacy policy and terms promise
   notice "by email or in the app" before significant changes, and notice
   before closing SwingArm for good. Build when first needed: a

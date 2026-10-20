@@ -179,6 +179,14 @@ export default function GarageApp() {
     bikesQuery.reload();
   };
 
+  // Import a backup (More) added bikes: show them in Garage, with the first one active.
+  const handleImported = (bikeIds: string[]) => {
+    if (bikeIds[0]) setSelectedBikeId(bikeIds[0]);
+    bikesQuery.reload();
+    allTasksQuery.reload();
+    setView('garage');
+  };
+
   const handleUpdateOdometer = async (miles: number) => {
     if (!activeBike) return 'Select a bike first.';
     const result = await updateOdometerAction(activeBike.id, miles);
@@ -440,6 +448,8 @@ export default function GarageApp() {
             reminders={preferences.reminders}
             isAdmin={isAdmin}
             reviewCount={reviewCount}
+            bikes={bikes}
+            onImported={handleImported}
             onChangeUnits={(next) => void updatePreferences({ unitSystem: next })}
             onChangeTheme={(next) => void updatePreferences({ theme: next })}
             onChangeReminders={(next) => void updatePreferences({ reminders: next })}

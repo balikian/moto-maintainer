@@ -20,6 +20,16 @@ describe('buildServiceHistoryCsv', () => {
     );
   });
 
+  it('keeps text that looks like a formula from running in a spreadsheet', () => {
+    const csv = buildServiceHistoryCsv(
+      bike,
+      [{ ...logs[0], task_name: '=HYPERLINK("http://example.com","Click")', notes: '-2+3' }],
+      'imperial'
+    );
+    assert.match(csv, /,"'=HYPERLINK\(""http:\/\/example.com"",""Click""\)",/);
+    assert.match(csv, /,'-2\+3\r\n$/);
+  });
+
   it('converts odometer readings to kilometers', () => {
     const csv = buildServiceHistoryCsv(bike, [logs[0]], 'metric');
     assert.match(csv, /Odometer \(km\)/);

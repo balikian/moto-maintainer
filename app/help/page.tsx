@@ -250,6 +250,11 @@ export default async function HelpPage() {
               <Ui>Download my data</Ui>: every bike, task and service record in one file, to keep as a backup.
             </li>
             <li>
+              <Ui>Import a backup</Ui>: adds bikes from that file, with their tasks and history, e.g. to restore them or
+              move them to another account. Pick which bikes first; bikes already in your garage start unticked, and
+              nothing you have is changed.
+            </li>
+            <li>
               <Ui>Delete account</Ui>: erases your bikes, tasks and history for good. The dialog lets you download a copy
               of your data first.
             </li>

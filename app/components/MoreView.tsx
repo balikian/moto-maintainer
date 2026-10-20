@@ -2,13 +2,14 @@
 
 import { useId, useState, type ReactNode } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronRight, LogOut } from 'lucide-react';
+import { ChevronRight, LogOut, Upload } from 'lucide-react';
 import { logout } from '@/lib/actions/auth';
-import type { ReminderPreferences, Theme, UnitSystem } from '@/lib/types';
+import type { Motorcycle, ReminderPreferences, Theme, UnitSystem } from '@/lib/types';
 import Avatar from './Avatar';
 import CountBadge from './CountBadge';
 import DeleteAccountModal from './DeleteAccountModal';
 import DownloadDataButton from './DownloadDataButton';
+import ImportDataModal from './ImportDataModal';
 import { SUPPORT_EMAIL } from '@/lib/site';
 import { ui } from './ui';
 
@@ -25,9 +26,13 @@ type MoreViewProps = {
   isAdmin: boolean;
   /** Admins only: submissions waiting for review. */
   reviewCount: number;
+  /** The rider's bikes, so Import can point out ones already in the garage. */
+  bikes: Motorcycle[];
   onChangeUnits: (unitSystem: UnitSystem) => void;
   onChangeTheme: (theme: Theme) => void;
   onChangeReminders: (reminders: ReminderPreferences) => void;
+  /** After Import a backup adds bikes. */
+  onImported: (bikeIds: string[]) => void;
 };
 
 const REMINDER_OPTIONS: { key: keyof ReminderPreferences; label: string; detail: string }[] = [
@@ -146,12 +151,15 @@ export default function MoreView({
   reminders,
   isAdmin,
   reviewCount,
+  bikes,
   onChangeUnits,
   onChangeTheme,
   onChangeReminders,
+  onImported,
 }: MoreViewProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -195,6 +203,16 @@ export default function MoreView({
             <div className="shrink-0">
               <DownloadDataButton supabase={supabase} userId={userId} email={email} onError={setDownloadError} />
             </div>
+          </div>
+          <div className={sideControlRowClass}>
+            <span className="min-w-0">
+              <span className="block text-base font-bold">Import a backup</span>
+              <span className="block text-sm font-medium text-muted">Add bikes from a downloaded data file</span>
+            </span>
+            <button type="button" onClick={() => setImportOpen(true)} className={`${ui.chipButton} shrink-0`}>
+              <Upload size={15} aria-hidden="true" />
+              Import
+            </button>
           </div>
         </Group>
         {downloadError && <p className={ui.errorBox}>{downloadError}</p>}
@@ -251,6 +269,17 @@ export default function MoreView({
           Delete account
         </button>
       </div>
+
+      {importOpen && (
+        <ImportDataModal
+          garage={bikes}
+          onClose={() => setImportOpen(false)}
+          onImported={(bikeIds) => {
+            setImportOpen(false);
+            onImported(bikeIds);
+          }}
+        />
+      )}
 
       {deleteOpen && (
         <DeleteAccountModal supabase={supabase} userId={userId} email={email} onClose={() => setDeleteOpen(false)} />

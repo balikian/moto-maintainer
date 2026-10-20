@@ -30,7 +30,10 @@ export function historyFileName(bike: Pick<Motorcycle, 'year' | 'make' | 'model'
 }
 
 function csvField(value: string | number | null | undefined): string {
-  const text = value === null || value === undefined ? '' : String(value);
+  let text = value === null || value === undefined ? '' : String(value);
+  // Text starting with = + - @ (or a tab or return) runs as a formula in Excel and Sheets, so a note like
+  // =HYPERLINK(...) could act when the file is opened. A leading apostrophe makes it plain text.
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) text = `'${text}`;
   return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
