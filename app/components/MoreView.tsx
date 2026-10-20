@@ -207,7 +207,7 @@ export default function MoreView({
           <div className={sideControlRowClass}>
             <span className="min-w-0">
               <span className="block text-base font-bold">Import a backup</span>
-              <span className="block text-sm font-medium text-muted">Add bikes from a downloaded data file</span>
+              <span className="block text-sm font-medium text-muted">Add bikes from a file saved with Download my data</span>
             </span>
             <button type="button" onClick={() => setImportOpen(true)} className={`${ui.chipButton} shrink-0`}>
               <Upload size={15} aria-hidden="true" />
