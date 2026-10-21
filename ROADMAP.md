@@ -107,7 +107,8 @@ Help page updated. ✅ Released 2026-10-21: migration on production first
 (checked: both columns nullable, no default), then `main`.
 
 ✅ **Sign-in code** (built 2026-10-21; owner checked on test, templates and
-Email OTP Length 6 set there; not released yet): the iPhone Home
+Email OTP Length 6 set there; released 2026-10-21 after the owner set up
+production the same way): the iPhone Home
 Screen app couldn't sign in by email, because the link opens in Safari,
 which doesn't share its sign-in. The sign-in email now has a code
 (`{{ .Token }}`) above the link, and after sending, the sign-in card asks
