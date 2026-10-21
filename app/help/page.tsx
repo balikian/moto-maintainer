@@ -151,13 +151,13 @@ export default async function HelpPage() {
               If you find an old receipt later, log it and the task counts from that instead.
             </li>
             <li>
-              <Ui>Count from new</Ui>: if it’s never been done, the task counts from 0 miles and January 1 of the bike’s
-              model year. On a used bike, this can show it as overdue.
+              <Ui>Never done</Ui>: if it hasn’t been done since the bike was new, the task counts from 0 miles and
+              January 1 of the bike’s model year. On a used bike, this can show it as overdue.
             </li>
           </ul>
           <p>
-            Open a task to choose for that task, or use <Ui>Start all today</Ui> or <Ui>Count all from new</Ui> for
-            all of them at once.
+            Open a task to choose for that task, or use <Ui>Start all today</Ui> or <Ui>None done yet</Ui> for all of
+            them at once.
           </p>
           <p>
             <Ui>Keep the odometer up to date.</Ui> Distance-based tasks can only count miles you’ve told SwingArm

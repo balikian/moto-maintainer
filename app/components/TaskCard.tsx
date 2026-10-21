@@ -26,9 +26,9 @@ type TaskCardProps = {
   alsoComingUp: MaintenanceTask[];
   onReset: () => void;
   onDelete: () => void;
-  /** For a task without a start point: count from today, or from when the bike was new. */
+  /** For a task without a start point: count from today, or "never done" (from when the bike was new). */
   onSetStart: (start: 'today' | 'new') => void;
-  /** The bike's model year, for "count from new". */
+  /** The bike's model year, where "never done" counts from. */
   bikeYear: number;
 };
 
@@ -213,8 +213,8 @@ export default function TaskCard({
           </dl>
           {noStart && (
             <p className="text-sm text-muted">
-              When was this last done? Log it if you know. If you don&apos;t, start counting today. Never done? Count
-              from new (January {bikeYear}).
+              When was this last done? Log it if you know. Not sure? Start counting today. Never been done? It counts
+              from when the bike was new (0 {unitLabel}, January {bikeYear}).
             </p>
           )}
           <div className="flex gap-2">
@@ -252,7 +252,7 @@ export default function TaskCard({
                 Start today
               </button>
               <button type="button" onClick={() => onSetStart('new')} className={ui.secondaryButton}>
-                Count from new
+                Never done
               </button>
             </div>
           )}

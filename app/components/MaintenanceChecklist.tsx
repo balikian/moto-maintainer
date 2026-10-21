@@ -112,13 +112,13 @@ export default function MaintenanceChecklist({
                   </ConfirmPopover>
                   <ConfirmPopover
                     align="left"
-                    message={`Count ${these} from new (0 ${distanceUnitLabel(unitSystem)}, January ${bike.year})? Anything past its interval will show as overdue.`}
-                    confirmLabel="Count from new"
+                    message={`Mark ${these} as never done? ${count === 1 ? 'It' : 'They'}'ll count from when the bike was new (0 ${distanceUnitLabel(unitSystem)}, January ${bike.year}), so anything past its interval will show as overdue.`}
+                    confirmLabel="Never done"
                     onConfirm={() => onSetStart(noStartTasks, 'new')}
                   >
                     {(openConfirm, popoverProps) => (
                       <button type="button" onClick={openConfirm} {...popoverProps} className={ui.secondaryButton}>
-                        {count === 1 ? 'Count from new' : 'Count all from new'}
+                        {count === 1 ? 'Never done' : 'None done yet'}
                       </button>
                     )}
                   </ConfirmPopover>

@@ -62,16 +62,20 @@ bike's tasks start with **no start point** (`last_performed_mileage` and
 date null; status `NoStart`): not due, not counted as due, no reminders.
 They're listed under "When were these last done?" at the top of Tasks;
 each one offers **Log a past service**, **Start today** (a full interval
-from today's odometer) or **Count from new**, and the group has **Start
-all today** / **Count all from new** (with a confirm). A guessed start
-point (today, from new) is replaced by the task's first logged service,
+from today's odometer) or **Never done** (counts from 0 miles and January
+of the model year), and the group has **Start all today** / **None done
+yet** (with a confirm). **Decided (owner):** not "Count from new", which
+confused him. A guessed start point (today, never done) is replaced by
+the task's first logged service,
 however old. Deleting a task's last log takes it back to no start point;
 applying a schedule adds tasks without one. The bike panel says "N tasks
 need a start point"; Garage says "N to set up". Time overdue past two
 years shows in years. Migration `20261020180000_task_start_point.sql`
 (pushed to test) makes the column nullable and **clears the automatic
-from-new start on existing tasks never logged** (105 of 108 on test).
-⏳ Owner to check on test, then production migration and release. Not
+from-new start on existing tasks never logged** (105 of 108 on test;
+**decided:** production's existing bikes get the same change).
+⏳ Owner to check on test, then production migration and release
+together (old code can't read a missing start point). Not
 done: the odometer staying required when logging service or adding a bike
 (`docs/bugs.md`).
 
