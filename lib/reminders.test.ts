@@ -97,6 +97,11 @@ describe('planDailyReminders', () => {
     assert.equal(planDailyReminders(rider({ bikes: [justAdded] }), new Date(2026, 9, 19))?.tasks.length, 1); // day 7
   });
 
+  it('skips tasks without a start point', () => {
+    const tasks = [task('t', { interval_mileage: 2500, last_performed_mileage: null, last_performed_date: null })];
+    assert.equal(planDailyReminders(rider({ bikes: [bike({ tasks })] }), today), null);
+  });
+
   it('checks in on the odometer every 30 days it stays the same', () => {
     const stale = bike({ odometer_updated_at: '2026-09-10T18:00:00+00:00' }); // 36 days
     const plan = planDailyReminders(rider({ bikes: [stale] }), today);

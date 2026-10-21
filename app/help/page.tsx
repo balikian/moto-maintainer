@@ -109,7 +109,8 @@ export default async function HelpPage() {
           </Steps>
           <p>
             If we have the manufacturer’s maintenance schedule for your model, the checklist starts from it. Otherwise it
-            starts with a sensible set of common jobs, which you can change any time.
+            starts with a sensible set of common jobs, which you can change any time. Then tell SwingArm when each job
+            was last done (see <a href="#what-is-due" className="font-bold text-accent hover:underline">how tasks come due</a>).
           </p>
           <p>
             With more than one bike, tap the bike’s name on Tasks to switch between them, or pick one in Garage. Garage is
@@ -136,9 +137,27 @@ export default async function HelpPage() {
             <Ui>All good</Ui>. Tap any task to see its interval and when it was last done.
           </p>
           <p>
-            <Ui>Until you log a service, a task counts from new:</Ui> from 0 miles and January 1 of the bike’s model
-            year. On a used bike, that can make a lot of tasks show as overdue. Log the last service you know of for each
-            one (an old receipt or a dealer stamp is fine), and they’ll count from there.
+            <Ui>Each task needs a start point.</Ui> A new bike’s tasks are listed under{' '}
+            <Ui>When were these last done?</Ui> at the top of Tasks, and they won’t come due until you choose one of
+            these for each task:
+          </p>
+          <ul className="list-disc space-y-1.5 pl-6">
+            <li>
+              <Ui>Log a past service</Ui>: the last time you know it was done (an old receipt or a dealer stamp is fine).
+              The task counts from that date and odometer reading.
+            </li>
+            <li>
+              <Ui>Start today</Ui>: if you don’t know, the task counts a full interval from today’s odometer reading.
+              If you find an old receipt later, log it and the task counts from that instead.
+            </li>
+            <li>
+              <Ui>Count from new</Ui>: if it’s never been done, the task counts from 0 miles and January 1 of the bike’s
+              model year. On a used bike, this can show it as overdue.
+            </li>
+          </ul>
+          <p>
+            Open a task to choose for that task, or use <Ui>Start all today</Ui> or <Ui>Count all from new</Ui> for
+            all of them at once.
           </p>
           <p>
             <Ui>Keep the odometer up to date.</Ui> Distance-based tasks can only count miles you’ve told SwingArm

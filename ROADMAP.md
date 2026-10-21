@@ -52,7 +52,28 @@ Developer Program as Cheese and Beer LLC (D-U-N-S number first) for Sign
 in with Apple (step 7).
 
 User testing with friends (2026-10-19): the invite and feedback texts are
-in `docs/user-testing.md`.
+in `docs/user-testing.md`. Testers' notes are in `docs/bugs.md` and
+`docs/Feedback.md` (owner's files).
+
+🔨 **Task start points** (built 2026-10-20, on test). Testers' biggest
+complaint: adding a used bike showed nearly every task overdue (counting
+from new), in hundreds of months. **Decided (owner, 2026-10-20):** a new
+bike's tasks start with **no start point** (`last_performed_mileage` and
+date null; status `NoStart`): not due, not counted as due, no reminders.
+They're listed under "When were these last done?" at the top of Tasks;
+each one offers **Log a past service**, **Start today** (a full interval
+from today's odometer) or **Count from new**, and the group has **Start
+all today** / **Count all from new** (with a confirm). A guessed start
+point (today, from new) is replaced by the task's first logged service,
+however old. Deleting a task's last log takes it back to no start point;
+applying a schedule adds tasks without one. The bike panel says "N tasks
+need a start point"; Garage says "N to set up". Time overdue past two
+years shows in years. Migration `20261020180000_task_start_point.sql`
+(pushed to test) makes the column nullable and **clears the automatic
+from-new start on existing tasks never logged** (105 of 108 on test).
+⏳ Owner to check on test, then production migration and release. Not
+done: the odometer staying required when logging service or adding a bike
+(`docs/bugs.md`).
 
 ---
 

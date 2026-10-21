@@ -89,7 +89,8 @@ export const ODOMETER_CHECK_IN_DAYS = 30;
 /**
  * No task reminders for a bike until it's been in the garage this long, so
  * the rider can log past service, apply a schedule or change intervals
- * before hearing that everything is overdue (tasks count from new).
+ * before hearing that everything is overdue (e.g. after counting from new).
+ * Tasks without a start point never send reminders.
  */
 export const NEW_BIKE_GRACE_DAYS = 7;
 
@@ -134,7 +135,7 @@ function planDaily(
     if (channel.tasks && settledIn) {
       for (const task of bike.tasks) {
         const dueState = getTaskDueState(task, bike.current_mileage, today);
-        if (dueState.status === 'Healthy') continue;
+        if (dueState.status === 'Healthy' || dueState.status === 'NoStart') continue;
         const kind = dueState.status === 'Overdue' ? 'overdue' : 'soon';
         const key = channel.keyPrefix + taskKey(task, kind);
         if (!sent.has(key)) tasks.push({ key, kind, bike, task, dueState });

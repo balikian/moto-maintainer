@@ -11,7 +11,10 @@ import {
   genericTasksFor,
   isGenericTaskName,
   groupTasksByUrgency,
+  hasStartPoint,
+  NO_START,
   scheduleOverlapsTasks,
+  startTodayBaseline,
 } from './maintenance';
 
 const today = new Date(2026, 8, 29); // Sep 29, 2026
@@ -146,21 +149,43 @@ describe('groupTasksByUrgency', () => {
     assert.deepEqual(names(healthy), ['Healthy near', 'Healthy far', 'No interval']);
   });
 
+  it('keeps tasks without a start point in their own group, after everything else', () => {
+    const withNoStart = [named('No start', { interval_mileage: 3000, ...NO_START }), ...tasks];
+    const { needsAttention, healthy, noStart } = groupTasksByUrgency(withNoStart, 14000, today);
+    assert.deepEqual(names(noStart), ['No start']);
+    assert.ok(!names(needsAttention).includes('No start'));
+    assert.ok(!names(healthy).includes('No start'));
+  });
+
   it('counts tasks by status', () => {
-    assert.deepEqual(countTasksByStatus(tasks, 14000, today), { Overdue: 1, Urgent: 1, Soon: 1, Healthy: 3 });
-    assert.deepEqual(countTasksByStatus([], 14000, today), { Overdue: 0, Urgent: 0, Soon: 0, Healthy: 0 });
+    assert.deepEqual(countTasksByStatus(tasks, 14000, today), { Overdue: 1, Urgent: 1, Soon: 1, Healthy: 3, NoStart: 0 });
+    assert.deepEqual(countTasksByStatus([], 14000, today), { Overdue: 0, Urgent: 0, Soon: 0, Healthy: 0, NoStart: 0 });
+    assert.equal(countTasksByStatus([task(NO_START)], 14000, today).NoStart, 1);
   });
 });
 
 describe('task baselines', () => {
+  it('a task without a start point is never due', () => {
+    const state = getTaskDueState({ interval_mileage: 4000, interval_months: 12, ...NO_START }, 50000, today);
+    assert.deepEqual(state, { status: 'NoStart', trigger: null, milesRemaining: null, daysRemaining: null, fractionRemaining: null });
+    assert.equal(hasStartPoint(NO_START), false);
+    assert.equal(hasStartPoint(fromNewBaseline(2020)), true);
+  });
+
   it('counts from new: 0 miles and the start of the model year', () => {
     assert.deepEqual(fromNewBaseline(2024), { last_performed_mileage: 0, last_performed_date: '2024-01-01' });
   });
 
-  it('a used bike with no service logged shows work as due', () => {
+  it('counting from new on a used bike shows work as due', () => {
     // A 2020 bike bought with 20,000 miles: the 15,000-mile service is overdue until it's logged.
     const state = getTaskDueState({ interval_mileage: 15000, interval_months: 12, ...fromNewBaseline(2020) }, 20000, today);
     assert.equal(state.status, 'Overdue');
+  });
+
+  it('starting today counts a full interval from the current odometer', () => {
+    const state = getTaskDueState({ interval_mileage: 4000, interval_months: 12, ...startTodayBaseline(20000, '2026-09-29') }, 20000, today);
+    assert.equal(state.status, 'Healthy');
+    assert.equal(state.fractionRemaining, 1);
   });
 
   it('uses the latest log, by date and then odometer', () => {
@@ -169,11 +194,11 @@ describe('task baselines', () => {
       { performed_at: '2026-05-20T00:00:00Z', odometer_at_service: 7000 },
       { performed_at: '2026-05-20', odometer_at_service: 6900 },
     ];
-    assert.deepEqual(baselineFromLogs(logs, 2024), { last_performed_mileage: 7000, last_performed_date: '2026-05-20' });
+    assert.deepEqual(baselineFromLogs(logs), { last_performed_mileage: 7000, last_performed_date: '2026-05-20' });
   });
 
-  it('falls back to new when there are no logs', () => {
-    assert.deepEqual(baselineFromLogs([], 2023), fromNewBaseline(2023));
+  it('has no start point when there are no logs', () => {
+    assert.deepEqual(baselineFromLogs([]), NO_START);
   });
 });
 

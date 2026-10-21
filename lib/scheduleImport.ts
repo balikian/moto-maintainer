@@ -70,7 +70,7 @@ export type ScheduleApplyPlan = {
 export function planScheduleApply(
   scheduleTasks: TaskDefaults[],
   existingTasks: { id: string; task_name: string }[],
-  { bikeYear, logs }: { bikeYear: number; logs: LogForApply[] }
+  { logs }: { logs: LogForApply[] }
 ): ScheduleApplyPlan {
   const orphanLogsByName = new Map<string, LogForApply[]>();
   for (const log of logs) {
@@ -100,7 +100,7 @@ export function planScheduleApply(
       plan.additions.push({
         ...intervals,
         task_name: task_name.trim(),
-        ...baselineFromLogs(matchingLogs, bikeYear),
+        ...baselineFromLogs(matchingLogs),
         relinkLogIds: matchingLogs.map((log) => log.id),
       });
     }

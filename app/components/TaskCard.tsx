@@ -26,6 +26,10 @@ type TaskCardProps = {
   alsoComingUp: MaintenanceTask[];
   onReset: () => void;
   onDelete: () => void;
+  /** For a task without a start point: count from today, or from when the bike was new. */
+  onSetStart: (start: 'today' | 'new') => void;
+  /** The bike's model year, for "count from new". */
+  bikeYear: number;
 };
 
 const STATUS_TEXT: Record<TaskStatus, string> = {
@@ -33,6 +37,7 @@ const STATUS_TEXT: Record<TaskStatus, string> = {
   Urgent: 'text-danger',
   Soon: 'text-warn',
   Healthy: 'text-muted',
+  NoStart: 'text-muted',
 };
 
 const STATUS_FILL: Record<TaskStatus, string> = {
@@ -40,12 +45,14 @@ const STATUS_FILL: Record<TaskStatus, string> = {
   Urgent: 'bg-danger',
   Soon: 'bg-warn',
   Healthy: 'bg-good',
+  NoStart: 'bg-track',
 };
 
 /** The progress bar is split into segments, like a rev counter. */
 const SEGMENTS = 12;
 
 function lastDoneLabel(task: MaintenanceTask, neverLogged: boolean, unitSystem: UnitSystem): string {
+  if (task.last_performed_mileage === null) return 'Not set yet';
   const date = task.last_performed_date ? formatDisplayDate(task.last_performed_date) : null;
   const distance = formatDistance(task.last_performed_mileage, unitSystem);
   if (neverLogged) {
@@ -66,7 +73,10 @@ export default function TaskCard({
   alsoComingUp,
   onReset,
   onDelete,
+  onSetStart,
+  bikeYear,
 }: TaskCardProps) {
+  const noStart = dueState.status === 'NoStart';
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<{ distance: string; months: string; category: TaskCategory } | null>(null);
   const [saving, setSaving] = useState(false);
@@ -76,7 +86,9 @@ export default function TaskCard({
 
   const unitLabel = distanceUnitLabel(unitSystem);
   const due = dueLabel(dueState, unitSystem);
-  const meta = [categoryLabel(category), task.is_diy ? 'DIY' : 'Shop', neverLogged ? 'not logged yet' : null].filter(Boolean).join(' · ');
+  const meta = [categoryLabel(category), task.is_diy ? 'DIY' : 'Shop', neverLogged && !noStart ? 'not logged yet' : null]
+    .filter(Boolean)
+    .join(' · ');
   // How much of the interval has been used up, capped at 100% once overdue.
   const percentUsed = dueState.fractionRemaining === null
     ? null
@@ -186,8 +198,12 @@ export default function TaskCard({
             )}
             <dt className="font-semibold text-muted">Interval</dt>
             <dd className="font-bold">{intervalLabel(task, unitSystem)}</dd>
-            <dt className="font-semibold text-muted">Last done</dt>
-            <dd className="font-bold">{lastDoneLabel(task, neverLogged, unitSystem)}</dd>
+            {!noStart && (
+              <>
+                <dt className="font-semibold text-muted">Last done</dt>
+                <dd className="font-bold">{lastDoneLabel(task, neverLogged, unitSystem)}</dd>
+              </>
+            )}
             {task.notes && (
               <>
                 <dt className="font-semibold text-muted">Notes</dt>
@@ -195,9 +211,15 @@ export default function TaskCard({
               </>
             )}
           </dl>
+          {noStart && (
+            <p className="text-sm text-muted">
+              When was this last done? Log it if you know. If you don&apos;t, start counting today. Never done? Count
+              from new (January {bikeYear}).
+            </p>
+          )}
           <div className="flex gap-2">
             <button type="button" onClick={onLog} className={`flex-1 ${ui.primaryButton}`}>
-              <Check size={16} strokeWidth={2.6} /> Log service
+              <Check size={16} strokeWidth={2.6} /> {noStart ? 'Log a past service' : 'Log service'}
             </button>
             <button type="button" onClick={startEditing} className={ui.iconButton} title="Edit interval" aria-label="Edit interval">
               <Pencil size={16} />
@@ -224,6 +246,16 @@ export default function TaskCard({
               )}
             </ConfirmPopover>
           </div>
+          {noStart && (
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => onSetStart('today')} className={ui.secondaryButton}>
+                Start today
+              </button>
+              <button type="button" onClick={() => onSetStart('new')} className={ui.secondaryButton}>
+                Count from new
+              </button>
+            </div>
+          )}
         </>
       )}
       {error && <p className={ui.errorBox}>{error}</p>}
@@ -240,10 +272,20 @@ export default function TaskCard({
           aria-controls={`${id}-details`}
           className="flex min-h-12 w-full items-center justify-between gap-3 px-4 py-2.5 text-left"
         >
-          <span className="font-semibold">{task.task_name}</span>
-          <span className="shrink-0 text-sm font-semibold text-muted tabular-nums">
-            {due.value} {due.caption}
-          </span>
+          {noStart ? (
+            // No countdown to show yet, so the interval goes under the name.
+            <span className="min-w-0">
+              <span className="block font-semibold">{task.task_name}</span>
+              <span className="block text-xs text-muted">{intervalLabel(task, unitSystem)}</span>
+            </span>
+          ) : (
+            <>
+              <span className="font-semibold">{task.task_name}</span>
+              <span className="shrink-0 text-sm font-semibold text-muted tabular-nums">
+                {due.value} {due.caption}
+              </span>
+            </>
+          )}
         </button>
         {details}
       </li>

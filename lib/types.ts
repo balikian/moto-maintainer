@@ -38,7 +38,8 @@ export interface MaintenanceTask {
   task_name: string;
   interval_mileage: number;
   interval_months: number;
-  last_performed_mileage: number;
+  /** Null, with the date, while the task has no start point; see NO_START in lib/maintenance.ts. */
+  last_performed_mileage: number | null;
   last_performed_date: string | null;
   is_diy: boolean;
   /** Null on older rows; see taskCategory() in lib/taskCategories.ts. */

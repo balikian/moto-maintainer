@@ -4,7 +4,9 @@ import { BookOpen, CheckCircle, ChevronDown, Plus } from 'lucide-react';
 import { groupTasksByUrgency, type TaskDueState } from '@/lib/maintenance';
 import { batchCandidates, type TaskCategory } from '@/lib/taskCategories';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
+import { distanceUnitLabel } from '@/lib/units';
 import { useStoredToggle } from '../hooks/useStoredToggle';
+import ConfirmPopover from './ConfirmPopover';
 import TaskCard from './TaskCard';
 import { ui } from './ui';
 
@@ -21,10 +23,13 @@ type MaintenanceChecklistProps = {
   onSaveIntervals: (task: MaintenanceTask, intervals: { intervalMileage: number; intervalMonths: number; category: TaskCategory }) => Promise<string | null>;
   onResetTask: (task: MaintenanceTask) => void;
   onDeleteTask: (task: MaintenanceTask) => void;
+  /** Gives tasks without a start point one: today, or from when the bike was new. */
+  onSetStart: (tasks: MaintenanceTask[], start: 'today' | 'new') => void;
 };
 
 /**
- * The bike's tasks, most due first. Anything overdue, urgent, or coming up
+ * The bike's tasks, most due first. Tasks without a start point come first,
+ * asking when they were last done; anything overdue, urgent, or coming up
  * soon is a card; healthy tasks are compact rows in a collapsible "All good" list.
  */
 export default function MaintenanceChecklist({
@@ -39,10 +44,14 @@ export default function MaintenanceChecklist({
   onSaveIntervals,
   onResetTask,
   onDeleteTask,
+  onSetStart,
 }: MaintenanceChecklistProps) {
   const [healthyCollapsed, toggleHealthy] = useStoredToggle('moto-maintain:healthy-tasks-collapsed', true);
-  const { needsAttention, healthy } = groupTasksByUrgency(tasks, bike.current_mileage, new Date());
+  const { needsAttention, healthy, noStart } = groupTasksByUrgency(tasks, bike.current_mileage, new Date());
   const allEntries = [...needsAttention, ...healthy];
+  const noStartTasks = noStart.map(({ task }) => task);
+  const count = noStartTasks.length;
+  const these = count === 1 ? 'this task' : `all ${count}`;
 
   const renderTask = ({ task, dueState }: { task: MaintenanceTask; dueState: TaskDueState }, variant: 'card' | 'row') => (
     <TaskCard
@@ -57,6 +66,8 @@ export default function MaintenanceChecklist({
       alsoComingUp={dueState.status === 'Healthy' ? [] : batchCandidates(task, allEntries)}
       onReset={() => onResetTask(task)}
       onDelete={() => onDeleteTask(task)}
+      onSetStart={(start) => onSetStart([task], start)}
+      bikeYear={bike.year}
     />
   );
 
@@ -76,12 +87,53 @@ export default function MaintenanceChecklist({
         <div className={ui.emptyState}>No maintenance tasks for this bike yet. Add one to start tracking.</div>
       ) : (
         <div className="grid grid-cols-1 gap-2.5">
+          {count > 0 && (
+            <div className={ui.card}>
+              <div className="space-y-3 px-4 py-4">
+                <div>
+                  <h3 className="text-base font-bold">When were these last done?</h3>
+                  <p className="mt-1 text-sm text-muted">
+                    {count === 1 ? 'This task' : `These ${count} tasks`} won&apos;t come due until they have a start point. Tap
+                    one to log a past service. Don&apos;t know? Start counting today.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <ConfirmPopover
+                    align="left"
+                    message={`Start counting ${these} today? You can still log past services for them later.`}
+                    confirmLabel="Start today"
+                    onConfirm={() => onSetStart(noStartTasks, 'today')}
+                  >
+                    {(openConfirm, popoverProps) => (
+                      <button type="button" onClick={openConfirm} {...popoverProps} className={ui.secondaryButton}>
+                        {count === 1 ? 'Start today' : 'Start all today'}
+                      </button>
+                    )}
+                  </ConfirmPopover>
+                  <ConfirmPopover
+                    align="left"
+                    message={`Count ${these} from new (0 ${distanceUnitLabel(unitSystem)}, January ${bike.year})? Anything past its interval will show as overdue.`}
+                    confirmLabel="Count from new"
+                    onConfirm={() => onSetStart(noStartTasks, 'new')}
+                  >
+                    {(openConfirm, popoverProps) => (
+                      <button type="button" onClick={openConfirm} {...popoverProps} className={ui.secondaryButton}>
+                        {count === 1 ? 'Count from new' : 'Count all from new'}
+                      </button>
+                    )}
+                  </ConfirmPopover>
+                </div>
+              </div>
+              <ul className="divide-y divide-line border-t border-line">{noStart.map((entry) => renderTask(entry, 'row'))}</ul>
+            </div>
+          )}
+
           {needsAttention.length > 0 ? (
             // Two across on desktop; an opened card grows without stretching its neighbor.
             <div className="grid grid-cols-1 items-start gap-2.5 lg:grid-cols-2 lg:gap-3">
               {needsAttention.map((entry) => renderTask(entry, 'card'))}
             </div>
-          ) : (
+          ) : count === 0 && (
             <div className={`${ui.card} flex items-center gap-3 px-4 py-4 text-sm`}>
               <CheckCircle size={20} className="shrink-0 text-good" aria-hidden="true" />
               <span>

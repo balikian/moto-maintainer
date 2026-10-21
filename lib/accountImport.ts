@@ -74,7 +74,7 @@ export type ImportTask = {
   category: TaskCategory;
   intervalMiles: number;
   intervalMonths: number;
-  lastPerformedMiles: number;
+  lastPerformedMiles: number | null;
   lastPerformedDate: string | null;
   isDiy: boolean;
   notes: string | null;
@@ -165,8 +165,9 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
           category: categoryFromFile(task.category, task.name),
           intervalMiles: task.every_miles ?? 0,
           intervalMonths: task.every_months ?? 0,
-          lastPerformedMiles: task.last_done_miles ?? 0,
-          lastPerformedDate: task.last_done_on ?? null,
+          // No miles in the file means the task had no start point yet.
+          lastPerformedMiles: task.last_done_miles ?? null,
+          lastPerformedDate: task.last_done_miles == null ? null : (task.last_done_on ?? null),
           isDiy: task.do_it_yourself ?? true,
           notes: task.notes,
         })),

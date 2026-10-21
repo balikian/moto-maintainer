@@ -7,9 +7,11 @@ import {
   createMaintenanceTaskAction,
   deleteServiceLogAction,
   deleteTaskAction,
+  setTaskStartAction,
   updateTaskIntervalsAction,
 } from '@/lib/actions/tasks';
 import type { CustomModel } from '@/lib/bikeCatalog';
+import { todayIsoDate } from '@/lib/dates';
 import { countTasksByStatus, findDefaultTask, scheduleOverlapsTasks } from '@/lib/maintenance';
 import { fetchModelSchedule } from '@/lib/modelData';
 import { createClient } from '@/lib/supabase/client';
@@ -234,6 +236,18 @@ export default function GarageApp() {
     reloadTasks();
   };
 
+  const handleSetStart = async (startTasks: MaintenanceTask[], start: 'today' | 'new') => {
+    if (!activeBike) return;
+    const result = await setTaskStartAction({
+      motorcycleId: activeBike.id,
+      taskIds: startTasks.map((task) => task.id),
+      start,
+      today: todayIsoDate(),
+    });
+    if (result.error) reportError(`Unable to set a start point: ${result.error}`);
+    reloadTasks();
+  };
+
   const handleDeleteTask = async (task: MaintenanceTask) => {
     const result = await deleteTaskAction(task.id);
     if (result.error) {
@@ -402,6 +416,7 @@ export default function GarageApp() {
                 onSaveIntervals={handleSaveIntervals}
                 onResetTask={(task) => void handleResetTask(task)}
                 onDeleteTask={(task) => void handleDeleteTask(task)}
+                onSetStart={(startTasks, start) => void handleSetStart(startTasks, start)}
               />
             </div>
           </div>

@@ -24,9 +24,10 @@ const SUMMARY: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'Overdue', label: 'overdue', color: 'text-danger' },
   { status: 'Urgent', label: 'urgent', color: 'text-danger' },
   { status: 'Soon', label: 'soon', color: 'text-warn' },
+  { status: 'NoStart', label: 'to set up', color: 'text-muted' },
 ];
 
-/** "2 overdue · 1 soon", "All good" or "No tasks yet" for one bike. */
+/** "2 overdue · 1 soon · 4 to set up", "All good" or "No tasks yet" for one bike. */
 export function BikeStatusLine({ tasks, mileage }: { tasks: MaintenanceTask[]; mileage: number }) {
   if (tasks.length === 0) return <span className="text-muted">No tasks yet</span>;
   const counts = countTasksByStatus(tasks, mileage, new Date());

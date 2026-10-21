@@ -11,12 +11,15 @@ const DAYS_PER_MONTH = 30.44;
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
-/** Days up to two months, whole months after that. */
+/** Days up to two months, whole months up to two years, whole years after that. */
 function timeSpan(days: number): string {
-  return days > 60 ? plural(Math.floor(days / DAYS_PER_MONTH), 'month') : plural(days, 'day');
+  if (days <= 60) return plural(days, 'day');
+  const months = Math.floor(days / DAYS_PER_MONTH);
+  return months < 24 ? plural(months, 'month') : plural(Math.floor(months / 12), 'year');
 }
 
-export function dueLabel({ trigger, milesRemaining, daysRemaining }: TaskDueState, units: UnitSystem): DueLabel {
+export function dueLabel({ status, trigger, milesRemaining, daysRemaining }: TaskDueState, units: UnitSystem): DueLabel {
+  if (status === 'NoStart') return { value: 'Not started', caption: '' };
   if (trigger === 'time' && daysRemaining !== null) {
     if (daysRemaining === 0) return { value: 'Today', caption: 'due' };
     return daysRemaining < 0

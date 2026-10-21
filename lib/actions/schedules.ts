@@ -159,7 +159,6 @@ export async function applyModelScheduleAction(
   if (logs.error) return { error: logs.error.message };
 
   const plan = planScheduleApply(getDefaultTasks(schedule.data), existing.data ?? [], {
-    bikeYear: bike.year,
     logs: logs.data ?? [],
   });
 

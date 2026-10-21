@@ -1,7 +1,7 @@
 'use server';
 
 import { BASE_CATALOG, isInCatalog } from '../bikeCatalog';
-import { DEFAULT_BIKE_SETUP, fromNewBaseline, getDefaultTasks, type BikeSetup } from '../maintenance';
+import { DEFAULT_BIKE_SETUP, getDefaultTasks, NO_START, type BikeSetup } from '../maintenance';
 import { fetchModelSchedule } from '../modelData';
 import { getSignedInClient } from '../supabase/server';
 import type { Motorcycle } from '../types';
@@ -69,7 +69,8 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
 
   // The manufacturer's schedule if we have one for this model, else generic tasks.
   // A lookup failure shouldn't block adding the bike, so it falls back too.
-  // Nothing has been logged yet, so each task counts from when the bike was new.
+  // We don't know when anything was last done, so the tasks start without a
+  // start point and the rider sets one (log a past service, today, or from new).
   const schedule = await fetchModelSchedule(supabase, { year, make, model });
 
   const { error: seedError } = await supabase.from('maintenance_tasks').insert(
@@ -77,7 +78,7 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
       ...task,
       motorcycle_id: bike.id,
       user_id: user.id,
-      ...fromNewBaseline(year),
+      ...NO_START,
     }))
   );
 

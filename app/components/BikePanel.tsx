@@ -57,6 +57,11 @@ export default function BikePanel(props: BikePanelProps) {
           ))}
         </ul>
       )}
+      {statusCounts && statusCounts.NoStart > 0 && (
+        <p className="-mt-1 text-center text-sm font-semibold text-muted">
+          {statusCounts.NoStart} {statusCounts.NoStart === 1 ? 'task needs' : 'tasks need'} a start point
+        </p>
+      )}
     </section>
   );
 }

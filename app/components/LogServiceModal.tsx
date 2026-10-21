@@ -3,7 +3,7 @@
 import { useState, type SubmitEvent } from 'react';
 import { Check } from 'lucide-react';
 import { todayIsoDate } from '@/lib/dates';
-import { getTaskDueState } from '@/lib/maintenance';
+import { getTaskDueState, hasStartPoint } from '@/lib/maintenance';
 import { batchCandidates, categoryLabel, taskCategory } from '@/lib/taskCategories';
 import type { MaintenanceTask, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
@@ -49,10 +49,12 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
 
   const selectedTask = tasks.find((candidate) => candidate.id === selectedTaskId) ?? null;
   const isCustom = selectedTask === null;
+  // Opened from a task without a start point: the rider is filling in when it was last done.
+  const pastService = task !== null && !hasStartPoint(task);
 
   // Same-category tasks that are coming due: worth doing while the bike is apart anyway.
   const [today] = useState(() => new Date());
-  const related = selectedTask
+  const related = selectedTask && !pastService
     ? batchCandidates(
         selectedTask,
         tasks.map((candidate) => ({ task: candidate, dueState: getTaskDueState(candidate, defaultOdometer, today) }))
@@ -103,8 +105,14 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
 
   return (
     <Modal
-      title="Log service"
-      description={task ? 'Record when it was done and what it cost.' : 'Record maintenance details for this bike.'}
+      title={pastService ? 'Log a past service' : 'Log service'}
+      description={
+        pastService
+          ? 'When was it last done? The task counts from that date and odometer.'
+          : task
+            ? 'Record when it was done and what it cost.'
+            : 'Record maintenance details for this bike.'
+      }
       size="lg"
       onClose={onClose}
     >

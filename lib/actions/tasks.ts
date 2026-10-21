@@ -1,7 +1,7 @@
 'use server';
 
 import { isIsoDate } from '../dates';
-import { baselineFromLogs } from '../maintenance';
+import { baselineFromLogs, fromNewBaseline, startTodayBaseline } from '../maintenance';
 import { guessCategory, isTaskCategory, type TaskCategory } from '../taskCategories';
 import { getSignedInClient } from '../supabase/server';
 import { normalizeMileage } from '../units';
@@ -127,6 +127,7 @@ export async function completeTaskAction(input: CompleteTaskActionInput): Promis
   if (odometer === null) return { error: 'Please enter a valid odometer reading.' };
 
   let task: { id: string; last_performed_date: string | null } | null = null;
+  let taskHasLogs = false;
   if (input.taskId) {
     const lookup = await supabase
       .from('maintenance_tasks')
@@ -138,6 +139,10 @@ export async function completeTaskAction(input: CompleteTaskActionInput): Promis
     if (lookup.error) return { error: lookup.error.message };
     if (!lookup.data) return { error: 'Maintenance task not found for this motorcycle.' };
     task = lookup.data;
+
+    const logs = await supabase.from('service_logs').select('id', { count: 'exact', head: true }).eq('task_id', task.id);
+    if (logs.error) return { error: logs.error.message };
+    taskHasLogs = (logs.count ?? 0) > 0;
   }
 
   const logInsert = await supabase.from('service_logs').insert({
@@ -152,9 +157,11 @@ export async function completeTaskAction(input: CompleteTaskActionInput): Promis
   });
   if (logInsert.error) return { error: logInsert.error.message };
 
-  // Back-filling an older service shouldn't rewind the task's schedule.
+  // Back-filling an older service shouldn't rewind the task's schedule. But a
+  // start point no service backs up ("start today", "from new") was only a
+  // guess, so the task's first logged service replaces it, however old.
   const lastPerformed = task?.last_performed_date?.slice(0, 10) ?? '';
-  if (task && input.performedAt >= lastPerformed) {
+  if (task && (!taskHasLogs || input.performedAt >= lastPerformed)) {
     const { error } = await supabase
       .from('maintenance_tasks')
       .update({ last_performed_mileage: odometer, last_performed_date: input.performedAt })
@@ -219,15 +226,46 @@ async function rewindTaskIfNeeded(
   const remaining = await supabase.from('service_logs').select('performed_at,odometer_at_service').eq('task_id', taskId);
   if (remaining.error) return { error: remaining.error.message };
 
-  // With no logs left, the task counts from when the bike was new again.
-  const bike = await supabase.from('motorcycles').select('year').eq('id', task.motorcycle_id).maybeSingle();
+  // With no logs left, the task has no start point again, and asks for one.
+  const { error } = await supabase.from('maintenance_tasks').update(baselineFromLogs(remaining.data ?? [])).eq('id', taskId);
+  if (error) return { error: error.message };
+  return {};
+}
+
+/**
+ * Gives tasks without a start point one: "today" counts from today at the
+ * bike's current odometer, "new" from when the bike was new. Tasks that
+ * already have a start point are left alone.
+ */
+export async function setTaskStartAction(input: {
+  motorcycleId: string;
+  taskIds: string[];
+  start: 'today' | 'new';
+  /** The rider's calendar day, so "today" matches their time zone. */
+  today: string;
+}): Promise<ActionResult> {
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
+
+  if (input.taskIds.length === 0) return {};
+  if (input.start !== 'today' && input.start !== 'new') return { error: 'Choose when to start counting.' };
+  if (!isIsoDate(input.today)) return { error: 'Please enter a valid date.' };
+
+  const bike = await supabase.from('motorcycles').select('year,current_mileage').eq('id', input.motorcycleId).maybeSingle();
   if (bike.error) return { error: bike.error.message };
-  if (!bike.data) return {};
+  if (!bike.data) return { error: 'Motorcycle not found.' };
+
+  const baseline =
+    input.start === 'new'
+      ? fromNewBaseline(Number(bike.data.year))
+      : startTodayBaseline(Number(bike.data.current_mileage), input.today);
 
   const { error } = await supabase
     .from('maintenance_tasks')
-    .update(baselineFromLogs(remaining.data ?? [], Number(bike.data.year)))
-    .eq('id', taskId);
+    .update(baseline)
+    .eq('motorcycle_id', input.motorcycleId)
+    .in('id', input.taskIds)
+    .is('last_performed_mileage', null);
   if (error) return { error: error.message };
   return {};
 }

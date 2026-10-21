@@ -98,7 +98,7 @@ const scheduleTask = (task_name: string, interval_mileage = 6214, interval_month
   category: 'other' as const,
 });
 
-const noLogs = { bikeYear: 2024, logs: [] };
+const noLogs = { logs: [] };
 
 const log = (id: string, task_name: string, performed_at: string, odometer_at_service: number, task_id: string | null = null) => ({
   id,
@@ -109,10 +109,10 @@ const log = (id: string, task_name: string, performed_at: string, odometer_at_se
 });
 
 describe('planScheduleApply', () => {
-  it('counts new tasks from when the bike was new if nothing was logged', () => {
+  it('adds new tasks without a start point if nothing was logged', () => {
     const [task] = planScheduleApply([scheduleTask('Oil change')], [], noLogs).additions;
-    assert.equal(task.last_performed_mileage, 0);
-    assert.equal(task.last_performed_date, '2024-01-01');
+    assert.equal(task.last_performed_mileage, null);
+    assert.equal(task.last_performed_date, null);
     assert.deepEqual(task.relinkLogIds, []);
   });
 
@@ -123,7 +123,7 @@ describe('planScheduleApply', () => {
       log('l3', 'Oil change', '2026-01-10', 5000, 'some-other-task'),
       log('l4', 'Chain lube', '2026-07-01', 8500),
     ];
-    const [task] = planScheduleApply([scheduleTask('Oil change')], [], { bikeYear: 2024, logs }).additions;
+    const [task] = planScheduleApply([scheduleTask('Oil change')], [], { logs }).additions;
     assert.equal(task.last_performed_mileage, 8000);
     assert.equal(task.last_performed_date, '2026-06-15');
     assert.deepEqual(task.relinkLogIds.sort(), ['l1', 'l2']);
@@ -138,7 +138,6 @@ describe('planScheduleApply', () => {
       { id: 'mine', task_name: 'Wash the bike' },
     ];
     const plan = planScheduleApply([scheduleTask('Replace coolant', 0, 48)], existing, {
-      bikeYear: 2024,
       logs: [log('l1', 'Check brake pads and discs', '2026-05-01', 3000, 'logged')],
     });
     assert.deepEqual(plan.removals, ['oil', 'old-chain']);
@@ -147,7 +146,6 @@ describe('planScheduleApply', () => {
 
   it('leaves the baseline of existing tasks alone', () => {
     const plan = planScheduleApply([scheduleTask('Oil change')], [{ id: 'a', task_name: 'Oil change' }], {
-      bikeYear: 2024,
       logs: [log('l1', 'Oil change', '2026-06-15', 8000)],
     });
     assert.equal(plan.updates.length, 1);

@@ -22,11 +22,18 @@ describe('dueLabel', () => {
     assert.deepEqual(dueLabel(state({ milesRemaining: 100 }), 'metric'), { value: '161 km', caption: 'left' });
   });
 
-  it('shows days, then whole months past two months', () => {
+  it('shows days, then whole months past two months, then whole years past two years', () => {
     assert.deepEqual(dueLabel(state({ trigger: 'time', daysRemaining: 1 }), 'imperial'), { value: '1 day', caption: 'left' });
     assert.deepEqual(dueLabel(state({ trigger: 'time', daysRemaining: 60 }), 'imperial'), { value: '60 days', caption: 'left' });
     assert.deepEqual(dueLabel(state({ trigger: 'time', daysRemaining: 400 }), 'imperial'), { value: '13 months', caption: 'left' });
     assert.deepEqual(dueLabel(state({ trigger: 'time', daysRemaining: -9 }), 'imperial'), { value: '9 days', caption: 'overdue' });
+    assert.deepEqual(dueLabel(state({ trigger: 'time', daysRemaining: -700 }), 'imperial'), { value: '22 months', caption: 'overdue' });
+    assert.deepEqual(dueLabel(state({ trigger: 'time', daysRemaining: -740 }), 'imperial'), { value: '2 years', caption: 'overdue' });
+    assert.deepEqual(dueLabel(state({ trigger: 'time', daysRemaining: -6600 }), 'imperial'), { value: '18 years', caption: 'overdue' });
+  });
+
+  it('says when a task has no start point', () => {
+    assert.deepEqual(dueLabel(state({ status: 'NoStart', trigger: null, fractionRemaining: null }), 'imperial'), { value: 'Not started', caption: '' });
   });
 
   it('says when a task is due today', () => {
