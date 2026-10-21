@@ -103,7 +103,8 @@ and `docs/Feedback.md`):
   "Manage garage" (Garage is in the bar), so Garage has one way in.
 - **Add task** at the top of Tasks, next to Manual & schedule (the bottom
   button stays).
-Help page updated. Not released yet: the migration goes to production first.
+Help page updated. ✅ Released 2026-10-21: migration on production first
+(checked: both columns nullable, no default), then `main`.
 
 ---
 
