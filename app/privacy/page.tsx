@@ -73,7 +73,7 @@ export default async function PrivacyPage() {
         <Bullets>
           <li>To run SwingArm for you: show your garage and work out which maintenance is due.</li>
           <li>
-            To send the emails and notifications you ask for: sign-in links, and the reminder emails and push
+            To send the emails and notifications you ask for: sign-in codes and links, and the reminder emails and push
             notifications you’ve turned on.
           </li>
           <li>To show a bike’s history to people you share it with, when you create a share link.</li>

@@ -60,6 +60,25 @@ export async function sendMagicLink(formData: FormData) {
   return { success: true };
 }
 
+/**
+ * Signs in with the code from the sign-in email, typed into the app. Works
+ * where the email's link can't: the iPhone Home Screen app, whose sign-in is
+ * kept apart from Safari's, where the link opens.
+ */
+export async function verifyEmailCode(email: string, code: string): Promise<{ error?: string }> {
+  const token = code.replace(/\D/g, '');
+  if (!email.trim() || token.length < 6) {
+    return { error: 'Enter the code from the email.' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: 'email' });
+  if (error) {
+    return { error: 'That code didn’t work. Check it, or send a new one. Codes expire after an hour.' };
+  }
+  return {};
+}
+
 export async function logout() {
   const supabase = await createClient();
   await supabase.auth.signOut();

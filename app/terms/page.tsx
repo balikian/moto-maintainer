@@ -37,7 +37,7 @@ export default async function TermsPage() {
       <LegalSection title="Your account">
         <Bullets>
           <li>You must be at least 13, and old enough where you live to agree to these terms.</li>
-          <li>Use an email address that’s yours. Sign-in links go to it, so keep that email account secure.</li>
+          <li>Use an email address that’s yours. Sign-in codes go to it, so keep that email account secure.</li>
           <li>You’re responsible for what happens in your account.</li>
         </Bullets>
       </LegalSection>

@@ -33,7 +33,7 @@ Send once they say yes and their schedule is loaded.
 ```
 Thanks! Here's the link: swingarm.app
 
-Sign in with Google or your email. If you use email, open the sign-in link on this same phone.
+Sign in with Google or your email. If you use email, type in the code from the email.
 
 Please don't read the help page first. I want to see if it makes sense without it. Try to:
 1. Add your bike

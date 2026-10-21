@@ -281,7 +281,8 @@ export default async function HelpPage() {
             <li>
               <Ui>Add to Home Screen</Ui>: SwingArm then opens full screen from its own icon, like an app. On an iPhone or
               iPad, open Safari’s Share menu and tap <Ui>Add to Home Screen</Ui>; in Chrome or Edge, use{' '}
-              <Ui>Install SwingArm</Ui> on More.
+              <Ui>Install SwingArm</Ui> on More. If you sign in there with your email, type in the code from the email:
+              the link opens in Safari, which doesn’t share the Home Screen app’s sign-in.
             </li>
             <li>
               <Ui>Download my data</Ui>: every bike, task and service record in one file, to keep as a backup.

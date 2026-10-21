@@ -10,7 +10,8 @@ export default function AuthErrorPage() {
         </h1>
         <h2 className="mt-6 text-lg font-extrabold">That sign-in link didn&apos;t work</h2>
         <p className="mt-2 text-sm text-muted">
-          It may have expired or already been used. Sign-in links only work once.
+          It may have expired or already been used, or it opened in a different browser or app than the one you asked
+          from (like Safari instead of SwingArm on your Home Screen). Go back, send a new code, and type it in.
         </p>
         <Link
           href="/login"

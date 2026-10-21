@@ -2,13 +2,15 @@
 
 import Link from 'next/link';
 import { useState, type SubmitEvent } from 'react';
-import { sendMagicLink, signInWithGoogle } from '@/lib/actions/auth';
+import { sendMagicLink, signInWithGoogle, verifyEmailCode } from '@/lib/actions/auth';
 import BrandLogo from './BrandLogo';
 import { ui } from './ui';
 
 export default function LoginCard() {
   const [email, setEmail] = useState('');
   const [linkSent, setLinkSent] = useState(false);
+  const [code, setCode] = useState('');
+  const [verifying, setVerifying] = useState(false);
   const [sending, setSending] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,8 +24,8 @@ export default function LoginCard() {
     setRedirecting(false);
   };
 
-  const handleMagicLinkSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  /** Emails a sign-in code and link: from the email form, and again from "Send a new code". */
+  const sendSignInEmail = async () => {
     const normalizedEmail = email.trim();
     if (!normalizedEmail) {
       setError('Please enter a valid email address.');
@@ -41,15 +43,41 @@ export default function LoginCard() {
         return;
       }
       setLinkSent(true);
+      setCode('');
     } catch {
-      setError('Unable to send a magic link right now. Please try again.');
+      setError('Unable to send a sign-in email right now. Please try again.');
     } finally {
       setSending(false);
     }
   };
 
+  const handleEmailSubmit = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    void sendSignInEmail();
+  };
+
+  const handleCodeSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setVerifying(true);
+    try {
+      const result = await verifyEmailCode(email, code);
+      if (result.error) {
+        setError(result.error);
+        setVerifying(false);
+        return;
+      }
+      // A full load, so the whole app starts out signed in.
+      window.location.assign('/');
+    } catch {
+      setError('Unable to check the code right now. Please try again.');
+      setVerifying(false);
+    }
+  };
+
   const resetMagicLink = () => {
     setEmail('');
+    setCode('');
     setLinkSent(false);
     setError(null);
   };
@@ -81,18 +109,55 @@ export default function LoginCard() {
           </div>
 
           {linkSent ? (
-            <div className="rounded-2xl border border-good/30 bg-good/10 p-4">
-              <p className="text-sm font-bold text-good">Sign-in link sent!</p>
-              <p className={`mt-1 text-sm ${ui.muted}`}>
-                We sent a one-click magic link to <span className="font-medium">{email}</span>. Tap the link in your
-                email to open your garage.
-              </p>
-              <button type="button" onClick={resetMagicLink} className={`mt-3 w-full ${ui.secondaryButton}`}>
-                Use a different email
+            <form onSubmit={handleCodeSubmit} className="space-y-3">
+              <div className="rounded-2xl border border-good/30 bg-good/10 p-4">
+                <p className="text-sm font-bold text-good">Check your email</p>
+                <p className={`mt-1 text-sm ${ui.muted}`}>
+                  We sent a sign-in code to <span className="font-medium">{email}</span>. Enter it here, or tap the
+                  link in the email on this device.
+                </p>
+              </div>
+              <label htmlFor="email-code" className={ui.label}>
+                Sign-in code
+              </label>
+              <input
+                id="email-code"
+                name="code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                // Supabase's code length is a project setting (6 by default), so up to 10 digits are accepted.
+                maxLength={10}
+                value={code}
+                onChange={(event) => {
+                  setCode(event.target.value.replace(/\D/g, ''));
+                  if (error) setError(null);
+                }}
+                disabled={verifying}
+                className={`${ui.input} text-center text-2xl font-extrabold tracking-[0.3em] tabular-nums`}
+                placeholder="000000"
+                autoFocus
+                required
+              />
+              <button type="submit" disabled={verifying || code.length < 6} className={`w-full py-3 ${ui.primaryButton}`}>
+                {verifying ? 'Signing in…' : 'Sign in'}
               </button>
-            </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => void sendSignInEmail()}
+                  disabled={sending || verifying}
+                  className={`flex-1 ${ui.secondaryButton}`}
+                >
+                  {sending ? 'Sending…' : 'Send a new code'}
+                </button>
+                <button type="button" onClick={resetMagicLink} disabled={verifying} className={`flex-1 ${ui.secondaryButton}`}>
+                  Different email
+                </button>
+              </div>
+            </form>
           ) : (
-            <form onSubmit={handleMagicLinkSubmit} className="space-y-3">
+            <form onSubmit={handleEmailSubmit} className="space-y-3">
               <label htmlFor="magic-email" className={ui.label}>
                 Email address
               </label>
@@ -112,11 +177,9 @@ export default function LoginCard() {
                 required
               />
               <button type="submit" disabled={sending} className={`w-full py-3 ${ui.secondaryButton}`}>
-                {sending ? 'Sending magic link…' : 'Send magic link'}
+                {sending ? 'Sending…' : 'Email me a sign-in code'}
               </button>
-              <p className="mt-2 text-center text-xs text-muted">
-                We&apos;ll email you a secure, password-free login link (magic link).
-              </p>
+              <p className="mt-2 text-center text-xs text-muted">No password needed. The email also has a sign-in link.</p>
             </form>
           )}
 

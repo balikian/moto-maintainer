@@ -1,7 +1,7 @@
 <!--
   Supabase → Authentication → Emails → Confirm signup, on both projects.
   Sent instead of the magic link the first time an email signs in.
-  Subject: Welcome to SwingArm: confirm your email
+  Subject: Welcome to SwingArm: your sign-in code
 -->
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ec;padding:16px 8px;font-family:Manrope,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#1c1f23;">
   <tr>
@@ -18,17 +18,22 @@
         </tr>
         <tr>
           <td style="font-size:14px;line-height:1.5;padding-bottom:16px;">
-            Confirm your email to finish signing up. Open the link on the same device and browser you signed up from.
+            Enter this code in SwingArm to confirm your email and finish signing up:
           </td>
         </tr>
         <tr>
           <td style="padding-bottom:16px;">
-            <a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#8f1f18;color:#f2e4c9;font-size:14px;font-weight:700;text-decoration:none;padding:10px 20px;border-radius:8px;">Confirm and sign in</a>
+            <span style="display:inline-block;background:#f4f1ec;border-radius:8px;padding:10px 18px;font-size:28px;font-weight:800;letter-spacing:6px;font-family:Menlo,Consolas,monospace;">{{ .Token }}</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="font-size:14px;line-height:1.5;padding-bottom:16px;">
+            Or <a href="{{ .ConfirmationURL }}" style="color:#b5281f;font-weight:700;">tap here to confirm and sign in</a> on the same device and browser you signed up from.
           </td>
         </tr>
         <tr>
           <td style="font-size:12px;line-height:1.5;color:#6b6460;">
-            The link works once and expires in an hour. If you didn't sign up for SwingArm, you can ignore this email.
+            The code and link work once and expire in an hour. If you didn't sign up for SwingArm, you can ignore this email.
           </td>
         </tr>
       </table>
