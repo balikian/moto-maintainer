@@ -55,7 +55,7 @@ User testing with friends (2026-10-19): the invite and feedback texts are
 in `docs/user-testing.md`. Testers' notes are in `docs/bugs.md` and
 `docs/Feedback.md` (owner's files).
 
-🔨 **Task start points** (built 2026-10-20, on test). Testers' biggest
+✅ **Task start points** (built and released 2026-10-20). Testers' biggest
 complaint: adding a used bike showed nearly every task overdue (counting
 from new), in hundreds of months. **Decided (owner, 2026-10-20):** a new
 bike's tasks start with **no start point** (`last_performed_mileage` and
@@ -74,8 +74,9 @@ years shows in years. Migration `20261020180000_task_start_point.sql`
 (pushed to test) makes the column nullable and **clears the automatic
 from-new start on existing tasks never logged** (105 of 108 on test;
 **decided:** production's existing bikes get the same change).
-⏳ Owner to check on test, then production migration and release
-together (old code can't read a missing start point). Not
+✅ Released 2026-10-20: migration on production first (checked: column
+nullable with no default, the check constraint, 339 of 409 tasks
+cleared, as counted beforehand), then `main`. Not
 done: the odometer staying required when logging service or adding a bike
 (`docs/bugs.md`).
 
