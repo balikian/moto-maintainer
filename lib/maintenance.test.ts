@@ -209,6 +209,12 @@ describe('task baselines', () => {
     assert.deepEqual(baselineFromLogs(logs, 8100), { last_performed_mileage: 8100, last_performed_date: '2026-05-20' });
   });
 
+  it('counts a log without a reading from the odometer saved when it was logged', () => {
+    // Logged with no reading while the bike read 5,000; the bike reads 9,000 now.
+    const logs = [{ performed_at: '2026-01-10', odometer_at_service: null, baseline_mileage: 5000 }];
+    assert.deepEqual(baselineFromLogs(logs, 9000), { last_performed_mileage: 5000, last_performed_date: '2026-01-10' });
+  });
+
   it('prefers the log with a reading when two share a date', () => {
     const logs = [
       { performed_at: '2026-05-20', odometer_at_service: null },

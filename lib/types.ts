@@ -93,6 +93,8 @@ export interface ServiceLog {
   performed_at: string;
   /** Null when the rider logged it without a reading. */
   odometer_at_service: number | null;
+  /** Miles the task counted from when this was logged (the bike's odometer if no reading); null on older records. */
+  baseline_mileage?: number | null;
   cost: number | null;
   notes: string | null;
   created_at?: string;

@@ -119,6 +119,21 @@ says to send a new code and type it in. Templates in `supabase/templates/`
 production at release. Set each project's **Email OTP Length** to 6
 (the card takes up to 10 digits) and keep Email OTP Expiration at 3600
 (the emails say an hour).
+🔨 **QA pass fixes** (2026-10-21, on `develop`, not released): from the
+tester agent's regression pass. A custom task's blank "last done at" saved
+as 0 mi (overdue once a no-reading bike got its odometer); blank now means
+the current odometer, required when there's none. Service and "last done
+on" dates can't be in the future (`isFutureEverywhere`). "-500" no longer
+saves as 500. An odometer below a task's start point no longer shows more
+than the full interval left. **Decided (owner):** a service logged without
+a reading saves the odometer its task counted from in
+`service_logs.baseline_mileage` (migration
+`20261021200000_service_log_baseline_mileage.sql`, pushed to test), so
+deleting a newer service falls back to the right miles. **Decided
+(owner): leave km rounding alone** (distances are whole miles, so a
+1,000 km interval shows 999 km and a typed km reading can come back 1 km
+lower).
+
 Discussed (2026-10-21), nothing decided: other sign-in options. Passkeys
 are the most secure and quickest but Supabase's support is limited (check
 first); Sign in with Apple needs the developer account (step 7); passwords

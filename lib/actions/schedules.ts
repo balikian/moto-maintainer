@@ -154,7 +154,7 @@ export async function applyModelScheduleAction(
   if (existing.error) return { error: existing.error.message };
   const logs = await supabase
     .from('service_logs')
-    .select('id,task_id,task_name,performed_at,odometer_at_service')
+    .select('id,task_id,task_name,performed_at,odometer_at_service,baseline_mileage')
     .eq('motorcycle_id', bike.id);
   if (logs.error) return { error: logs.error.message };
 

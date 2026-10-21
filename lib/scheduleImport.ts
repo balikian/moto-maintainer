@@ -44,7 +44,14 @@ export function cleanTasks(tasks: ExtractedTask[]): ExtractedTask[] {
 /** How task names are compared: ignoring case and extra spaces. */
 export const nameKey = (name: string) => name.replace(/\s+/g, ' ').trim().toLowerCase();
 
-type LogForApply = { id: string; task_id: string | null; task_name: string; performed_at: string; odometer_at_service: number | null };
+type LogForApply = {
+  id: string;
+  task_id: string | null;
+  task_name: string;
+  performed_at: string;
+  odometer_at_service: number | null;
+  baseline_mileage?: number | null;
+};
 
 export type ScheduleApplyPlan = {
   updates: (Omit<TaskDefaults, 'task_name'> & { id: string })[];
@@ -75,7 +82,7 @@ export function planScheduleApply(
     currentMileage = null,
   }: {
     logs: LogForApply[];
-    /** The bike's odometer, the baseline for a log without a reading. */
+    /** The bike's odometer now: the baseline for an older record that has neither a reading nor a saved one. */
     currentMileage?: number | null;
   }
 ): ScheduleApplyPlan {

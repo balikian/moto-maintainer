@@ -122,13 +122,19 @@ export function startTodayBaseline(currentMileage: number, today: string): TaskB
   return { last_performed_mileage: currentMileage, last_performed_date: today };
 }
 
+/** The miles a service log's task counts from: its reading, else the bike's odometer saved when it was logged. */
+export function logMileage(log: { odometer_at_service: number | null; baseline_mileage?: number | null }): number | null {
+  return log.odometer_at_service ?? log.baseline_mileage ?? null;
+}
+
 /**
  * The most recent of these service logs as a task's baseline, or no start
- * point if there are none. A log without an odometer reading counts from
- * `fallbackMileage` (the bike's odometer), as it did when it was logged.
+ * point if there are none. A log without a reading counts from the odometer
+ * saved when it was logged; records older than that fall back to
+ * `fallbackMileage` (the bike's odometer now).
  */
 export function baselineFromLogs(
-  logs: { performed_at: string; odometer_at_service: number | null }[],
+  logs: { performed_at: string; odometer_at_service: number | null; baseline_mileage?: number | null }[],
   fallbackMileage: number | null
 ): TaskBaseline {
   const latest = [...logs].sort(
@@ -136,7 +142,7 @@ export function baselineFromLogs(
       b.performed_at.slice(0, 10).localeCompare(a.performed_at.slice(0, 10)) ||
       (b.odometer_at_service ?? -1) - (a.odometer_at_service ?? -1)
   )[0];
-  const mileage = latest ? (latest.odometer_at_service ?? fallbackMileage) : null;
+  const mileage = latest ? (logMileage(latest) ?? fallbackMileage) : null;
   return latest && mileage !== null
     ? { last_performed_mileage: Number(mileage), last_performed_date: latest.performed_at.slice(0, 10) }
     : NO_START;

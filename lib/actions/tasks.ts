@@ -1,7 +1,7 @@
 'use server';
 
 import { isFutureEverywhere, isIsoDate } from '../dates';
-import { baselineFromLogs, fromNewBaseline, startTodayBaseline } from '../maintenance';
+import { baselineFromLogs, fromNewBaseline, logMileage, startTodayBaseline } from '../maintenance';
 import { guessCategory, isTaskCategory, type TaskCategory } from '../taskCategories';
 import { getSignedInClient } from '../supabase/server';
 import { normalizeMileage } from '../units';
@@ -174,6 +174,8 @@ export async function completeTaskAction(input: CompleteTaskActionInput): Promis
     task_name: taskName,
     performed_at: input.performedAt,
     odometer_at_service: odometer,
+    // What the task counts from, kept so deleting a newer service later can fall back to it exactly.
+    baseline_mileage: taskMileage,
     cost,
     notes: input.notes?.trim() || null,
   });
@@ -213,7 +215,7 @@ export async function deleteServiceLogAction(logId: string): Promise<ActionResul
 
   const lookup = await supabase
     .from('service_logs')
-    .select('id,task_id,performed_at,odometer_at_service')
+    .select('id,task_id,performed_at,odometer_at_service,baseline_mileage')
     .eq('id', logId)
     .maybeSingle();
   if (lookup.error) return { error: lookup.error.message };
@@ -231,7 +233,7 @@ export async function deleteServiceLogAction(logId: string): Promise<ActionResul
 async function rewindTaskIfNeeded(
   supabase: SupabaseServerClient,
   taskId: string,
-  deletedLog: { performed_at: string; odometer_at_service: number | null }
+  deletedLog: { performed_at: string; odometer_at_service: number | null; baseline_mileage: number | null }
 ): Promise<ActionResult> {
   const taskLookup = await supabase
     .from('maintenance_tasks')
@@ -241,15 +243,18 @@ async function rewindTaskIfNeeded(
   if (taskLookup.error) return { error: taskLookup.error.message };
 
   const task = taskLookup.data;
-  // A log without a reading took the bike's odometer for the task's miles, so only its date can match.
+  // An older record without a reading saved no mileage, so only its date can match.
+  const deletedMileage = logMileage(deletedLog);
   const cameFromDeletedLog =
     task &&
     task.last_performed_date?.slice(0, 10) === deletedLog.performed_at.slice(0, 10) &&
-    (deletedLog.odometer_at_service === null ||
-      Number(task.last_performed_mileage) === Number(deletedLog.odometer_at_service));
+    (deletedMileage === null || Number(task.last_performed_mileage) === Number(deletedMileage));
   if (!cameFromDeletedLog) return {};
 
-  const remaining = await supabase.from('service_logs').select('performed_at,odometer_at_service').eq('task_id', taskId);
+  const remaining = await supabase
+    .from('service_logs')
+    .select('performed_at,odometer_at_service,baseline_mileage')
+    .eq('task_id', taskId);
   if (remaining.error) return { error: remaining.error.message };
 
   const bike = await supabase.from('motorcycles').select('current_mileage').eq('id', task.motorcycle_id).maybeSingle();
