@@ -194,11 +194,35 @@ describe('task baselines', () => {
       { performed_at: '2026-05-20T00:00:00Z', odometer_at_service: 7000 },
       { performed_at: '2026-05-20', odometer_at_service: 6900 },
     ];
-    assert.deepEqual(baselineFromLogs(logs), { last_performed_mileage: 7000, last_performed_date: '2026-05-20' });
+    assert.deepEqual(baselineFromLogs(logs, null), { last_performed_mileage: 7000, last_performed_date: '2026-05-20' });
   });
 
   it('has no start point when there are no logs', () => {
-    assert.deepEqual(baselineFromLogs([]), NO_START);
+    assert.deepEqual(baselineFromLogs([], 0), NO_START);
+  });
+
+  it('counts a latest log without a reading from the bike’s odometer', () => {
+    const logs = [
+      { performed_at: '2026-01-05', odometer_at_service: 4000 },
+      { performed_at: '2026-05-20', odometer_at_service: null },
+    ];
+    assert.deepEqual(baselineFromLogs(logs, 8100), { last_performed_mileage: 8100, last_performed_date: '2026-05-20' });
+  });
+
+  it('prefers the log with a reading when two share a date', () => {
+    const logs = [
+      { performed_at: '2026-05-20', odometer_at_service: null },
+      { performed_at: '2026-05-20', odometer_at_service: 6900 },
+    ];
+    assert.deepEqual(baselineFromLogs(logs, 8100), { last_performed_mileage: 6900, last_performed_date: '2026-05-20' });
+  });
+
+  it('without a bike odometer, counts only the time interval', () => {
+    const task = { interval_mileage: 4000, interval_months: 12, last_performed_mileage: 0, last_performed_date: '2026-03-29' };
+    const state = getTaskDueState(task, null, today);
+    assert.equal(state.trigger, 'time');
+    assert.equal(state.milesRemaining, null);
+    assert.ok(state.daysRemaining !== null && state.daysRemaining > 0);
   });
 });
 

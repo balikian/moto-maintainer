@@ -31,7 +31,8 @@ type AddBikeInput = {
   year: number;
   make: string;
   model: string;
-  currentMileage: number;
+  /** Null when the rider will enter it later. */
+  currentMileage: number | null;
   /** Picks the generic starter tasks when there's no manufacturer schedule. */
   setup?: BikeSetup;
 };
@@ -43,7 +44,7 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
   const make = input.make.trim();
   const model = input.model.trim();
   const year = Math.round(input.year);
-  const currentMileage = normalizeMileage(input.currentMileage);
+  const currentMileage = input.currentMileage === null ? null : normalizeMileage(input.currentMileage);
   const finalDrive = input.setup?.finalDrive;
   const setup: BikeSetup = {
     finalDrive: finalDrive === 'belt' || finalDrive === 'shaft' ? finalDrive : DEFAULT_BIKE_SETUP.finalDrive,
@@ -53,7 +54,7 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
   if (!make || !model || !year) {
     return { error: 'Please choose a year, make, and model.' };
   }
-  if (currentMileage === null) {
+  if (input.currentMileage !== null && currentMileage === null) {
     return { error: 'Please enter a valid odometer reading.' };
   }
 

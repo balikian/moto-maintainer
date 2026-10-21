@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { COMPANY_NAME, SUPPORT_EMAIL } from '@/lib/site';
+import AppNav from './AppNav';
 import BrandLogo from './BrandLogo';
 import { ui } from './ui';
 
@@ -34,7 +35,17 @@ export function SiteHeader({ signedIn, nav }: {
   );
 }
 
-export function SiteFooter() {
+/** Signed-in riders on a phone also get the app's bottom bar, so they're never stuck off the dashboard. */
+export function SiteFooter({ signedIn = false }: { signedIn?: boolean }) {
+  return (
+    <>
+      <SiteFooterLinks />
+      {signedIn && <AppNav view="more" />}
+    </>
+  );
+}
+
+function SiteFooterLinks() {
   return (
     <footer className="border-t border-line">
       <div className={`${SITE_WRAP} flex flex-wrap justify-between gap-5 pb-9 pt-7 text-sm font-semibold text-muted`}>

@@ -85,7 +85,7 @@ export default function TaskCard({
   const category = taskCategory(task);
 
   const unitLabel = distanceUnitLabel(unitSystem);
-  const due = dueLabel(dueState, unitSystem);
+  const due = dueLabel(dueState, unitSystem, task.interval_mileage);
   const meta = [categoryLabel(category), task.is_diy ? 'DIY' : 'Shop', neverLogged && !noStart ? 'not logged yet' : null]
     .filter(Boolean)
     .join(' · ');

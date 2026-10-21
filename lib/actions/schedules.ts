@@ -160,6 +160,7 @@ export async function applyModelScheduleAction(
 
   const plan = planScheduleApply(getDefaultTasks(schedule.data), existing.data ?? [], {
     logs: logs.data ?? [],
+    currentMileage: bike.current_mileage,
   });
 
   for (const { id, ...intervals } of plan.updates) {

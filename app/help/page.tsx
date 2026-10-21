@@ -92,13 +92,16 @@ export default async function HelpPage() {
         <Section id="add-a-bike">
           <Steps>
             <li>
-              Open <Ui>Garage</Ui> and tap <Ui>Add bike</Ui>. (On Tasks you can also tap the bike’s name, then{' '}
-              <Ui>Add bike</Ui>.)
+              Open <Ui>Garage</Ui> and tap <Ui>Add bike</Ui>. (With more than one bike, you can also tap the bike’s name
+              on Tasks, then <Ui>Add bike</Ui>.)
             </li>
             <li>
               Pick the year, make and model. If yours isn’t listed, choose <Ui>Other / Not Listed</Ui> and type it in.
             </li>
-            <li>Enter the odometer reading.</li>
+            <li>
+              Enter the odometer reading. Not with the bike? Leave it blank and tap <Ui>Add reading</Ui> on Tasks later.
+              Until then, tasks count by time only.
+            </li>
             <li>
               Choose the final drive (chain, belt or shaft) and the engine cooling (liquid or air/oil). These pick the
               starter checklist, so a shaft-drive bike doesn’t get chain jobs.
@@ -113,8 +116,8 @@ export default async function HelpPage() {
             was last done (see <a href="#what-is-due" className="font-bold text-accent hover:underline">how tasks come due</a>).
           </p>
           <p>
-            With more than one bike, tap the bike’s name on Tasks to switch between them, or pick one in Garage. Garage is
-            also where you edit or remove a bike.
+            With more than one bike, tap the bike’s name on Tasks (where it says how many bikes you have) to switch
+            between them, or pick one in Garage. Garage is also where you add, edit or remove a bike.
           </p>
         </Section>
 
@@ -174,7 +177,10 @@ export default async function HelpPage() {
               Pick the task, or <Ui>+ Something else (one-off job)</Ui> for work that isn’t on your checklist, like a
               new tire or fork seals.
             </li>
-            <li>Enter the date and the odometer reading when it was done. Cost and notes (oil type, parts) are optional.</li>
+            <li>
+              Enter the date and, if you have it, the odometer reading when it was done. Without a reading, the task’s
+              miles count from your current odometer. Cost and notes (oil type, parts) are optional.
+            </li>
             <li>
               Under <Ui>While you’re at it</Ui>, SwingArm lists related jobs that are coming up too, like the air filter
               with the oil change. Tick any you did, and they’re logged with the same date and odometer.
@@ -203,7 +209,8 @@ export default async function HelpPage() {
             </li>
           </Bullets>
           <p>
-            To track something else, tap <Ui>Add a custom task</Ui> at the bottom of Tasks. Give it a name, an interval,
+            To track something else, tap <Ui>Add task</Ui> at the top of Tasks (or <Ui>Add a custom task</Ui> at the
+            bottom). Give it a name, an interval,
             and when it was last done, so it counts from the right place.
           </p>
         </Section>
@@ -308,7 +315,7 @@ export default async function HelpPage() {
         </section>
       </main>
 
-      <SiteFooter />
+      <SiteFooter signedIn={user !== null} />
     </div>
   );
 }

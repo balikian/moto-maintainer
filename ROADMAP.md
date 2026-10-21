@@ -76,9 +76,34 @@ from-new start on existing tasks never logged** (105 of 108 on test;
 **decided:** production's existing bikes get the same change).
 ✅ Released 2026-10-20: migration on production first (checked: column
 nullable with no default, the check constraint, 339 of 409 tasks
-cleared, as counted beforehand), then `main`. Not
-done: the odometer staying required when logging service or adding a bike
-(`docs/bugs.md`).
+cleared, as counted beforehand), then `main`.
+
+🔨 **Testers' quick fixes** (built 2026-10-21, on test; from `docs/bugs.md`
+and `docs/Feedback.md`):
+- **Odometer optional** when adding a bike and when logging service.
+  **Decided (owner, 2026-10-21):** a bike added without a reading has
+  `current_mileage` null: the bike panel says "No reading yet" with **Add
+  reading**, tasks count by time only (a mileage-only task shows "No
+  odometer reading yet"), **Start today** asks for a reading first, and the
+  odometer check-in says to add one. A service logged without a reading
+  keeps `odometer_at_service` null, and its task's miles count from the
+  bike's odometer at the time (exact for today's service; an older one may
+  come due a little late by miles, and time still catches it). A bike with
+  no reading needs one to log service. "Log a past service" starts with the
+  odometer blank instead of today's reading. History, the printout and CSV
+  leave the mileage out; backup files may hold null. Migration
+  `20261021120000_optional_odometer.sql` (pushed to test) makes both
+  columns nullable.
+- The page behind an open dialog no longer scrolls on phones.
+- Signed-in riders get the bottom bar on About, Help, Privacy and Terms
+  (More shows as current; Log service links to `/?log=service`, which
+  opens it on the dashboard).
+- The bike's name wraps instead of being cut off, and "2 bikes" moved up to
+  the year/make line. With one bike there's no menu, and the menu lost
+  "Manage garage" (Garage is in the bar), so Garage has one way in.
+- **Add task** at the top of Tasks, next to Manual & schedule (the bottom
+  button stays).
+Help page updated. To check on test: all of the above on a phone.
 
 ---
 

@@ -46,7 +46,7 @@ export function buildServiceHistoryCsv(bike: ReportBike, logs: ReportLog[], unit
       log.performed_at.slice(0, 10),
       serviceType(log),
       log.task_name,
-      toDisplayDistance(Number(log.odometer_at_service ?? 0), unitSystem),
+      log.odometer_at_service === null ? null : toDisplayDistance(Number(log.odometer_at_service), unitSystem),
       log.cost !== null && Number.isFinite(Number(log.cost)) ? Number(log.cost).toFixed(2) : null,
       log.notes,
     ]),

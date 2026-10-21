@@ -150,6 +150,16 @@ describe('parseAccountImport', () => {
     assert.equal(result.data.bikes[0].odometerMiles, 5201);
     assert.equal(result.data.bikes[0].tasks[0].notes, null);
   });
+
+  it('keeps a missing odometer as no reading', () => {
+    const file = exportFile();
+    file.bikes[0].odometer_miles = null;
+    file.bikes[0].service_history[0].odometer_miles = null;
+    const result = parse(file);
+    assert.ok('data' in result);
+    assert.equal(result.data.bikes[0].odometerMiles, null);
+    assert.equal(result.data.bikes[0].logs[0].odometerMiles, null);
+  });
 });
 
 describe('parseAccountImportText', () => {

@@ -87,9 +87,11 @@ export default function ServiceHistoryView({ bike, logs, tasks, loading, unitSys
                       )}
                     </div>
                     <h3 className="text-base font-bold">{log.task_name}</h3>
-                    <p className={`text-sm ${ui.muted}`}>
-                      Odometer: {formatDistance(Number(log.odometer_at_service ?? 0), unitSystem)}
-                    </p>
+                    {log.odometer_at_service !== null && (
+                      <p className={`text-sm ${ui.muted}`}>
+                        Odometer: {formatDistance(Number(log.odometer_at_service), unitSystem)}
+                      </p>
+                    )}
                     {log.cost !== null && Number.isFinite(Number(log.cost)) && (
                       <p className="text-sm font-bold text-good">
                         Cost: {currencyFormatter.format(Number(log.cost))}

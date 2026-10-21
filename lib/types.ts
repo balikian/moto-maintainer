@@ -26,7 +26,8 @@ export interface Motorcycle {
   make: string;
   model: string;
   year: number;
-  current_mileage: number;
+  /** Null until the rider enters a reading. */
+  current_mileage: number | null;
   created_at?: string;
   updated_at?: string;
 }
@@ -90,7 +91,8 @@ export interface ServiceLog {
   task_id: string | null;
   task_name: string;
   performed_at: string;
-  odometer_at_service: number;
+  /** Null when the rider logged it without a reading. */
+  odometer_at_service: number | null;
   cost: number | null;
   notes: string | null;
   created_at?: string;

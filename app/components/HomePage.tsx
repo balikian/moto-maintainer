@@ -254,7 +254,7 @@ export default function HomePage({ signedIn, accountDeleted = false }: HomePageP
         </section>
       </main>
 
-      <SiteFooter />
+      <SiteFooter signedIn={signedIn} />
     </div>
   );
 }

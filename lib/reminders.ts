@@ -26,7 +26,8 @@ export type ReminderBike = {
   year: number;
   make: string;
   model: string;
-  current_mileage: number;
+  /** Null until the rider enters a reading. */
+  current_mileage: number | null;
   /** Timestamp of when the bike was added. */
   created_at: string;
   /** Timestamp of the last odometer entry or confirmation. */

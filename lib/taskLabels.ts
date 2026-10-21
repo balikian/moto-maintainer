@@ -18,7 +18,12 @@ function timeSpan(days: number): string {
   return months < 24 ? plural(months, 'month') : plural(Math.floor(months / 12), 'year');
 }
 
-export function dueLabel({ status, trigger, milesRemaining, daysRemaining }: TaskDueState, units: UnitSystem): DueLabel {
+/** `intervalMiles` tells "no interval" apart from a mileage interval that can't count without an odometer reading. */
+export function dueLabel(
+  { status, trigger, milesRemaining, daysRemaining }: TaskDueState,
+  units: UnitSystem,
+  intervalMiles = 0
+): DueLabel {
   if (status === 'NoStart') return { value: 'Not started', caption: '' };
   if (trigger === 'time' && daysRemaining !== null) {
     if (daysRemaining === 0) return { value: 'Today', caption: 'due' };
@@ -31,7 +36,7 @@ export function dueLabel({ status, trigger, milesRemaining, daysRemaining }: Tas
       ? { value: formatDistance(-milesRemaining, units), caption: 'overdue' }
       : { value: formatDistance(milesRemaining, units), caption: 'left' };
   }
-  return { value: 'No interval', caption: '' };
+  return intervalMiles > 0 ? { value: 'No odometer', caption: 'reading yet' } : { value: 'No interval', caption: '' };
 }
 
 /** "Every 6,200 mi or 12 months". */

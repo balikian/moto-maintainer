@@ -1,7 +1,7 @@
 import { formatDisplayDate } from '@/lib/dates';
 import { bikeTitle, serviceType, totalCost, type ReportBike, type ReportLog } from '@/lib/historyExport';
 import type { UnitSystem } from '@/lib/types';
-import { formatDistance } from '@/lib/units';
+import { formatDistance, formatOdometer } from '@/lib/units';
 import BrandLogo from './BrandLogo';
 
 // A printable, read-only service history. Used by the print page and the
@@ -30,7 +30,7 @@ export default function HistoryReport({ bike, logs, unitSystem, generatedOn }: H
         <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4">
           <div>
             <dt className="text-xs font-semibold text-muted">Odometer</dt>
-            <dd className="font-bold">{formatDistance(bike.current_mileage, unitSystem)}</dd>
+            <dd className="font-bold">{formatOdometer(bike.current_mileage, unitSystem)}</dd>
           </div>
           <div>
             <dt className="text-xs font-semibold text-muted">Services</dt>
@@ -61,7 +61,9 @@ export default function HistoryReport({ bike, logs, unitSystem, generatedOn }: H
                     {serviceType(log)}
                   </span>
                 </div>
-                <p className="text-sm text-muted">at {formatDistance(Number(log.odometer_at_service ?? 0), unitSystem)}</p>
+                {log.odometer_at_service !== null && (
+                  <p className="text-sm text-muted">at {formatDistance(Number(log.odometer_at_service), unitSystem)}</p>
+                )}
                 {log.notes && <p className="mt-1 whitespace-pre-wrap text-sm">{log.notes}</p>}
               </div>
               <div className="text-sm font-bold sm:text-right">

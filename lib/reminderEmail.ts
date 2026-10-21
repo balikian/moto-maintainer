@@ -73,7 +73,11 @@ function byBike<T extends { bike: ReminderBike }>(items: T[]): { bike: ReminderB
 }
 
 function odometerSentence(reminder: OdometerReminder, units: UnitSystem): string {
-  return `The odometer on your ${bikeTitle(reminder.bike)} was last updated ${plural(reminder.daysSince, 'day')} ago, at ${formatDistance(reminder.bike.current_mileage, units)}.`;
+  const { bike } = reminder;
+  if (bike.current_mileage === null) {
+    return `Your ${bikeTitle(bike)} doesn’t have an odometer reading yet. Add one so tasks with a mileage interval can come due.`;
+  }
+  return `The odometer on your ${bikeTitle(bike)} was last updated ${plural(reminder.daysSince, 'day')} ago, at ${formatDistance(bike.current_mileage, units)}.`;
 }
 
 // --- HTML pieces ---
@@ -197,8 +201,9 @@ export function monthlySummaryEmail(summary: MonthlySummary, units: UnitSystem, 
     text.push('', bikeTitle(bike));
 
     const logged = services === 0 ? `No service logged in ${MONTHS[Number(summary.month.slice(5)) - 1]}.` : `${plural(services, 'service')} logged, ${currency.format(spent)} spent.`;
-    rows.push(paragraph(escapeHtml(`${logged} Odometer: ${formatDistance(bike.current_mileage, units)}.`), 'padding-bottom:8px;'));
-    text.push(`${logged} Odometer: ${formatDistance(bike.current_mileage, units)}.`);
+    const odometer = bike.current_mileage === null ? 'No odometer reading yet.' : `Odometer: ${formatDistance(bike.current_mileage, units)}.`;
+    rows.push(paragraph(escapeHtml(`${logged} ${odometer}`), 'padding-bottom:8px;'));
+    text.push(`${logged} ${odometer}`);
 
     if (needsAttention.length === 0) {
       rows.push(paragraph('Nothing due soon.', `color:${COLORS.muted};`));

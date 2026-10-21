@@ -3,7 +3,7 @@
 import { Pencil, Plus, Trash2 } from 'lucide-react';
 import { countTasksByStatus, type TaskStatus } from '@/lib/maintenance';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
-import { formatDistance } from '@/lib/units';
+import { formatOdometer } from '@/lib/units';
 import ConfirmPopover from './ConfirmPopover';
 import { ui } from './ui';
 
@@ -28,7 +28,7 @@ const SUMMARY: { status: TaskStatus; label: string; color: string }[] = [
 ];
 
 /** "2 overdue · 1 soon · 4 to set up", "All good" or "No tasks yet" for one bike. */
-export function BikeStatusLine({ tasks, mileage }: { tasks: MaintenanceTask[]; mileage: number }) {
+export function BikeStatusLine({ tasks, mileage }: { tasks: MaintenanceTask[]; mileage: number | null }) {
   if (tasks.length === 0) return <span className="text-muted">No tasks yet</span>;
   const counts = countTasksByStatus(tasks, mileage, new Date());
   const parts = SUMMARY.filter(({ status }) => counts[status] > 0);
@@ -67,7 +67,7 @@ export default function GarageView({ bikes, activeBikeId, allTasks, unitSystem, 
                   </span>
                   <span className="block truncate text-2xl font-extrabold leading-tight tracking-tight">{bike.model}</span>
                   <span className="mt-1.5 flex flex-wrap items-center gap-x-1 text-sm font-bold">
-                    <span className="tabular-nums">{formatDistance(bike.current_mileage, unitSystem)}</span>
+                    <span className="tabular-nums">{formatOdometer(bike.current_mileage, unitSystem)}</span>
                     <span className="text-muted"> · </span>
                     {allTasks ? (
                       <BikeStatusLine tasks={allTasks.filter((task) => task.motorcycle_id === bike.id)} mileage={bike.current_mileage} />

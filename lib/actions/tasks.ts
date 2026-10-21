@@ -107,7 +107,8 @@ type CompleteTaskActionInput = {
   taskId: string | null;
   taskName: string;
   performedAt: string;
-  odometerAtService: number;
+  /** Null without a reading: the task's miles then count from the bike's odometer. */
+  odometerAtService: number | null;
   cost: number | null;
   notes: string | null;
 };
@@ -118,13 +119,20 @@ export async function completeTaskAction(input: CompleteTaskActionInput): Promis
   if (!user) return { error: SIGNED_OUT_ERROR };
 
   const taskName = input.taskName.trim();
-  const odometer = normalizeMileage(input.odometerAtService);
+  const odometer = input.odometerAtService === null ? null : normalizeMileage(input.odometerAtService);
   const cost = input.cost !== null && Number.isFinite(input.cost) && input.cost >= 0 ? input.cost : null;
 
   if (!input.motorcycleId) return { error: 'A motorcycle must be selected.' };
   if (!taskName) return { error: 'Task name is required.' };
   if (!isIsoDate(input.performedAt)) return { error: 'Please enter a valid date.' };
-  if (odometer === null) return { error: 'Please enter a valid odometer reading.' };
+  if (input.odometerAtService !== null && odometer === null) return { error: 'Please enter a valid odometer reading.' };
+
+  const bike = await supabase.from('motorcycles').select('current_mileage').eq('id', input.motorcycleId).maybeSingle();
+  if (bike.error) return { error: bike.error.message };
+  if (!bike.data) return { error: 'Motorcycle not found.' };
+  // Without a reading, the task's miles count from the bike's odometer now.
+  const taskMileage = odometer ?? (bike.data.current_mileage as number | null);
+  if (taskMileage === null) return { error: 'Enter the odometer reading. Your bike doesn’t have one yet.' };
 
   let task: { id: string; last_performed_date: string | null } | null = null;
   let taskHasLogs = false;
@@ -164,17 +172,19 @@ export async function completeTaskAction(input: CompleteTaskActionInput): Promis
   if (task && (!taskHasLogs || input.performedAt >= lastPerformed)) {
     const { error } = await supabase
       .from('maintenance_tasks')
-      .update({ last_performed_mileage: odometer, last_performed_date: input.performedAt })
+      .update({ last_performed_mileage: taskMileage, last_performed_date: input.performedAt })
       .eq('id', task.id);
     if (error) return { error: error.message };
   }
 
-  const bumpOdometer = await supabase
-    .from('motorcycles')
-    .update({ current_mileage: odometer })
-    .eq('id', input.motorcycleId)
-    .lt('current_mileage', odometer);
-  if (bumpOdometer.error) return { error: bumpOdometer.error.message };
+  if (odometer !== null) {
+    const bumpOdometer = await supabase
+      .from('motorcycles')
+      .update({ current_mileage: odometer })
+      .eq('id', input.motorcycleId)
+      .or(`current_mileage.is.null,current_mileage.lt.${odometer}`);
+    if (bumpOdometer.error) return { error: bumpOdometer.error.message };
+  }
 
   return {};
 }
@@ -207,7 +217,7 @@ export async function deleteServiceLogAction(logId: string): Promise<ActionResul
 async function rewindTaskIfNeeded(
   supabase: SupabaseServerClient,
   taskId: string,
-  deletedLog: { performed_at: string; odometer_at_service: number }
+  deletedLog: { performed_at: string; odometer_at_service: number | null }
 ): Promise<ActionResult> {
   const taskLookup = await supabase
     .from('maintenance_tasks')
@@ -217,17 +227,23 @@ async function rewindTaskIfNeeded(
   if (taskLookup.error) return { error: taskLookup.error.message };
 
   const task = taskLookup.data;
+  // A log without a reading took the bike's odometer for the task's miles, so only its date can match.
   const cameFromDeletedLog =
     task &&
     task.last_performed_date?.slice(0, 10) === deletedLog.performed_at.slice(0, 10) &&
-    Number(task.last_performed_mileage) === Number(deletedLog.odometer_at_service);
+    (deletedLog.odometer_at_service === null ||
+      Number(task.last_performed_mileage) === Number(deletedLog.odometer_at_service));
   if (!cameFromDeletedLog) return {};
 
   const remaining = await supabase.from('service_logs').select('performed_at,odometer_at_service').eq('task_id', taskId);
   if (remaining.error) return { error: remaining.error.message };
 
+  const bike = await supabase.from('motorcycles').select('current_mileage').eq('id', task.motorcycle_id).maybeSingle();
+  if (bike.error) return { error: bike.error.message };
+
   // With no logs left, the task has no start point again, and asks for one.
-  const { error } = await supabase.from('maintenance_tasks').update(baselineFromLogs(remaining.data ?? [])).eq('id', taskId);
+  const baseline = baselineFromLogs(remaining.data ?? [], (bike.data?.current_mileage as number | null) ?? null);
+  const { error } = await supabase.from('maintenance_tasks').update(baseline).eq('id', taskId);
   if (error) return { error: error.message };
   return {};
 }
@@ -254,6 +270,9 @@ export async function setTaskStartAction(input: {
   const bike = await supabase.from('motorcycles').select('year,current_mileage').eq('id', input.motorcycleId).maybeSingle();
   if (bike.error) return { error: bike.error.message };
   if (!bike.data) return { error: 'Motorcycle not found.' };
+  if (input.start === 'today' && bike.data.current_mileage === null) {
+    return { error: 'Enter your odometer reading first, so there’s a starting point for the miles.' };
+  }
 
   const baseline =
     input.start === 'new'

@@ -2,7 +2,7 @@
 
 import { Plus } from 'lucide-react';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
-import { formatDistance } from '@/lib/units';
+import { formatOdometer } from '@/lib/units';
 import { BikeStatusLine } from './GarageView';
 import { ui } from './ui';
 
@@ -37,7 +37,7 @@ export default function BikeList({ bikes, activeBikeId, allTasks, unitSystem, on
               >
                 <span className="block truncate text-[15px] font-bold">{bike.year} {bike.make} {bike.model}</span>
                 <span className="block truncate text-sm font-semibold">
-                  <span className="text-muted tabular-nums">{formatDistance(bike.current_mileage, unitSystem)} · </span>
+                  <span className="text-muted tabular-nums">{formatOdometer(bike.current_mileage, unitSystem)} · </span>
                   {allTasks ? (
                     <BikeStatusLine tasks={allTasks.filter((task) => task.motorcycle_id === bike.id)} mileage={bike.current_mileage} />
                   ) : (

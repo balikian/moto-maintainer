@@ -30,6 +30,9 @@ export default function Modal({ title, description, size = 'md', closeOnOutsideC
 
   useEffect(() => {
     openModals.push(titleId);
+    // The page behind stays put while a dialog is open (phones otherwise scroll it).
+    // `html` reserves the scrollbar's space, so hiding it doesn't shift the layout.
+    document.documentElement.style.overflow = 'hidden';
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && openModals.at(-1) === titleId) close();
     };
@@ -37,6 +40,7 @@ export default function Modal({ title, description, size = 'md', closeOnOutsideC
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       openModals.splice(openModals.indexOf(titleId), 1);
+      if (openModals.length === 0) document.documentElement.style.overflow = '';
     };
   }, [titleId]);
 
@@ -56,7 +60,7 @@ export default function Modal({ title, description, size = 'md', closeOnOutsideC
       }}
     >
       <div
-        className={`relative max-h-[calc(100dvh-1rem)] w-full overflow-y-auto p-4 sm:max-h-[calc(100dvh-2rem)] sm:p-6 ${ui.popover} ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'}`}
+        className={`relative max-h-[calc(100dvh-1rem)] w-full overflow-y-auto overscroll-contain p-4 sm:max-h-[calc(100dvh-2rem)] sm:p-6 ${ui.popover} ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'}`}
       >
         <button
           type="button"

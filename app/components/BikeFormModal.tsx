@@ -8,7 +8,8 @@ import { distanceUnitLabel, fromDisplayDistance } from '@/lib/units';
 import Modal from './Modal';
 import { ui } from './ui';
 
-export type BikeFormValues = { year: number; make: string; model: string; currentMileage: number; setup: BikeSetup };
+/** currentMileage is null when the rider leaves the odometer for later. */
+export type BikeFormValues = { year: number; make: string; model: string; currentMileage: number | null; setup: BikeSetup };
 
 /** A row of segmented buttons, for short either/or choices. */
 function ChoiceRow<T extends string>({
@@ -117,13 +118,14 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
     // When editing, the odometer isn't on this form; it has its own Update control.
-    const miles = bike ? bike.current_mileage : fromDisplayDistance(odometer, unitSystem);
+    // Adding, it's optional: left blank, the bike has no reading until the rider enters one.
+    const miles = bike ? bike.current_mileage : odometer.trim() === '' ? null : fromDisplayDistance(odometer, unitSystem);
 
     if (!resolvedMake || !resolvedModel) {
       setError('Please choose or enter a make and model.');
       return;
     }
-    if (!bike && (odometer.trim() === '' || Number.isNaN(miles) || miles < 0)) {
+    if (!bike && miles !== null && (Number.isNaN(miles) || miles < 0)) {
       setError('Please enter a valid odometer reading.');
       return;
     }
@@ -215,18 +217,18 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
         ) : (
           <div>
             <label htmlFor="bike-odometer" className={ui.label}>
-              Current odometer ({distanceUnitLabel(unitSystem)})
+              Current odometer ({distanceUnitLabel(unitSystem)}) <span className="font-normal text-muted">optional</span>
             </label>
             <input
               id="bike-odometer"
               type="number"
-              required
               min="0"
-              placeholder="0"
+              inputMode="numeric"
               value={odometer}
               onChange={(event) => setOdometer(event.target.value)}
               className={ui.input}
             />
+            <p className={`mt-1 text-xs ${ui.muted}`}>Not with the bike? Add it later. Until then, tasks count by time only.</p>
           </div>
         )}
 

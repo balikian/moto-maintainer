@@ -41,7 +41,7 @@ export function LegalPage({ title, updated, intro, signedIn, children }: {
         </section>
       </main>
 
-      <SiteFooter />
+      <SiteFooter signedIn={signedIn} />
     </div>
   );
 }

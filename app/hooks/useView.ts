@@ -9,6 +9,9 @@ const VIEWS: readonly View[] = ['tasks', 'history', 'garage', 'more'];
 
 export const viewHref = (view: View) => (view === 'tasks' ? '/' : `/?view=${view}`);
 
+/** Opens the dashboard with Log service open: the bottom bar's button on pages outside the dashboard. */
+export const LOG_SERVICE_HREF = '/?log=service';
+
 /**
  * The open screen, kept in the URL (`/?view=history`) so the back button,
  * reloads and links work. Switching uses pushState, which Next.js syncs with

@@ -14,7 +14,8 @@ export type LogServiceValues = {
   taskId: string | null;
   taskName: string;
   performedAt: string;
-  odometer: number;
+  /** Null when left blank: the task's miles count from the bike's odometer. */
+  odometer: number | null;
   cost: number | null;
   notes: string | null;
   /** Related tasks done in the same visit; logged with the same date and odometer. */
@@ -26,8 +27,8 @@ type LogServiceModalProps = {
   /** The task being logged, when opened from a task card. The task picker is locked to it. */
   task: MaintenanceTask | null;
   unitSystem: UnitSystem;
-  /** The bike's current odometer, in miles. */
-  defaultOdometer: number;
+  /** The bike's current odometer, in miles; null if it has no reading yet. */
+  defaultOdometer: number | null;
   onClose: () => void;
   /** Receives the odometer in miles; resolves to an error message, or null on success. */
   onSubmit: (values: LogServiceValues) => Promise<string | null>;
@@ -39,7 +40,12 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
   const [selectedTaskId, setSelectedTaskId] = useState(task?.id ?? tasks[0]?.id ?? CUSTOM_ONE_OFF_VALUE);
   const [customTaskName, setCustomTaskName] = useState('');
   const [performedAt, setPerformedAt] = useState(todayIsoDate);
-  const [odometer, setOdometer] = useState(String(toDisplayDistance(defaultOdometer, unitSystem)));
+  // Opened from a task without a start point: the rider is filling in when it was last done.
+  const pastService = task !== null && !hasStartPoint(task);
+  // A past service wasn't at today's odometer, so it starts blank.
+  const [odometer, setOdometer] = useState(() =>
+    defaultOdometer === null || pastService ? '' : String(toDisplayDistance(defaultOdometer, unitSystem))
+  );
   const [cost, setCost] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
@@ -49,8 +55,8 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
 
   const selectedTask = tasks.find((candidate) => candidate.id === selectedTaskId) ?? null;
   const isCustom = selectedTask === null;
-  // Opened from a task without a start point: the rider is filling in when it was last done.
-  const pastService = task !== null && !hasStartPoint(task);
+  // Without a reading, a task counts its miles from the bike's odometer, so a bike without one needs it here.
+  const odometerRequired = defaultOdometer === null;
 
   // Same-category tasks that are coming due: worth doing while the bike is apart anyway.
   const [today] = useState(() => new Date());
@@ -68,7 +74,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
     event.preventDefault();
 
     const taskName = (isCustom ? customTaskName : selectedTask.task_name).trim();
-    const miles = fromDisplayDistance(odometer, unitSystem);
+    const miles = odometer.trim() === '' ? null : fromDisplayDistance(odometer, unitSystem);
     const parsedCost = cost.trim() ? Number(cost) : null;
 
     if (!taskName) {
@@ -79,8 +85,8 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
       setError('Date performed is required.');
       return;
     }
-    if (odometer.trim() === '' || Number.isNaN(miles) || miles < 0) {
-      setError('Please enter a valid odometer value.');
+    if (miles === null ? odometerRequired : Number.isNaN(miles) || miles < 0) {
+      setError(miles === null ? 'Enter the odometer reading. Your bike doesn’t have one yet.' : 'Please enter a valid odometer value.');
       return;
     }
     if (parsedCost !== null && (Number.isNaN(parsedCost) || parsedCost < 0)) {
@@ -190,16 +196,23 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
             />
           </div>
           <div>
-            <label htmlFor="log-odometer" className={ui.label}>Odometer ({distanceUnitLabel(unitSystem)})</label>
+            <label htmlFor="log-odometer" className={ui.label}>
+              Odometer ({distanceUnitLabel(unitSystem)}){' '}
+              {!odometerRequired && <span className="font-normal text-muted">optional</span>}
+            </label>
             <input
               id="log-odometer"
               type="number"
               min="0"
+              inputMode="numeric"
               value={odometer}
               onChange={(event) => setOdometer(event.target.value)}
-              required
+              required={odometerRequired}
               className={ui.input}
             />
+            {!odometerRequired && odometer.trim() === '' && selectedTask && (
+              <p className={`mt-1 text-xs ${ui.muted}`}>Don&apos;t know? Its miles will count from your current odometer.</p>
+            )}
           </div>
         </div>
 

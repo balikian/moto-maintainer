@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { addBikeAction, deleteBikeAction, updateBikeAction, updateOdometerAction } from '@/lib/actions/bikes';
 import {
   completeTaskAction,
@@ -37,7 +38,7 @@ import { ui } from './components/ui';
 import { useAuthUser } from './hooks/useAuthUser';
 import { usePreferences } from './hooks/usePreferences';
 import { useSupabaseQuery } from './hooks/useSupabaseQuery';
-import { useView, type View } from './hooks/useView';
+import { useView, viewHref, type View } from './hooks/useView';
 
 // Reads go straight from the browser to Supabase; writes go through the server
 // actions in lib/actions. Row-level security keeps both scoped to the user.
@@ -78,7 +79,13 @@ export default function GarageApp() {
   const selectedBikeId = preferences.activeBikeId;
   const setSelectedBikeId = (bikeId: string | null) => void updatePreferences({ activeBikeId: bikeId });
 
-  const [dialog, setDialog] = useState<OpenDialog>(null);
+  // Log service on the bottom bar of the pages outside the dashboard (Help, About…) links to /?log=service.
+  const logRequested = useSearchParams().get('log') === 'service';
+  const [dialog, setDialog] = useState<OpenDialog>(() => (logRequested ? { type: 'logService', task: null } : null));
+  useEffect(() => {
+    // Opened once: a reload or Back shouldn't open it again.
+    if (logRequested) window.history.replaceState(null, '', viewHref(view));
+  }, [logRequested, view]);
 
   const bikesQuery = useSupabaseQuery<Motorcycle[]>(userId, () =>
     supabase.from('motorcycles').select('*').order('created_at', { ascending: true })
@@ -377,7 +384,6 @@ export default function GarageApp() {
                 unitSystem={unitSystem}
                 onSelectBike={setSelectedBikeId}
                 onAddBike={() => setDialog({ type: 'addBike' })}
-                onManageGarage={() => setView('garage')}
                 onUpdateOdometer={handleUpdateOdometer}
               />
               <BikeList

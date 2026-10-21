@@ -22,7 +22,7 @@ export default function OdometerControl({ bike, unitSystem, onSave }: OdometerCo
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
     const miles = fromDisplayDistance(draft ?? '', unitSystem);
-    if (Number.isNaN(miles) || miles < 0) {
+    if (draft?.trim() === '' || Number.isNaN(miles) || miles < 0) {
       setError('Enter a valid reading.');
       return;
     }
@@ -72,22 +72,32 @@ export default function OdometerControl({ bike, unitSystem, onSave }: OdometerCo
     );
   }
 
+  // Added without a reading: ask for one, since mileage intervals can't count without it.
+  if (bike.current_mileage === null) {
+    return (
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <span className="block text-sm font-semibold text-muted">Odometer</span>
+          <span className="block text-sm">No reading yet. Tasks count by time until you add one.</span>
+        </div>
+        <button type="button" onClick={() => setDraft('')} className={`shrink-0 ${ui.primaryButton}`}>
+          Add reading
+        </button>
+      </div>
+    );
+  }
+  const displayMileage = toDisplayDistance(bike.current_mileage, unitSystem);
+
   return (
     <div className="flex items-center justify-between gap-3">
       <div>
         <span className="block text-sm font-semibold text-muted">Odometer</span>
         <span className="flex items-baseline gap-1.5">
-          <span className="text-3xl font-extrabold tracking-tight tabular-nums">
-            {toDisplayDistance(bike.current_mileage, unitSystem).toLocaleString()}
-          </span>
+          <span className="text-3xl font-extrabold tracking-tight tabular-nums">{displayMileage.toLocaleString()}</span>
           <span className="text-base font-bold text-muted">{unitLabel}</span>
         </span>
       </div>
-      <button
-        type="button"
-        onClick={() => setDraft(String(toDisplayDistance(bike.current_mileage, unitSystem)))}
-        className={ui.secondaryButton}
-      >
+      <button type="button" onClick={() => setDraft(String(displayMileage))} className={ui.secondaryButton}>
         Update
       </button>
     </div>

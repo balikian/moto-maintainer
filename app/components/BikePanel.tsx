@@ -14,7 +14,6 @@ type BikePanelProps = {
   unitSystem: UnitSystem;
   onSelectBike: (bikeId: string) => void;
   onAddBike: () => void;
-  onManageGarage: () => void;
   onUpdateOdometer: (miles: number) => Promise<string | null>;
 };
 
@@ -37,7 +36,6 @@ export default function BikePanel(props: BikePanelProps) {
         unitSystem={props.unitSystem}
         onSelect={props.onSelectBike}
         onAdd={props.onAddBike}
-        onManage={props.onManageGarage}
       />
       <div className="border-t border-line pt-3.5">
         <OdometerControl

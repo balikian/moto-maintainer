@@ -25,10 +25,12 @@ export function dailyPush({ tasks, odometer }: DailyReminders, units: UnitSystem
       const name = severalBikes ? `${entry.bike.model}: ${entry.task.task_name}` : entry.task.task_name;
       return `${name}, ${dueText(entry, units).toLowerCase()}`;
     }),
-    ...odometer.map((entry) =>
-      tasks.length === 0 && odometer.length === 1
-        ? `It’s been ${entry.daysSince} days at ${formatDistance(entry.bike.current_mileage, units)}. Tap to enter the new reading.`
-        : `Update the odometer on your ${entry.bike.model}`
+    ...odometer.map(({ bike, daysSince }) =>
+      bike.current_mileage === null
+        ? `Add an odometer reading for your ${bike.model}`
+        : tasks.length === 0 && odometer.length === 1
+          ? `It’s been ${daysSince} days at ${formatDistance(bike.current_mileage, units)}. Tap to enter the new reading.`
+          : `Update the odometer on your ${bike.model}`
     ),
   ];
 

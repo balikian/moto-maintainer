@@ -24,6 +24,11 @@ export function formatDistance(miles: number, units: UnitSystem): string {
   return `${toDisplayDistance(miles, units).toLocaleString()} ${distanceUnitLabel(units)}`;
 }
 
+/** A bike's odometer for display; bikes added without a reading have none yet. */
+export function formatOdometer(miles: number | null, units: UnitSystem): string {
+  return miles === null ? 'No odometer reading' : formatDistance(miles, units);
+}
+
 /** Rounds a mileage to a whole number, or returns null if it isn't a valid non-negative number. */
 export function normalizeMileage(value: number): number | null {
   return Number.isFinite(value) && value >= 0 ? Math.round(value) : null;

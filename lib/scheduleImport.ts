@@ -44,7 +44,7 @@ export function cleanTasks(tasks: ExtractedTask[]): ExtractedTask[] {
 /** How task names are compared: ignoring case and extra spaces. */
 export const nameKey = (name: string) => name.replace(/\s+/g, ' ').trim().toLowerCase();
 
-type LogForApply = { id: string; task_id: string | null; task_name: string; performed_at: string; odometer_at_service: number };
+type LogForApply = { id: string; task_id: string | null; task_name: string; performed_at: string; odometer_at_service: number | null };
 
 export type ScheduleApplyPlan = {
   updates: (Omit<TaskDefaults, 'task_name'> & { id: string })[];
@@ -70,7 +70,14 @@ export type ScheduleApplyPlan = {
 export function planScheduleApply(
   scheduleTasks: TaskDefaults[],
   existingTasks: { id: string; task_name: string }[],
-  { logs }: { logs: LogForApply[] }
+  {
+    logs,
+    currentMileage = null,
+  }: {
+    logs: LogForApply[];
+    /** The bike's odometer, the baseline for a log without a reading. */
+    currentMileage?: number | null;
+  }
 ): ScheduleApplyPlan {
   const orphanLogsByName = new Map<string, LogForApply[]>();
   for (const log of logs) {
@@ -100,7 +107,7 @@ export function planScheduleApply(
       plan.additions.push({
         ...intervals,
         task_name: task_name.trim(),
-        ...baselineFromLogs(matchingLogs),
+        ...baselineFromLogs(matchingLogs, currentMileage),
         relinkLogIds: matchingLogs.map((log) => log.id),
       });
     }

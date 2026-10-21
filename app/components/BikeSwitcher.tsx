@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { ChevronDown, Plus } from 'lucide-react';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
-import { formatDistance } from '@/lib/units';
+import { formatOdometer } from '@/lib/units';
 import { useDismiss } from '../hooks/useDismiss';
 import { ui } from './ui';
 
@@ -13,12 +13,14 @@ type BikeSwitcherProps = {
   unitSystem: UnitSystem;
   onSelect: (bikeId: string) => void;
   onAdd: () => void;
-  /** Opens Garage, where bikes are edited and removed. */
-  onManage: () => void;
 };
 
-/** The bike's name, large; opens a quick list to switch bikes or add one. */
-export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, onAdd, onManage }: BikeSwitcherProps) {
+/**
+ * The bike's name, large. With more than one bike, "2 bikes" opens a quick
+ * list to switch or add one. (Garage, in the bottom bar, is where bikes are
+ * added, edited and removed otherwise.)
+ */
+export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, onAdd }: BikeSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   useDismiss(wrapperRef, isOpen, () => setIsOpen(false));
@@ -28,24 +30,34 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
     then();
   };
 
+  const yearAndMake = (
+    <span className="min-w-0 text-sm font-semibold text-muted">
+      {activeBike.year} {activeBike.make}
+    </span>
+  );
+  // Wraps rather than truncating: a long model name ("R 1250 GS Adventure") should show in full.
+  const model = <span className="block break-words text-3xl font-extrabold leading-tight tracking-tight">{activeBike.model}</span>;
+
+  if (bikes.length < 2) {
+    return (
+      <div>
+        <span className="block">{yearAndMake}</span>
+        {model}
+      </div>
+    );
+  }
+
   return (
     <div ref={wrapperRef} className="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen((previous) => !previous)}
-        className="flex w-full items-end justify-between gap-3 text-left"
-        aria-expanded={isOpen}
-      >
-        <span className="min-w-0">
-          <span className="block text-sm font-semibold text-muted">
-            {activeBike.year} {activeBike.make}
+      <button type="button" onClick={() => setIsOpen((previous) => !previous)} className="block w-full text-left" aria-expanded={isOpen}>
+        <span className="flex items-center justify-between gap-3">
+          {yearAndMake}
+          <span className="-my-1 flex shrink-0 items-center gap-1 rounded-lg bg-raised px-2 py-1 text-sm font-bold text-muted">
+            {bikes.length} bikes
+            <ChevronDown size={16} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
           </span>
-          <span className="block truncate text-3xl font-extrabold leading-tight tracking-tight">{activeBike.model}</span>
         </span>
-        <span className="flex shrink-0 items-center gap-1 pb-1.5 text-sm font-bold text-muted">
-          {bikes.length > 1 ? `${bikes.length} bikes` : 'Garage'}
-          <ChevronDown size={16} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
-        </span>
+        {model}
       </button>
 
       {isOpen && (
@@ -66,19 +78,16 @@ export default function BikeSwitcher({ bikes, activeBike, unitSystem, onSelect, 
                     <span className="truncate text-sm font-semibold">{bike.make} {bike.model}</span>
                     <span className="shrink-0 rounded bg-raised px-1.5 py-0.5 text-xs font-bold text-muted">{bike.year}</span>
                     <span className="ml-auto shrink-0 text-xs font-semibold text-muted tabular-nums">
-                      {formatDistance(bike.current_mileage, unitSystem)}
+                      {formatOdometer(bike.current_mileage, unitSystem)}
                     </span>
                   </button>
                 </li>
               );
             })}
           </ul>
-          <div className="flex gap-2 border-t border-line p-2">
-            <button type="button" onClick={() => close(onAdd)} className={`flex-1 ${ui.secondaryButton}`}>
+          <div className="border-t border-line p-2">
+            <button type="button" onClick={() => close(onAdd)} className={`w-full ${ui.secondaryButton}`}>
               <Plus size={15} /> Add bike
-            </button>
-            <button type="button" onClick={() => close(onManage)} className={`flex-1 ${ui.secondaryButton}`}>
-              Manage garage
             </button>
           </div>
         </div>

@@ -24,8 +24,8 @@ const AUTO = 'auto';
 
 type AddCustomTaskModalProps = {
   unitSystem: UnitSystem;
-  /** The bike's current odometer, in miles. */
-  currentOdometer: number;
+  /** The bike's current odometer, in miles; null if it has no reading yet. */
+  currentOdometer: number | null;
   onClose: () => void;
   /** Receives distances in miles; resolves to an error message, or null on success. */
   onSubmit: (values: NewTaskValues) => Promise<string | null>;
@@ -35,7 +35,7 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
   const [taskName, setTaskName] = useState('');
   const [intervalDistance, setIntervalDistance] = useState('');
   const [intervalMonths, setIntervalMonths] = useState('');
-  const [baselineOdometer, setBaselineOdometer] = useState(String(toDisplayDistance(currentOdometer, unitSystem)));
+  const [baselineOdometer, setBaselineOdometer] = useState(currentOdometer === null ? '' : String(toDisplayDistance(currentOdometer, unitSystem)));
   const [baselineDate, setBaselineDate] = useState(todayIsoDate);
   const [notes, setNotes] = useState('');
   const [category, setCategory] = useState<TaskCategory | typeof AUTO>(AUTO);

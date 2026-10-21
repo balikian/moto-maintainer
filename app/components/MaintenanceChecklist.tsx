@@ -75,10 +75,17 @@ export default function MaintenanceChecklist({
     <section>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
         <h2 className={ui.sectionTitle}>Needs attention</h2>
-        <button type="button" onClick={onOpenManual} className={ui.chipButton}>
-          <BookOpen size={15} />
-          Manual &amp; schedule
-        </button>
+        {/* Add task is here too, not only below a long list where it gets missed. */}
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={onAddTask} className={ui.chipButton}>
+            <Plus size={15} />
+            Add task
+          </button>
+          <button type="button" onClick={onOpenManual} className={ui.chipButton}>
+            <BookOpen size={15} />
+            Manual &amp; schedule
+          </button>
+        </div>
       </div>
 
       {loading ? (

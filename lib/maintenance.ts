@@ -122,13 +122,23 @@ export function startTodayBaseline(currentMileage: number, today: string): TaskB
   return { last_performed_mileage: currentMileage, last_performed_date: today };
 }
 
-/** The most recent of these service logs as a task's baseline, or no start point if there are none. */
-export function baselineFromLogs(logs: { performed_at: string; odometer_at_service: number }[]): TaskBaseline {
+/**
+ * The most recent of these service logs as a task's baseline, or no start
+ * point if there are none. A log without an odometer reading counts from
+ * `fallbackMileage` (the bike's odometer), as it did when it was logged.
+ */
+export function baselineFromLogs(
+  logs: { performed_at: string; odometer_at_service: number | null }[],
+  fallbackMileage: number | null
+): TaskBaseline {
   const latest = [...logs].sort(
-    (a, b) => b.performed_at.slice(0, 10).localeCompare(a.performed_at.slice(0, 10)) || b.odometer_at_service - a.odometer_at_service
+    (a, b) =>
+      b.performed_at.slice(0, 10).localeCompare(a.performed_at.slice(0, 10)) ||
+      (b.odometer_at_service ?? -1) - (a.odometer_at_service ?? -1)
   )[0];
-  return latest
-    ? { last_performed_mileage: Number(latest.odometer_at_service), last_performed_date: latest.performed_at.slice(0, 10) }
+  const mileage = latest ? (latest.odometer_at_service ?? fallbackMileage) : null;
+  return latest && mileage !== null
+    ? { last_performed_mileage: Number(mileage), last_performed_date: latest.performed_at.slice(0, 10) }
     : NO_START;
 }
 
@@ -179,11 +189,12 @@ const URGENT_FRACTION = 0.1;
  * intervals comes first. Each interval is compared as the fraction of it still
  * remaining, so "10% of 12 months left" and "10% of 5,000 miles left" rank
  * the same. A negative fraction means that interval is already past due.
- * A task without a start point is NoStart.
+ * A task without a start point is NoStart. Without an odometer reading
+ * (`currentMileage` null), only the time interval counts.
  */
 export function getTaskDueState(
   task: Pick<MaintenanceTask, 'interval_mileage' | 'interval_months' | 'last_performed_mileage' | 'last_performed_date'>,
-  currentMileage: number,
+  currentMileage: number | null,
   today: Date
 ): TaskDueState {
   const startMileage = task.last_performed_mileage;
@@ -193,7 +204,7 @@ export function getTaskDueState(
 
   let milesRemaining: number | null = null;
   let milesFraction = Number.POSITIVE_INFINITY;
-  if (task.interval_mileage > 0) {
+  if (task.interval_mileage > 0 && currentMileage !== null) {
     milesRemaining = task.interval_mileage - (currentMileage - startMileage);
     milesFraction = milesRemaining / task.interval_mileage;
   }
@@ -236,7 +247,7 @@ type TaskEntry<T> = { task: T; dueState: TaskDueState };
  */
 export function groupTasksByUrgency<T extends Parameters<typeof getTaskDueState>[0] & { task_name: string }>(
   tasks: T[],
-  currentMileage: number,
+  currentMileage: number | null,
   today: Date
 ): { needsAttention: TaskEntry<T>[]; healthy: TaskEntry<T>[]; noStart: TaskEntry<T>[] } {
   const sorted = tasks
@@ -258,7 +269,7 @@ export function groupTasksByUrgency<T extends Parameters<typeof getTaskDueState>
 /** How many of a bike's tasks are in each status, for the summary under the odometer. */
 export function countTasksByStatus(
   tasks: Parameters<typeof getTaskDueState>[0][],
-  currentMileage: number,
+  currentMileage: number | null,
   today: Date
 ): Record<TaskStatus, number> {
   const counts: Record<TaskStatus, number> = { Overdue: 0, Urgent: 0, Soon: 0, Healthy: 0, NoStart: 0 };

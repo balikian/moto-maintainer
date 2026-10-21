@@ -47,6 +47,11 @@ describe('dueLabel', () => {
   it('handles a task with no interval', () => {
     assert.deepEqual(dueLabel(state({ trigger: null }), 'imperial'), { value: 'No interval', caption: '' });
   });
+
+  it('says a mileage interval is waiting on an odometer reading', () => {
+    const noReading = state({ trigger: null, milesRemaining: null, daysRemaining: null });
+    assert.deepEqual(dueLabel(noReading, 'imperial', 4000), { value: 'No odometer', caption: 'reading yet' });
+  });
 });
 
 describe('intervalLabel', () => {

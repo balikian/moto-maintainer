@@ -48,7 +48,7 @@ const logSchema = z.object({
   date: isoDate,
   service: requiredText(200),
   type: z.string().nullish(),
-  odometer_miles: miles,
+  odometer_miles: miles.nullish(),
   cost: z.number().min(0, "can't be negative").max(MAX_COST, 'is too large').nullish(),
   notes: optionalText(2000),
 });
@@ -58,7 +58,7 @@ const bikeSchema = (maxYear: number) =>
     year: z.number().int('must be a whole year').min(EARLIEST_YEAR, 'is too early').max(maxYear, 'is in the future'),
     make: requiredText(100),
     model: requiredText(100),
-    odometer_miles: miles,
+    odometer_miles: miles.nullish(),
     maintenance_tasks: z.array(taskSchema).max(IMPORT_LIMITS.tasksPerBike, `has more than ${IMPORT_LIMITS.tasksPerBike} tasks`).default([]),
     service_history: z.array(logSchema).max(IMPORT_LIMITS.logsPerBike, `has more than ${IMPORT_LIMITS.logsPerBike} service records`).default([]),
   });
@@ -85,7 +85,8 @@ export type ImportLog = {
   /** Routine services are linked to the bike's task with the same name, if there is one. */
   routine: boolean;
   performedAt: string;
-  odometerMiles: number;
+  /** Null when there was no reading. */
+  odometerMiles: number | null;
   cost: number | null;
   notes: string | null;
 };
@@ -94,7 +95,8 @@ export type ImportBike = {
   year: number;
   make: string;
   model: string;
-  odometerMiles: number;
+  /** Null when there was no reading. */
+  odometerMiles: number | null;
   tasks: ImportTask[];
   logs: ImportLog[];
 };
@@ -159,7 +161,7 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
         year: bike.year,
         make: bike.make,
         model: bike.model,
-        odometerMiles: bike.odometer_miles,
+        odometerMiles: bike.odometer_miles ?? null,
         tasks: bike.maintenance_tasks.map((task) => ({
           taskName: task.name,
           category: categoryFromFile(task.category, task.name),
@@ -175,7 +177,7 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
           taskName: log.service,
           routine: log.type?.trim().toLowerCase() === 'routine',
           performedAt: log.date,
-          odometerMiles: log.odometer_miles,
+          odometerMiles: log.odometer_miles ?? null,
           cost: log.cost ?? null,
           notes: log.notes,
         })),
