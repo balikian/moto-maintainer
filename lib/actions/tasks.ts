@@ -1,6 +1,6 @@
 'use server';
 
-import { isIsoDate } from '../dates';
+import { isFutureEverywhere, isIsoDate } from '../dates';
 import { baselineFromLogs, fromNewBaseline, startTodayBaseline } from '../maintenance';
 import { guessCategory, isTaskCategory, type TaskCategory } from '../taskCategories';
 import { getSignedInClient } from '../supabase/server';
@@ -14,7 +14,8 @@ type CreateMaintenanceTaskInput = {
   taskName: string;
   intervalMileage: number;
   intervalMonths: number;
-  baselineOdometer: number;
+  /** Null to count from the bike's current odometer. */
+  baselineOdometer: number | null;
   baselineDate: string;
   notes?: string;
   /** Guessed from the name when not given. */
@@ -30,15 +31,27 @@ export async function createMaintenanceTaskAction(
   const taskName = input.taskName.trim();
   const intervalMileage = normalizeMileage(input.intervalMileage) ?? 0;
   const intervalMonths = normalizeMileage(input.intervalMonths) ?? 0;
-  const baselineOdometer = normalizeMileage(input.baselineOdometer);
+  const typedOdometer = input.baselineOdometer === null ? null : normalizeMileage(input.baselineOdometer);
 
   if (!input.motorcycleId) return { error: 'A motorcycle must be selected.' };
   if (!taskName) return { error: 'Task name is required.' };
   if (intervalMileage === 0 && intervalMonths === 0) {
     return { error: 'Enter a mileage interval, a time interval, or both.' };
   }
-  if (baselineOdometer === null) return { error: 'Please enter a valid baseline odometer.' };
-  if (!isIsoDate(input.baselineDate)) return { error: 'Please enter a valid baseline date.' };
+  if (input.baselineOdometer !== null && typedOdometer === null) return { error: 'Please enter a valid odometer reading.' };
+  if (!isIsoDate(input.baselineDate)) return { error: 'Please enter a valid date.' };
+  if (isFutureEverywhere(input.baselineDate)) return { error: 'The date it was last done can’t be in the future.' };
+
+  // Left blank, it counts from the bike's odometer (as Log service does).
+  let baselineOdometer = typedOdometer;
+  if (baselineOdometer === null) {
+    const bike = await supabase.from('motorcycles').select('current_mileage').eq('id', input.motorcycleId).maybeSingle();
+    if (bike.error) return { error: bike.error.message };
+    baselineOdometer = (bike.data?.current_mileage as number | null | undefined) ?? null;
+    if (baselineOdometer === null) {
+      return { error: 'Enter the odometer when it was last done. Your bike doesn’t have a reading yet.' };
+    }
+  }
 
   const { data, error } = await supabase
     .from('maintenance_tasks')
@@ -125,6 +138,7 @@ export async function completeTaskAction(input: CompleteTaskActionInput): Promis
   if (!input.motorcycleId) return { error: 'A motorcycle must be selected.' };
   if (!taskName) return { error: 'Task name is required.' };
   if (!isIsoDate(input.performedAt)) return { error: 'Please enter a valid date.' };
+  if (isFutureEverywhere(input.performedAt)) return { error: 'The service date can’t be in the future.' };
   if (input.odometerAtService !== null && odometer === null) return { error: 'Please enter a valid odometer reading.' };
 
   const bike = await supabase.from('motorcycles').select('current_mileage').eq('id', input.motorcycleId).maybeSingle();

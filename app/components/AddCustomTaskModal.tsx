@@ -13,7 +13,8 @@ export type NewTaskValues = {
   taskName: string;
   intervalMileage: number;
   intervalMonths: number;
-  baselineOdometer: number;
+  /** Null when left blank: the task counts from the bike's current odometer. */
+  baselineOdometer: number | null;
   baselineDate: string;
   notes: string;
   /** Left out to have it guessed from the name. */
@@ -43,13 +44,15 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
   const [error, setError] = useState<string | null>(null);
 
   const unitLabel = distanceUnitLabel(unitSystem);
+  // A blank reading counts from the bike's odometer, so a bike without one needs it here.
+  const baselineRequired = currentOdometer === null;
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
 
     const intervalMileage = intervalDistance.trim() ? fromDisplayDistance(intervalDistance, unitSystem) : 0;
     const months = intervalMonths.trim() ? Number(intervalMonths) : 0;
-    const baseline = fromDisplayDistance(baselineOdometer || '0', unitSystem);
+    const baseline = baselineOdometer.trim() ? fromDisplayDistance(baselineOdometer, unitSystem) : null;
 
     if (!taskName.trim()) {
       setError('Task name is required.');
@@ -63,8 +66,12 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
       setError('Enter a distance interval, a time interval, or both.');
       return;
     }
-    if (Number.isNaN(baseline) || baseline < 0) {
-      setError('Please enter a valid baseline odometer.');
+    if (baseline === null ? baselineRequired : Number.isNaN(baseline) || baseline < 0) {
+      setError(
+        baseline === null
+          ? 'Enter the odometer when it was last done. Your bike doesn’t have a reading yet.'
+          : 'Please enter a valid odometer reading.'
+      );
       return;
     }
 
@@ -148,10 +155,15 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
               id="task-baseline-odometer"
               type="number"
               min="0"
+              inputMode="numeric"
               value={baselineOdometer}
               onChange={(event) => setBaselineOdometer(event.target.value)}
+              required={baselineRequired}
               className={ui.input}
             />
+            {!baselineRequired && baselineOdometer.trim() === '' && (
+              <p className={`mt-1 text-xs ${ui.muted}`}>Blank counts from your current odometer.</p>
+            )}
           </div>
           <div>
             <label htmlFor="task-baseline-date" className={ui.label}>Last done on</label>
@@ -159,6 +171,7 @@ export default function AddCustomTaskModal({ unitSystem, currentOdometer, onClos
               id="task-baseline-date"
               type="date"
               value={baselineDate}
+              max={todayIsoDate()}
               onChange={(event) => setBaselineDate(event.target.value)}
               required
               className={ui.input}

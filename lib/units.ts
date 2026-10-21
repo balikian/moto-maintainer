@@ -13,9 +13,13 @@ export function toDisplayDistance(miles: number, units: UnitSystem): number {
   return Math.round(units === 'metric' ? miles * KM_PER_MILE : miles);
 }
 
-/** Converts a typed distance in the user's units to miles. Returns NaN for unparseable input. */
+/**
+ * Converts a typed distance in the user's units to miles. Returns NaN for
+ * unparseable input, and keeps a minus sign so "-500" is rejected as negative
+ * instead of saved as 500.
+ */
 export function fromDisplayDistance(value: string | number, units: UnitSystem): number {
-  const parsed = typeof value === 'number' ? value : parseFloat(value.replace(/[^0-9.]/g, ''));
+  const parsed = typeof value === 'number' ? value : parseFloat(value.replace(/[^0-9.-]/g, ''));
   if (Number.isNaN(parsed)) return NaN;
   return units === 'metric' ? parsed / KM_PER_MILE : parsed;
 }

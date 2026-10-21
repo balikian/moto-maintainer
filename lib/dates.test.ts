@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { addMonths, daysBetween, formatDisplayDate, isIsoDate, parseIsoDate, toIsoDate } from './dates';
+import { addMonths, daysBetween, formatDisplayDate, isFutureEverywhere, isIsoDate, parseIsoDate, toIsoDate } from './dates';
 
 describe('dates', () => {
   it('parses a calendar day as local midnight, not UTC', () => {
@@ -33,5 +33,13 @@ describe('dates', () => {
   it('counts calendar days', () => {
     assert.equal(daysBetween(new Date(2026, 8, 1), new Date(2026, 8, 29)), 28);
     assert.equal(daysBetween(new Date(2026, 8, 29), new Date(2026, 8, 1)), -28);
+  });
+
+  it('allows today in the furthest-ahead time zone, but not later', () => {
+    // 11:00 UTC on Oct 21 is already Oct 22 at UTC+14.
+    const now = new Date(Date.UTC(2026, 9, 21, 11, 0));
+    assert.equal(isFutureEverywhere('2026-10-21', now), false);
+    assert.equal(isFutureEverywhere('2026-10-22', now), false);
+    assert.equal(isFutureEverywhere('2026-10-23', now), true);
   });
 });

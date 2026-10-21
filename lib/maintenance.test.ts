@@ -217,6 +217,13 @@ describe('task baselines', () => {
     assert.deepEqual(baselineFromLogs(logs, 8100), { last_performed_mileage: 6900, last_performed_date: '2026-05-20' });
   });
 
+  it('never shows more than the full interval left when the odometer is below the start point', () => {
+    const task = { interval_mileage: 4000, interval_months: 0, last_performed_mileage: 10000, last_performed_date: '2026-09-01' };
+    const state = getTaskDueState(task, 1000, today);
+    assert.equal(state.milesRemaining, 4000);
+    assert.equal(state.fractionRemaining, 1);
+  });
+
   it('without a bike odometer, counts only the time interval', () => {
     const task = { interval_mileage: 4000, interval_months: 12, last_performed_mileage: 0, last_performed_date: '2026-03-29' };
     const state = getTaskDueState(task, null, today);

@@ -205,7 +205,8 @@ export function getTaskDueState(
   let milesRemaining: number | null = null;
   let milesFraction = Number.POSITIVE_INFINITY;
   if (task.interval_mileage > 0 && currentMileage !== null) {
-    milesRemaining = task.interval_mileage - (currentMileage - startMileage);
+    // An odometer below the start point (a corrected reading) counts as no miles yet, not as extra miles left.
+    milesRemaining = task.interval_mileage - Math.max(0, currentMileage - startMileage);
     milesFraction = milesRemaining / task.interval_mileage;
   }
 

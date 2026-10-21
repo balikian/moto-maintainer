@@ -190,6 +190,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
               id="log-date"
               type="date"
               value={performedAt}
+              max={todayIsoDate()}
               onChange={(event) => setPerformedAt(event.target.value)}
               required
               className={ui.input}

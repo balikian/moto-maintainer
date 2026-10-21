@@ -20,6 +20,16 @@ export function todayIsoDate(): string {
   return toIsoDate(new Date());
 }
 
+/**
+ * Whether a calendar day hasn't started anywhere yet. The server doesn't know
+ * the rider's time zone, so "today" is allowed in the furthest-ahead one
+ * (UTC+14); UTC is deliberate here.
+ */
+export function isFutureEverywhere(value: string, now = new Date()): boolean {
+  const latestToday = new Date(now.getTime() + 14 * 3_600_000).toISOString().slice(0, 10);
+  return value.slice(0, 10) > latestToday;
+}
+
 /** Accepts "YYYY-MM-DD" (or a timestamp starting with it) and returns local midnight. */
 export function parseIsoDate(value: string | null | undefined): Date | null {
   const match = value ? ISO_DATE_PATTERN.exec(value) : null;
