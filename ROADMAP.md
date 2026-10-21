@@ -78,7 +78,7 @@ from-new start on existing tasks never logged** (105 of 108 on test;
 nullable with no default, the check constraint, 339 of 409 tasks
 cleared, as counted beforehand), then `main`.
 
-🔨 **Testers' quick fixes** (built 2026-10-21, on test; from `docs/bugs.md`
+✅ **Testers' quick fixes** (built 2026-10-21; owner checked on test; from `docs/bugs.md`
 and `docs/Feedback.md`):
 - **Odometer optional** when adding a bike and when logging service.
   **Decided (owner, 2026-10-21):** a bike added without a reading has
