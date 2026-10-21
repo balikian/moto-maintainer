@@ -106,7 +106,8 @@ and `docs/Feedback.md`):
 Help page updated. ✅ Released 2026-10-21: migration on production first
 (checked: both columns nullable, no default), then `main`.
 
-🔨 **Sign-in code** (built 2026-10-21, on `develop`): the iPhone Home
+✅ **Sign-in code** (built 2026-10-21; owner checked on test, templates and
+Email OTP Length 6 set there; not released yet): the iPhone Home
 Screen app couldn't sign in by email, because the link opens in Safari,
 which doesn't share its sign-in. The sign-in email now has a code
 (`{{ .Token }}`) above the link, and after sending, the sign-in card asks
@@ -114,8 +115,9 @@ for it (`verifyEmailCode`, Supabase `verifyOtp` with type `email`). The
 link still works in the same browser. The error page for a failed link
 says to send a new code and type it in. Templates in `supabase/templates/`
 (subjects changed too) must be pasted into each project: test first, then
-production at release. Check each project's email code length is 6
-(the card takes up to 10 digits).
+production at release. Set each project's **Email OTP Length** to 6
+(the card takes up to 10 digits) and keep Email OTP Expiration at 3600
+(the emails say an hour).
 Discussed (2026-10-21), nothing decided: other sign-in options. Passkeys
 are the most secure and quickest but Supabase's support is limited (check
 first); Sign in with Apple needs the developer account (step 7); passwords
