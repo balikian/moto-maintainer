@@ -119,7 +119,7 @@ says to send a new code and type it in. Templates in `supabase/templates/`
 production at release. Set each project's **Email OTP Length** to 6
 (the card takes up to 10 digits) and keep Email OTP Expiration at 3600
 (the emails say an hour).
-🔨 **QA pass fixes** (2026-10-21, on `develop`, not released): from the
+✅ **QA pass fixes** (2026-10-21; released 2026-10-22): from the
 tester agent's regression pass. A custom task's blank "last done at" saved
 as 0 mi (overdue once a no-reading bike got its odometer); blank now means
 the current odometer, required when there's none. Service and "last done
@@ -134,8 +134,10 @@ deleting a newer service falls back to the right miles. **Decided
 1,000 km interval shows 999 km and a typed km reading can come back 1 km
 lower).
 
-🔨 **Daily admin review email** (owner, 2026-10-22; built, on test, not
-released): the daily reminder run also emails each admin when manual links
+✅ **Daily admin review email** (owner, 2026-10-22; checked on test with a
+real send and a repeat run that sent nothing; released 2026-10-22, both
+migrations on production first, checked): the daily reminder run also
+emails each admin when manual links
 or makes/models are pending (what the review badge counts), once a day per
 admin (`admin-review:<date>` claim), before the riders' emails so the
 80-email cap can't skip it. Manual links show only their site, never a
