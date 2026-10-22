@@ -134,6 +134,17 @@ deleting a newer service falls back to the right miles. **Decided
 1,000 km interval shows 999 km and a typed km reading can come back 1 km
 lower).
 
+🔨 **Daily admin review email** (owner, 2026-10-22; built, on test, not
+released): the daily reminder run also emails each admin when manual links
+or makes/models are pending (what the review badge counts), once a day per
+admin (`admin-review:<date>` claim), before the riders' emails so the
+80-email cap can't skip it. Manual links show only their site, never a
+clickable link (they're unreviewed). Migration
+`20261022120000_admin_review_digest.sql` (pushed to test; checked: security
+definer, a wrong job secret is refused). Code: `adminReviewEmail` in
+`lib/reminderEmail.ts`, `runReminderJob`. Off production, a real run needs
+`?only=<admin email>` as before; `?dry-run` previews it.
+
 Discussed (2026-10-21), nothing decided: other sign-in options. Passkeys
 are the most secure and quickest but Supabase's support is limited (check
 first); Sign in with Apple needs the developer account (step 7); passwords

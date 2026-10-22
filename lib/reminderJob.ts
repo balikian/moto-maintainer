@@ -2,7 +2,15 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { sendEmail } from './email';
 import { sendPush } from './push';
 import { dailyPush, type PushMessage } from './pushMessage';
-import { dailyReminderEmail, monthlySummaryEmail, type Email, type EmailLinks } from './reminderEmail';
+import { toIsoDate } from './dates';
+import {
+  adminReviewEmail,
+  dailyReminderEmail,
+  monthlySummaryEmail,
+  type AdminReviewDigest,
+  type Email,
+  type EmailLinks,
+} from './reminderEmail';
 import {
   isMonthlySummaryDay,
   lastMonthRange,
@@ -18,7 +26,8 @@ import {
 // secret lets it in; the app holds no service-role key), claims each reminder
 // before sending so none goes twice, and releases the claim if sending fails.
 // Push goes to each of the rider's devices; devices the push service says are
-// gone are deleted.
+// gone are deleted. Admins also get one email a day listing rider submissions
+// waiting for review, when there are any (admin_review_digest).
 
 /** Stays under Resend's free plan (100 a day, sign-in emails included). Leftovers go tomorrow. */
 const MAX_EMAILS_PER_RUN = 80;
@@ -35,6 +44,8 @@ export type ReminderJobResult = {
   capped: boolean;
   /** Riders sent a push (to at least one device), riders whose push failed, and gone devices deleted. */
   push: { sent: number; failed: number; removed: number };
+  /** Admins emailed about submissions waiting for review. */
+  admin: { sent: number; failed: number };
   errors: string[];
   /** Dry run only: what would be sent. */
   preview?: { to: string; subject: string; keys: string[] }[];
@@ -125,10 +136,24 @@ export async function runReminderJob({ secret, today, baseUrl, dryRun, onlyEmail
     failed: 0,
     capped: false,
     push: { sent: 0, failed: 0, removed: 0 },
+    admin: { sent: 0, failed: 0 },
     errors: [],
   };
+
+  // Admins: what's waiting on the review page. A failure here is logged, not fatal to riders' reminders.
+  const review = await supabase.rpc('admin_review_digest', { job_secret: secret });
+  const digest = review.error ? null : (review.data as AdminReviewDigest);
+  if (review.error) result.errors.push(`admin review digest: ${review.error.message}`);
+  const adminEmail = digest ? adminReviewEmail(digest, `${baseUrl}/admin`) : null;
+  const admins = adminEmail
+    ? digest!.admins.filter((admin) => !onlyEmail || admin.email.toLowerCase() === onlyEmail.toLowerCase())
+    : [];
+  // Once a day per admin, so a second run the same day doesn't repeat it.
+  const adminKey = `admin-review:${toIsoDate(today)}`;
+
   if (dryRun) {
     result.preview = [
+      ...admins.map((admin) => ({ to: admin.email, subject: adminEmail!.subject, keys: [adminKey] })),
       ...outgoing.map((item) => ({ to: item.rider.email, subject: item.build(new Set(item.keys)).subject, keys: item.keys })),
       ...outgoingPush.map((item) => ({
         to: `push: ${item.rider.email} (${item.rider.push.length} ${item.rider.push.length === 1 ? 'device' : 'devices'})`,
@@ -137,6 +162,26 @@ export async function runReminderJob({ secret, today, baseUrl, dryRun, onlyEmail
       })),
     ];
     return result;
+  }
+
+  for (const admin of admins) {
+    const claim = await supabase.rpc('claim_reminders', { job_secret: secret, rider: admin.user_id, keys: [adminKey] });
+    if (claim.error) {
+      result.admin.failed += 1;
+      result.errors.push(`admin claim for ${admin.user_id}: ${claim.error.message}`);
+      continue;
+    }
+    if (((claim.data ?? []) as string[]).length === 0) continue; // Already sent today.
+
+    const sent = await sendEmail({ to: admin.email, ...adminEmail! });
+    if (sent.error) {
+      result.admin.failed += 1;
+      result.errors.push(`admin email to ${admin.user_id}: ${sent.error}`);
+      await supabase.rpc('release_reminders', { job_secret: secret, rider: admin.user_id, keys: [adminKey] });
+    } else {
+      result.admin.sent += 1;
+    }
+    await pause(SEND_GAP_MS);
   }
 
   // Push first: it isn't capped like email, so a capped run still pushes everyone.

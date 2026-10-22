@@ -183,6 +183,72 @@ export function dailyReminderEmail(reminders: DailyReminders, units: UnitSystem,
   return { subject: dailySubject(reminders), html: layout(rows.join('\n'), foot.html), text: text.join('\n') };
 }
 
+// --- Admins: what's waiting for review ---
+
+export type AdminReviewDigest = {
+  admins: { user_id: string; email: string }[];
+  manuals: { make: string; model: string; year_from: number; year_to: number; url: string; submitted_at: string }[];
+  models: { make: string; model: string; submitted_at: string }[];
+};
+
+/** Where a submitted manual link points, by site only. The email never links to it: it's unreviewed. */
+function linkDetail(url: string): string {
+  try {
+    const site = new URL(url).hostname;
+    return site ? `Link to ${site}` : 'Not a valid web address';
+  } catch {
+    return 'Not a valid web address';
+  }
+}
+
+const years = (from: number, to: number) => (from === to ? String(from) : `${from}–${to}`);
+
+/** Null when nothing is waiting. */
+export function adminReviewEmail(digest: Pick<AdminReviewDigest, 'manuals' | 'models'>, adminUrl: string): Email | null {
+  const { manuals, models } = digest;
+  const total = manuals.length + models.length;
+  if (total === 0) return null;
+
+  const rows: string[] = [paragraph(escapeHtml(`${plural(total, 'submission')} from riders ${total === 1 ? 'is' : 'are'} waiting for review.`))];
+  const text: string[] = [`${plural(total, 'submission')} from riders ${total === 1 ? 'is' : 'are'} waiting for review.`];
+
+  if (manuals.length > 0) {
+    rows.push(heading(manuals.length === 1 ? 'Manual link' : 'Manual links'));
+    text.push('', 'MANUAL LINKS');
+    for (const manual of manuals.slice(0, MAX_TASKS_SHOWN)) {
+      const name = `${years(manual.year_from, manual.year_to)} ${manual.make} ${manual.model}`;
+      const detail = linkDetail(manual.url);
+      rows.push(itemRow(name, detail, COLORS.muted));
+      text.push(`- ${name}: ${detail}`);
+    }
+  }
+  if (models.length > 0) {
+    rows.push(heading(models.length === 1 ? 'New make or model' : 'New makes and models'));
+    text.push('', 'NEW MAKES AND MODELS');
+    for (const model of models.slice(0, MAX_TASKS_SHOWN)) {
+      const name = `${model.make} ${model.model}`;
+      rows.push(itemRow(name, 'Typed in by a rider', COLORS.muted));
+      text.push(`- ${name}`);
+    }
+  }
+  const hidden = Math.max(0, manuals.length - MAX_TASKS_SHOWN) + Math.max(0, models.length - MAX_TASKS_SHOWN);
+  if (hidden > 0) {
+    rows.push(paragraph(escapeHtml(`And ${hidden} more on the review page.`), 'padding-bottom:8px;font-weight:700;'));
+    text.push('', `And ${hidden} more on the review page.`);
+  }
+
+  rows.push(button(adminUrl, 'Review submissions'));
+  text.push('', `Review submissions: ${adminUrl}`);
+
+  const reason = 'You get this because you’re a SwingArm admin. It comes each day something is waiting for review.';
+  text.push('', '--', reason);
+  return {
+    subject: `${plural(total, 'submission')} to review`,
+    html: layout(rows.join('\n'), escapeHtml(reason)),
+    text: text.join('\n'),
+  };
+}
+
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 /** "October 2026" from "2026-10". */

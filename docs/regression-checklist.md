@@ -83,6 +83,7 @@ add a line when a feature ships. Main code paths are in brackets.
 - Monthly summary on the 1st to 3rd, about last month, if turned on. [`planMonthlySummary`]
 - Push: same reminders under `push:` keys, one push a day to every device, gone devices deleted, failures released for the next run. [`planPushReminders`, `runReminderJob`, `lib/push.ts`]
 - Email cap of 80 a run; claims before sending, releases on failure. [`runReminderJob`]
+- Admin review email: once a day to each admin while manual links or makes/models are pending; manual links show the site only, never a clickable link; a wrong job secret is refused. [`admin_review_digest`, `adminReviewEmail`, `runReminderJob`]
 
 ## Unsubscribe
 

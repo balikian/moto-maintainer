@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { dailyReminderEmail, dailySubject, escapeHtml, monthName, monthlySummaryEmail } from './reminderEmail';
+import { adminReviewEmail, dailyReminderEmail, dailySubject, escapeHtml, monthName, monthlySummaryEmail } from './reminderEmail';
 import { planDailyReminders, planMonthlySummary, type ReminderBike, type ReminderRider, type ReminderTask } from './reminders';
 
 const today = new Date(2026, 9, 16);
@@ -113,5 +113,36 @@ describe('monthlySummaryEmail', () => {
 
   it('names months', () => {
     assert.equal(monthName('2025-12'), 'December 2025');
+  });
+});
+
+describe('adminReviewEmail', () => {
+  const adminUrl = 'https://swingarm.app/admin';
+  const manual = { make: 'Husqvarna', model: 'Norden 901', year_from: 2022, year_to: 2024, url: 'https://evil.example/manual.pdf?x=<script>', submitted_at: '2026-10-21T10:00:00Z' };
+  const model = { make: 'CFMoto', model: '800MT <b>Explore</b>', submitted_at: '2026-10-21T11:00:00Z' };
+
+  it('sends nothing when nothing is waiting', () => {
+    assert.equal(adminReviewEmail({ manuals: [], models: [] }, adminUrl), null);
+  });
+
+  it('lists manual links and makes/models, with a link to the review page', () => {
+    const email = adminReviewEmail({ manuals: [manual], models: [model] }, adminUrl)!;
+    assert.equal(email.subject, '2 submissions to review');
+    assert.match(email.text, /2022–2024 Husqvarna Norden 901: Link to evil\.example/);
+    assert.match(email.text, /CFMoto 800MT <b>Explore<\/b>/);
+    assert.ok(email.html.includes(`href="${adminUrl}"`));
+  });
+
+  it('never links to or shows a submitted manual link, and escapes what riders typed', () => {
+    const email = adminReviewEmail({ manuals: [manual], models: [model] }, adminUrl)!;
+    assert.ok(!email.html.includes('manual.pdf'));
+    assert.ok(!email.text.includes('manual.pdf'));
+    assert.ok(!email.html.includes('<b>Explore'));
+    assert.ok(email.html.includes('&lt;b&gt;Explore'));
+  });
+
+  it('says so when a link isn’t a valid address', () => {
+    const email = adminReviewEmail({ manuals: [{ ...manual, url: 'not a url' }], models: [] }, adminUrl)!;
+    assert.match(email.text, /Husqvarna Norden 901: Not a valid web address/);
   });
 });
