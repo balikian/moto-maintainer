@@ -8,6 +8,53 @@ Status key: ✅ done · 🔨 in progress · ⏳ next · 💤 later
 
 ---
 
+## Launch checklist (2026-10-23)
+
+Two phases: tell the public about the web app first, while the store
+accounts are being set up; the phone apps follow. Owner = only the owner can
+do it; Claude = code or setup Claude can do.
+
+**Web launch**
+1. ⏳ Owner: confirm Vercel Pro continues after the trial (Billing).
+2. ⏳ Owner + Claude: import manufacturer schedules for the most popular
+   bikes (admin page), so most new riders get a real schedule instead of
+   starter tasks. Testers didn't know what their list should be.
+3. ⏳ Owner: Supabase → Authentication → Rate Limits on production; the
+   sign-in email limit starts at 30 an hour. Resend's free plan is 100
+   emails a day (the reminder run stops at 80); move to Pro ($20 a month)
+   when daily reminders get close.
+4. ⏳ Claude: link previews and search basics: an Open Graph image and
+   description (what a link shows in texts and Facebook groups), a sitemap
+   and robots file; owner submits the sitemap in Search Console (swingarm.app
+   is verified there).
+5. ⏳ Claude: database cleanup migration (unused `bikes` table,
+   `profiles.is_dark_mode`, a fixed `search_path` on `handle_new_user()`).
+6. ⏳ Owner: the push checks still open (a tap opens SwingArm, signing out
+   turns push off on that device, a real reminder on the iPhone).
+7. 💤 Optional: error alerts (Sentry's free plan), an off-site `pg_dump` of
+   production now and then (Supabase keeps 7 days of backups).
+8. ⏳ Owner: where to announce (riding forums, Facebook groups, Reddit,
+   friends' clubs), and a short post. Claude can draft it.
+
+**Phone apps** (step 7 below)
+1. ⏳ Owner: D-U-N-S number for Cheese and Beer LLC (free; Apple says up to
+   5 business days plus 2 for Apple to see it; Google says up to 30 days).
+2. Owner: Apple Developer Program as the LLC ($99 a year) and a Google Play
+   organization account ($25 once). Organization accounts skip Google's
+   12-tester, 14-day closed test.
+3. Claude: wrap the app with Capacitor (icon, splash screen, deep links,
+   Google sign-in through the system browser and back), native push through
+   the existing reminder job, Sign in with Apple (required on iPhone when
+   Google sign-in is offered).
+4. Owner + Claude: store listings (screenshots, description, privacy labels
+   including analytics, age rating), privacy policy updates (Apple and
+   Google push, Sign in with Apple), then review.
+5. Check before enrolling: the business address on the D-U-N-S record, and
+   whether Apple (EU trader status) or Google show the developer's address
+   publicly. Use the LLC's registered address, not a home address.
+
+---
+
 ## Where things stand (2026-10-15)
 
 Live at https://swingarm.app (production database) with a test site at
@@ -40,8 +87,8 @@ and won't publish a home address). The copyright section is just "email
 support@ and we'll look into it". Later, if wanted: register an agent
 (copyright.gov/dmca-directory, $6, renew every 3 years) using a virtual
 mailbox or a registered-agent service's address, and add the formal
-notice requirements back. Open: whether a lawyer should look before
-launch. ✅ Google's OAuth consent screen (Branding → App domain) has the
+notice requirements back. **Decided (owner, 2026-10-23):** no lawyer
+review before launch (cost); the plain-language policy and terms stand. ✅ Google's OAuth consent screen (Branding → App domain) has the
 home page, privacy and terms URLs (2026-10-19).
 ✅ Download my data on More, the admin review badge and Import a backup
 (owner checked on test; released 2026-10-20).
@@ -265,8 +312,9 @@ for now.
   connectors, sold for commercial and military aerospace. No motorcycle or
   consumer use, and different goods from an app (class 9/42), so we treat
   it as no conflict.
-- **Open:** consider filing our own "SwingArm" mark in class 9 / class 42
-  before launch.
+- **Decided (owner, 2026-10-23):** no trademark filing for now (cost).
+  Using the name builds common-law rights in the US, and "SwingArm™" can be
+  used without registering (® can't). Revisit if SwingArm takes off.
 - Step 2 has started (the app's amber UI doesn't match the red logo yet).
 
 ## 2. Design 🔨
@@ -674,8 +722,10 @@ for now.
   **Sign in with Apple** (required when Google sign-in is offered; never
   finished), privacy policy and terms URLs, in-app account deletion, store
   screenshots and descriptions, and in-app purchase if Pro is sold in-app.
-- **Open (owner, 2026-10-20):** are the store apps worth it if the web app
-  (with Add to Home Screen) is enough? Discussed: the stores bring
+- **Decided (owner, 2026-10-23): yes, store apps**, as Cheese and Beer LLC
+  (organization accounts, which need a free D-U-N-S number; see the launch
+  checklist). Earlier question (2026-10-20): are the store apps worth it if
+  the web app (with Add to Home Screen) is enough? Discussed: the stores bring
   discoverability, trust and native push on iPhone, and are needed for the
   auto-odometer and offline manuals ideas; the cost is $99 a year (Apple)
   plus $25 once (Google), the Capacitor work, sign-in inside the app
