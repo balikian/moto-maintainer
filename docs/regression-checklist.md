@@ -24,6 +24,7 @@ add a line when a feature ships. Main code paths are in brackets.
 - Add a custom task: name, intervals, last done at (blank = current odometer; required when the bike has no reading) and on (not in the future), category. [`AddCustomTaskModal`, `createMaintenanceTaskAction`]
 - Manual and schedule: submit a manual link (pending for riders), apply a schedule (updates, additions, starter tasks removed if never logged). [`BikeManualPanel`, `submitManualAction`, `applyModelScheduleAction`, `planScheduleApply`]
 - Bike panel status counts and "N tasks need a start point". [`BikePanel`, `countTasksByStatus`]
+- Getting started card at the top of Tasks: three steps; Got it or X hides it for good on that browser. [`GettingStarted`]
 
 ## Log service (bottom bar and task cards)
 

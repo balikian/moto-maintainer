@@ -27,6 +27,7 @@ import BikePanel from './components/BikePanel';
 import DesktopHeader from './components/DesktopHeader';
 import ErrorList from './components/ErrorList';
 import GarageView from './components/GarageView';
+import GettingStarted from './components/GettingStarted';
 import LoadingScreen from './components/LoadingScreen';
 import LoginCard from './components/LoginCard';
 import LogServiceModal, { type LogServiceValues } from './components/LogServiceModal';
@@ -398,6 +399,7 @@ export default function GarageApp() {
             </aside>
 
             <div className="grid min-w-0 grid-cols-1 gap-6">
+              <GettingStarted />
               {unappliedSchedule && (
                 <div className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 ${ui.infoBox}`}>
                   <span>
