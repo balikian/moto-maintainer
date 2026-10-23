@@ -1,11 +1,13 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { todayIsoDate } from '@/lib/dates';
 import { getSignedInClient } from '@/lib/supabase/server';
 import type { Motorcycle, ServiceLog } from '@/lib/types';
 import HistoryReport from '../../components/HistoryReport';
+import NoticeCard from '../../components/NoticeCard';
 import PrintButton from '../../components/PrintButton';
+import ShareButton from '../../components/ShareButton';
 
 export const metadata: Metadata = {
   title: 'Service History · SwingArm',
@@ -13,13 +15,35 @@ export const metadata: Metadata = {
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Shown when someone opens another rider's printable page, usually a copied address instead of a share link. */
+function PrivatePageNotice({ signedIn }: { signedIn: boolean }) {
+  return (
+    <NoticeCard title="This page is private">
+      <p>Only the bike&apos;s owner can open this printable service history.</p>
+      <p>
+        If someone sent you this address, ask them for a share link instead: in SwingArm, History →{' '}
+        <strong className="text-fg">Share</strong>.
+      </p>
+      {!signedIn && (
+        <p>
+          Is it your bike?{' '}
+          <Link href="/login" className="font-bold text-accent hover:underline">
+            Sign in
+          </Link>{' '}
+          and open it again.
+        </p>
+      )}
+    </NoticeCard>
+  );
+}
+
 /** The owner's printable service history for one bike. */
 export default async function PrintHistoryPage({ params }: { params: Promise<{ bikeId: string }> }) {
   const { bikeId } = await params;
   if (!UUID_PATTERN.test(bikeId)) notFound();
 
   const { supabase, user } = await getSignedInClient();
-  if (!user) redirect('/login');
+  if (!user) return <PrivatePageNotice signedIn={false} />;
 
   // Row-level security limits these to the signed-in user's own rows.
   const [bikeResult, logsResult, profileResult] = await Promise.all([
@@ -36,19 +60,29 @@ export default async function PrintHistoryPage({ params }: { params: Promise<{ b
   if (bikeResult.error || logsResult.error) {
     throw new Error(bikeResult.error?.message ?? logsResult.error?.message);
   }
-  if (!bikeResult.data) notFound();
+  if (!bikeResult.data) return <PrivatePageNotice signedIn />;
+
+  const bike = bikeResult.data as Motorcycle;
 
   return (
     <div className="theme-light min-h-screen w-full bg-page text-fg print:bg-white">
-      <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 p-4 print:hidden">
-        <Link href="/" className="text-sm font-bold text-muted hover:text-fg">
-          ← Back to garage
-        </Link>
-        <PrintButton />
+      <div className="mx-auto max-w-3xl p-4 print:hidden">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link href="/" className="text-sm font-bold text-muted hover:text-fg">
+            ← Back to garage
+          </Link>
+          <div className="flex flex-wrap gap-2">
+            <ShareButton bike={bike} />
+            <PrintButton />
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          Only you can open this page. To show someone else, send them a share link.
+        </p>
       </div>
       <div className="pb-10 print:pb-0">
         <HistoryReport
-          bike={bikeResult.data as Motorcycle}
+          bike={bike}
           logs={(logsResult.data ?? []) as ServiceLog[]}
           unitSystem={profileResult.data?.unit_system === 'metric' ? 'metric' : 'imperial'}
           generatedOn={todayIsoDate()}

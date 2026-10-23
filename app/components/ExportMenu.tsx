@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Download, FileDown, Link2, Printer } from 'lucide-react';
+import { Download, FileDown, Printer } from 'lucide-react';
 import { buildServiceHistoryCsv, historyFileName } from '@/lib/historyExport';
 import type { Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
 import { useDismiss } from '../hooks/useDismiss';
@@ -12,7 +12,6 @@ type ExportMenuProps = {
   bike: Motorcycle;
   logs: ServiceLog[];
   unitSystem: UnitSystem;
-  onShare: () => void;
 };
 
 const menuItemClass =
@@ -22,7 +21,7 @@ function downloadCsv(bike: Motorcycle, logs: ServiceLog[], unitSystem: UnitSyste
   downloadFile(historyFileName(bike, 'csv'), buildServiceHistoryCsv(bike, logs, unitSystem), 'text/csv;charset=utf-8');
 }
 
-export default function ExportMenu({ bike, logs, unitSystem, onShare }: ExportMenuProps) {
+export default function ExportMenu({ bike, logs, unitSystem }: ExportMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   useDismiss(wrapperRef, isOpen, () => setIsOpen(false));
@@ -55,16 +54,6 @@ export default function ExportMenu({ bike, logs, unitSystem, onShare }: ExportMe
           >
             <Printer size={15} className="text-accent" /> Print / Save as PDF
           </a>
-          <button
-            type="button"
-            onClick={() => {
-              setIsOpen(false);
-              onShare();
-            }}
-            className={menuItemClass}
-          >
-            <Link2 size={15} className="text-accent" /> Share link…
-          </button>
         </div>
       )}
     </div>

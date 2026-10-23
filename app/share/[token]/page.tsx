@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { todayIsoDate } from '@/lib/dates';
 import type { ReportBike, ReportLog } from '@/lib/historyExport';
 import { createClient } from '@/lib/supabase/server';
-import BrandLogo from '../../components/BrandLogo';
 import HistoryReport from '../../components/HistoryReport';
+import NoticeCard from '../../components/NoticeCard';
 import PrintButton from '../../components/PrintButton';
 
 export const metadata: Metadata = {
@@ -29,17 +29,9 @@ export default async function SharedHistoryPage({ params }: { params: Promise<{ 
 
   if (!shared) {
     return (
-      <div className="theme-light flex min-h-screen w-full items-center justify-center bg-page p-4 text-fg">
-        <div className="max-w-md rounded-2xl bg-surface p-8 text-center shadow-lg">
-          <div className="flex justify-center">
-            <BrandLogo className="h-12" lightOnly />
-          </div>
-          <h1 className="mt-3 text-lg font-extrabold">This link isn&apos;t available</h1>
-          <p className="mt-2 text-sm text-muted">
-            The owner may have turned off sharing for this service history, or the link was copied incorrectly.
-          </p>
-        </div>
-      </div>
+      <NoticeCard title={"This link isn't available"}>
+        <p>The owner may have turned off sharing for this service history, or the link was copied incorrectly.</p>
+      </NoticeCard>
     );
   }
 

@@ -25,8 +25,8 @@ export default function LoginCard() {
   };
 
   /** Emails a sign-in code and link: from the email form, and again from "Send a new code". */
-  const sendSignInEmail = async () => {
-    const normalizedEmail = email.trim();
+  const sendSignInEmail = async (typedEmail = email) => {
+    const normalizedEmail = typedEmail.trim();
     if (!normalizedEmail) {
       setError('Please enter a valid email address.');
       return;
@@ -53,7 +53,11 @@ export default function LoginCard() {
 
   const handleEmailSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
-    void sendSignInEmail();
+    // iPhone AutoFill can fill the field without React seeing a change, so read the field itself.
+    const fieldValue = new FormData(event.currentTarget).get('email');
+    const typedEmail = typeof fieldValue === 'string' && fieldValue.trim() ? fieldValue : email;
+    if (typedEmail !== email) setEmail(typedEmail);
+    void sendSignInEmail(typedEmail);
   };
 
   const handleCodeSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
@@ -166,6 +170,9 @@ export default function LoginCard() {
                 name="email"
                 type="email"
                 autoComplete="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 value={email}
                 onChange={(event) => {
                   setEmail(event.target.value);

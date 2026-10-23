@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock3, Trash2 } from 'lucide-react';
+import { Clock3, Link2, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
 import type { MaintenanceTask, Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
@@ -50,7 +50,13 @@ export default function ServiceHistoryView({ bike, logs, tasks, loading, unitSys
             </div>
           )}
         </div>
-        <ExportMenu bike={bike} logs={logs} unitSystem={unitSystem} onShare={onShare} />
+        <div className="flex shrink-0 gap-2">
+          <button type="button" onClick={onShare} className={ui.chipButton}>
+            <Link2 size={15} />
+            Share
+          </button>
+          <ExportMenu bike={bike} logs={logs} unitSystem={unitSystem} />
+        </div>
       </div>
 
       <div>

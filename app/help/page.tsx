@@ -127,7 +127,10 @@ export default async function HelpPage() {
             Whichever runs out first decides when it’s due, so a bike that sits all winter still gets its brake fluid
             changed.
           </p>
-          <p>As a task gets close, it changes status:</p>
+          <p>
+            As a task gets close, it changes status. For an oil change every 4,000 miles or 12 months, Soon starts at
+            3,000 miles or 9 months, and Urgent at 3,600 miles or about 11 months:
+          </p>
           <ul className="space-y-1.5 pl-1">
             {STATUSES.map((status) => (
               <li key={status.name}>
@@ -240,6 +243,11 @@ export default async function HelpPage() {
             category.
           </p>
           <p>
+            <Ui>Share</Ui> on History, then <Ui>Create share link</Ui>, gives you a read-only page anyone with the link
+            can open, handy when you sell the bike or hand it to a shop. It shows dates, odometer readings, costs and
+            notes, never your email. <Ui>Turn off link</Ui> stops it working.
+          </p>
+          <p>
             <Ui>Export</Ui> on History gives you:
           </p>
           <Bullets>
@@ -247,12 +255,8 @@ export default async function HelpPage() {
               <Ui>Download spreadsheet (CSV)</Ui>, for Excel, Numbers or Google Sheets
             </li>
             <li>
-              <Ui>Print / Save as PDF</Ui>, a clean printable history
-            </li>
-            <li>
-              <Ui>Share link…</Ui>, then <Ui>Create share link</Ui>: a read-only page anyone with the link can open,
-              handy when you sell the bike. It shows dates, odometer readings, costs and notes, never your email.{' '}
-              <Ui>Turn off link</Ui> stops it working.
+              <Ui>Print / Save as PDF</Ui>, a clean printable history. Only you can open that page, so to show
+              someone else, send a share link instead of its address.
             </li>
           </Bullets>
         </Section>
