@@ -147,7 +147,8 @@ definer, a wrong job secret is refused). Code: `adminReviewEmail` in
 `lib/reminderEmail.ts`, `runReminderJob`. Off production, a real run needs
 `?only=<admin email>` as before; `?dry-run` previews it.
 
-🔨 **Testers' feedback, round 2** (built 2026-10-23, on test; from
+✅ **Testers' feedback, round 2** (built 2026-10-23; owner checked on test;
+released 2026-10-23, migration on production first; from
 `docs/Feedback.md`):
 - **Service visits.** Log service is a checklist: tick any tasks plus an
   optional one-off job; they share the date, odometer, cost and a new
@@ -161,7 +162,9 @@ definer, a wrong job secret is refused). Code: `adminReviewEmail` in
   **Log a past service** for any of its tasks, and the next past service
   starts on the last one's date (until reload). Where is in the CSV,
   Download my data and Import a backup. Migration
-  `20261023120000_service_log_shop.sql` (pushed to test) adds
+  `20261023120000_service_log_shop.sql` (on test and production; checked on
+  production: nullable text, the 80-character check, `get_shared_history`
+  returns `shop` and keeps its grants) adds
   `service_logs.shop` and returns it from `get_shared_history`. Privacy
   policy (dated 2026-10-23), help and share wording mention "where it was
   done".
@@ -179,12 +182,11 @@ definer, a wrong job secret is refused). Code: `adminReviewEmail` in
 - **Getting started** card at the top of Tasks (three steps, a link to
   help), hidden for good on that browser by Got it or X.
 - Help explains when Soon and Urgent start, with an example (Feedback #6).
-- ⏳ **Overdue cards** ("somewhat overwhelming"): four options on the canvas
+- 💤 **Overdue cards** ("somewhat overwhelming"): four options on the canvas
   https://claude.ai/artifact/3DgbY84PudX9M3xdG4JczD (A today's, B dot and
-  bigger title, C status tag and thin line, D grouped rows). Owner to pick,
-  or keep today's.
+  bigger title, C status tag and thin line, D grouped rows). **On hold**
+  (owner, 2026-10-23); today's cards stay.
 - 💤 A purchase date on the bike (John): post-launch, below.
-- Release needs the migration on production first.
 
 Discussed (2026-10-21), nothing decided: other sign-in options. Passkeys
 are the most secure and quickest but Supabase's support is limited (check
@@ -700,7 +702,7 @@ banner, EU and UK included), and keeps 12 months. Pro allows two
 properties per custom event; Web Analytics Plus ($10 a month) isn't
 needed. GA4 can come later if funnels or retention reports are wanted.
 
-🔨 Built 2026-10-23 (on `develop`; nothing is collected until a release):
+✅ Built and released 2026-10-23:
 `@vercel/analytics` 2.0.1. `app/layout.tsx` renders `SiteAnalytics` only
 when `VERCEL_ENV` is production, so test and local send nothing (`track()`
 does nothing without the script). Before sending, `redactAnalyticsUrl`
@@ -711,8 +713,8 @@ logged (tasks, past), Start points set (start, tasks), Schedule applied,
 Custom task added, Share link created, Push turned on, Backup imported
 (bikes), Getting started closed. Never names, emails, notes or ids. Privacy
 policy updated (usage statistics, Vercel's role, the cookies section).
-**At release:** enable Web Analytics in the Vercel project (Analytics tab)
-and check that Pro continues after the trial.
+⏳ **Owner:** enable Web Analytics in the Vercel project (Analytics tab);
+nothing is recorded until then. Check that Pro continues after the trial.
 
 Earlier thoughts (2026-10-15):
 
