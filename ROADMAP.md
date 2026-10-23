@@ -37,8 +37,8 @@ do it; Claude = code or setup Claude can do.
    friends' clubs), and a short post. Claude can draft it.
 
 **Phone apps** (step 7 below)
-1. ⏳ Owner: D-U-N-S number for Cheese and Beer LLC (free; Apple says up to
-   5 business days plus 2 for Apple to see it; Google says up to 30 days).
+1. ✅ D-U-N-S number for Cheese and Beer LLC: **025614636** (2026-10-23).
+   Apple can take up to 2 business days to see a new number.
 2. Owner: Apple Developer Program as the LLC ($99 a year) and a Google Play
    organization account ($25 once). Organization accounts skip Google's
    12-tester, 14-day closed test.
