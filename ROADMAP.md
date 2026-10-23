@@ -246,9 +246,15 @@ for now.
     logo, 14px text, less padding), pasted into both projects. Again the
     first emails after saving used the old template for a few minutes:
     **after changing a template, wait a few minutes before testing.**
-  - Before launch, consider a Supabase custom domain (paid add-on, e.g.
-    auth.swingarm.app) so Google's sign-in screen stops showing the
-    `*.supabase.co` address.
+  - ✅ Google's sign-in screen showed the `*.supabase.co` address. Fixed
+    for free (2026-10-23) with Google **brand verification** instead of a
+    Supabase custom domain ($10 a month extra on top of Pro; **decided:**
+    not needed). swingarm.app was verified in Google Search Console (Domain
+    property, TXT record `google-site-verification=…` on `@` at GoDaddy,
+    next to the SPF record), the app was published (Audience → In
+    production; only the basic sign-in scopes, so no further review), and
+    branding verified. The account chooser now says "to continue to
+    SwingArm" with the logo.
 - ✅ Store check (2026-10-12): neither "SwingArm" nor "Swing Arm" turned up
   on the App Store or Google Play.
 - ✅ USPTO search (2026-10-12): every "SwingArm" record is dead or abandoned,
