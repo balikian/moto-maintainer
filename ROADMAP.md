@@ -147,6 +147,45 @@ definer, a wrong job secret is refused). Code: `adminReviewEmail` in
 `lib/reminderEmail.ts`, `runReminderJob`. Off production, a real run needs
 `?only=<admin email>` as before; `?dry-run` previews it.
 
+🔨 **Testers' feedback, round 2** (built 2026-10-23, on test; from
+`docs/Feedback.md`):
+- **Service visits.** Log service is a checklist: tick any tasks plus an
+  optional one-off job; they share the date, odometer, cost and a new
+  **Where** ("Home", a shop's name; Home and earlier places are one-tap
+  choices). Tasks needing attention are listed first, a task card's related
+  jobs say "Do it with this", the rest are behind Show all tasks. The visit's
+  cost and notes are saved on its first record. **Decided (Claude; owner can
+  change):** no visit id. History, the printout and the share page group
+  records on the same day, odometer and place into one visit, so services
+  logged separately that day group too. "When were these last done?" has
+  **Log a past service** for any of its tasks, and the next past service
+  starts on the last one's date (until reload). Where is in the CSV,
+  Download my data and Import a backup. Migration
+  `20261023120000_service_log_shop.sql` (pushed to test) adds
+  `service_logs.shop` and returns it from `get_shared_history`. Privacy
+  policy (dated 2026-10-23), help and share wording mention "where it was
+  done".
+- **Share 404.** A tester sent the printable page's address instead of a
+  share link. **Share** is now its own button on History (Export keeps CSV
+  and Print); the print page has a Share link button and says only the
+  owner can open it; anyone else gets "This page is private" with how to
+  ask for a share link, instead of a 404 (signed out: no more redirect to
+  sign-in).
+- **Email autofill on iPhone (John).** The field already had
+  `type="email"` and `autoComplete="email"`. Now it also reads its own
+  value on submit (in case AutoFill fills it without React noticing) and
+  turns off autocapitalize and autocorrect. Ask John: Safari or the Home
+  Screen app, and what happened when he tapped the suggestion?
+- **Getting started** card at the top of Tasks (three steps, a link to
+  help), hidden for good on that browser by Got it or X.
+- Help explains when Soon and Urgent start, with an example (Feedback #6).
+- ⏳ **Overdue cards** ("somewhat overwhelming"): four options on the canvas
+  https://claude.ai/artifact/3DgbY84PudX9M3xdG4JczD (A today's, B dot and
+  bigger title, C status tag and thin line, D grouped rows). Owner to pick,
+  or keep today's.
+- 💤 A purchase date on the bike (John): post-launch, below.
+- Release needs the migration on production first.
+
 Discussed (2026-10-21), nothing decided: other sign-in options. Passkeys
 are the most secure and quickest but Supabase's support is limited (check
 first); Sign in with Apple needs the developer account (step 7); passwords
@@ -811,6 +850,10 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
     dragging brake, a clogged air filter) and could be pointed out.
   - Later: snap a photo of the pump or receipt and let Claude fill in the
     form.
+- **Purchase date on the bike** (tester John, 2026-10-23; owner: after
+  launch). So "Never done" and time-based tasks on a used bike count from
+  when the rider bought it, not January of the model year. Start points
+  (Start today, Log a past service) cover most of this already.
 - **Upgrade wish list** (owner, 2026-10-14). Mods and accessories the rider
   is thinking about for a bike: a different exhaust, hand guards, crash
   bars, and so on. Each item has a name, an estimated cost, and links to
