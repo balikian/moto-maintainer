@@ -5,6 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { BookOpen, ExternalLink, ListChecks, Plus, Search, Sparkles, X } from 'lucide-react';
 import { deleteManualAction, submitManualAction } from '@/lib/actions/modelData';
 import { applyModelScheduleAction } from '@/lib/actions/schedules';
+import { trackEvent } from '@/lib/analytics';
 import { manualPortalFor, manualSearchUrl } from '@/lib/data/manualPortals';
 import { bikeTitle } from '@/lib/historyExport';
 import { fetchManuals, fetchModelSchedule, isHttpUrl } from '@/lib/modelData';
@@ -84,6 +85,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
       setMessage({ tone: 'error', text: result.error ?? 'Couldn’t update your checklist.' });
       return;
     }
+    trackEvent('Schedule applied');
     setMessage({ tone: 'info', text: `Checklist updated: ${applySummary(result.data)}.` });
     onTasksChanged();
   };

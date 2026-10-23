@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { removePushDeviceAction, savePushDeviceAction, sendTestPushAction } from '@/lib/actions/push';
+import { trackEvent } from '@/lib/analytics';
 import { decodeVapidKey, pushAvailability } from '@/lib/pushSupport';
 
 // Push notifications on this device, for More's switch. Turning them on asks
@@ -125,6 +126,7 @@ export function usePush(supabase: SupabaseClient) {
         throw new Error(saved.error);
       }
       setState((previous) => ({ ...previous, status: 'on', endpoint: subscription.endpoint }));
+      trackEvent('Push turned on');
     });
 
   const turnOff = () =>

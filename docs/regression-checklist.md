@@ -63,6 +63,7 @@ add a line when a feature ships. Main code paths are in brackets.
 
 - Home, `/help`, `/privacy`, `/terms` render signed out; signed-in riders on a phone also get the bottom bar. [`SiteChrome`, `AppNav`]
 - `/help` matches what the app does (update it when buttons or behavior change). [`app/help/page.tsx`]
+- Analytics only on production; addresses sent without share tokens, bike ids or query strings (except `view`); events carry no names, emails or ids. [`SiteAnalytics`, `redactAnalyticsUrl`, `trackEvent`]
 
 ## Share and print pages
 

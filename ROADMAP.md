@@ -691,9 +691,30 @@ for now.
   relay address, and reminder emails only reach those if swingarm.app's
   sending domain is registered with Apple's private email relay.
 
-## 8. Analytics 💤 (before launch)
+## 8. Analytics 🔨 (before launch)
 
-Added by the owner (2026-10-15). First thoughts, nothing decided:
+**Decided (owner, 2026-10-23): Vercel Web Analytics**, not GA4 + GTM (for
+now). It's billed per event out of Vercel Pro's monthly usage credit
+($0.03 per 1,000 events, checked 2026-10-23), uses no cookies (no consent
+banner, EU and UK included), and keeps 12 months. Pro allows two
+properties per custom event; Web Analytics Plus ($10 a month) isn't
+needed. GA4 can come later if funnels or retention reports are wanted.
+
+🔨 Built 2026-10-23 (on `develop`; nothing is collected until a release):
+`@vercel/analytics` 2.0.1. `app/layout.tsx` renders `SiteAnalytics` only
+when `VERCEL_ENV` is production, so test and local send nothing (`track()`
+does nothing without the script). Before sending, `redactAnalyticsUrl`
+(`lib/analytics.ts`, tested) replaces share tokens and bike ids in the path
+and drops every query parameter but `view` (unsubscribe tokens, sign-in
+codes). Events through `trackEvent`: Bike added (make, model), Service
+logged (tasks, past), Start points set (start, tasks), Schedule applied,
+Custom task added, Share link created, Push turned on, Backup imported
+(bikes), Getting started closed. Never names, emails, notes or ids. Privacy
+policy updated (usage statistics, Vercel's role, the cookies section).
+**At release:** enable Web Analytics in the Vercel project (Analytics tab)
+and check that Pro continues after the trial.
+
+Earlier thoughts (2026-10-15):
 
 - Two kinds, possibly both:
   - **Site traffic:** visits, pages, where visitors come from, on the
@@ -731,8 +752,7 @@ Added by the owner (2026-10-15). First thoughts, nothing decided:
   - The phone apps' store privacy labels must list analytics. Apple's
     tracking prompt (ATT) isn't needed as long as GA4's ads features
     (Google signals, ads linking) stay off.
-- **Open:** confirm GA4 + GTM, and which questions it should answer (that
-  decides the events).
+- ~~Open: confirm GA4 + GTM~~ Vercel Web Analytics chosen instead (above).
 
 ## After launch 💤
 

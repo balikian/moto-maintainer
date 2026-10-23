@@ -15,6 +15,7 @@ import type { CustomModel } from '@/lib/bikeCatalog';
 import { todayIsoDate } from '@/lib/dates';
 import { countTasksByStatus, findDefaultTask, hasStartPoint, scheduleOverlapsTasks } from '@/lib/maintenance';
 import { fetchModelSchedule } from '@/lib/modelData';
+import { trackEvent } from '@/lib/analytics';
 import { shopSuggestions } from '@/lib/serviceVisits';
 import { createClient } from '@/lib/supabase/client';
 import type { MaintenanceTask, ModelSchedule, Motorcycle, ServiceLog } from '@/lib/types';
@@ -170,6 +171,7 @@ export default function GarageApp() {
     const result = await addBikeAction(values);
     if (!result.data) return result.error ?? 'Unable to add this motorcycle right now.';
 
+    trackEvent('Bike added', { make: values.make, model: values.model });
     // The bike was saved even if seeding its default tasks failed.
     if (result.error) reportError(result.error);
     setSelectedBikeId(result.data.id);
@@ -224,6 +226,7 @@ export default function GarageApp() {
     if (!activeBike) return 'Select a bike before adding a task.';
     const result = await createMaintenanceTaskAction({ motorcycleId: activeBike.id, ...values });
     if (result.error) return result.error;
+    trackEvent('Custom task added');
     setDialog(null);
     reloadTasks();
     return null;
@@ -266,6 +269,7 @@ export default function GarageApp() {
       today: todayIsoDate(),
     });
     if (result.error) reportError(`Unable to set a start point: ${result.error}`);
+    else trackEvent('Start points set', { start, tasks: startTasks.length });
     reloadTasks();
   };
 
@@ -295,7 +299,9 @@ export default function GarageApp() {
     });
     if (result.error) return result.error;
 
-    if (values.performedAt !== todayIsoDate()) setLastPastDate(values.performedAt);
+    const past = values.performedAt !== todayIsoDate();
+    trackEvent('Service logged', { tasks: values.taskIds.length + (values.oneOffName ? 1 : 0), past });
+    if (past) setLastPastDate(values.performedAt);
     setDialog(null);
     bikesQuery.reload();
     reloadTasks();

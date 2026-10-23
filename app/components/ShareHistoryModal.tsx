@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Check, Copy, ExternalLink, Link2, Mail, Share2 } from 'lucide-react';
 import { createShareLinkAction, revokeShareLinkAction } from '@/lib/actions/shares';
+import { trackEvent } from '@/lib/analytics';
 import { bikeTitle } from '@/lib/historyExport';
 import type { Motorcycle } from '@/lib/types';
 import { useSupabaseQuery } from '../hooks/useSupabaseQuery';
@@ -138,7 +139,13 @@ export default function ShareHistoryModal({ supabase, bike, onClose }: ShareHist
           <button
             type="button"
             disabled={busy}
-            onClick={() => void runAction(() => createShareLinkAction(bike.id))}
+            onClick={() =>
+              void runAction(async () => {
+                const result = await createShareLinkAction(bike.id);
+                if (!result.error) trackEvent('Share link created');
+                return result;
+              })
+            }
             className={`w-full py-2.5 ${ui.primaryButton}`}
           >
             <Link2 size={16} />

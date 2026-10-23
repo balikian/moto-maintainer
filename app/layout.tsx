@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
+import SiteAnalytics from "./components/SiteAnalytics";
 import "./globals.css";
 
 const manrope = Manrope({
@@ -49,6 +50,8 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         {children}
+        {/* Production only, so the test site and local dev don't skew the numbers. */}
+        {process.env.VERCEL_ENV === 'production' && <SiteAnalytics />}
       </body>
     </html>
   );

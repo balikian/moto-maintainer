@@ -4,6 +4,7 @@ import { useId, useState, type ChangeEvent, type SubmitEvent } from 'react';
 import { Upload } from 'lucide-react';
 import { findDuplicateBikes, IMPORT_LIMITS, parseAccountImportText, type AccountImport } from '@/lib/accountImport';
 import { importAccountDataAction } from '@/lib/actions/accountImport';
+import { trackEvent } from '@/lib/analytics';
 import { formatDisplayDate, todayIsoDate } from '@/lib/dates';
 import type { Motorcycle } from '@/lib/types';
 import Modal from './Modal';
@@ -68,6 +69,7 @@ export default function ImportDataModal({ garage, onClose, onImported }: ImportD
       setError(result.error ?? 'Couldn’t import this file.');
       return;
     }
+    trackEvent('Backup imported', { bikes: result.data.bikeIds.length });
     onImported(result.data.bikeIds);
   };
 

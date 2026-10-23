@@ -60,6 +60,12 @@ export default async function PrivacyPage() {
             the same one twice.
           </li>
           <li>
+            <strong>Usage statistics:</strong> which pages are visited, and a few actions in the app, like adding a bike
+            (with its make and model), logging service (how many tasks) or creating a share link. They’re counted
+            without cookies and never include your name, email, notes or share links, so we see totals, not what any one
+            rider did.
+          </li>
+          <li>
             <strong>Technical information:</strong> like most websites, our hosting providers log requests, including
             IP address, browser type and the pages requested. These logs are used for security and fixing problems.
           </li>
@@ -79,6 +85,7 @@ export default async function PrivacyPage() {
           <li>To show a bike’s history to people you share it with, when you create a share link.</li>
           <li>To review manual links and bike models before other riders see them.</li>
           <li>To keep SwingArm secure, fix problems, and answer you when you write to us.</li>
+          <li>To see how SwingArm is used, from usage statistics, so we know what to improve.</li>
         </Bullets>
         <p>We don’t sell your information, use it for advertising, or share it with data brokers.</p>
       </LegalSection>
@@ -120,7 +127,7 @@ export default async function PrivacyPage() {
             <strong>Supabase:</strong> our database and sign-in.
           </li>
           <li>
-            <strong>Vercel:</strong> hosts the website.
+            <strong>Vercel:</strong> hosts the website and collects the usage statistics (Vercel Web Analytics).
           </li>
           <li>
             <strong>Resend:</strong> sends sign-in and reminder emails.
@@ -148,8 +155,8 @@ export default async function PrivacyPage() {
         <p>
           SwingArm uses cookies to keep you signed in. Your browser also stores your theme and which sections you’ve
           collapsed, so the app looks right the moment it opens. If you turn on push notifications, your browser keeps a
-          small SwingArm script (a service worker) that shows them. We don’t use advertising or tracking cookies, and
-          we don’t use analytics. If that changes, we’ll update this policy first.
+          small SwingArm script (a service worker) that shows them. We don’t use advertising or tracking cookies. Our
+          usage statistics don’t use cookies or store anything in your browser.
         </p>
       </LegalSection>
 

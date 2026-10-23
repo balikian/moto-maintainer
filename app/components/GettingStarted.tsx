@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { X } from 'lucide-react';
+import { trackEvent } from '@/lib/analytics';
 import { useStoredToggle } from '../hooks/useStoredToggle';
 import { ui } from './ui';
 
@@ -22,8 +23,13 @@ const STEPS = [
 
 /** A short how-to at the top of Tasks, shown until the rider dismisses it (per browser). */
 export default function GettingStarted() {
-  const [dismissed, dismiss] = useStoredToggle('moto-maintain:getting-started-dismissed', false);
+  const [dismissed, toggleDismissed] = useStoredToggle('moto-maintain:getting-started-dismissed', false);
   if (dismissed) return null;
+
+  const dismiss = () => {
+    trackEvent('Getting started closed');
+    toggleDismissed();
+  };
 
   return (
     <section aria-labelledby="getting-started-title" className={`${ui.card} relative p-4`}>
