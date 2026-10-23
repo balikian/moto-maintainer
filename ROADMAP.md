@@ -713,8 +713,11 @@ logged (tasks, past), Start points set (start, tasks), Schedule applied,
 Custom task added, Share link created, Push turned on, Backup imported
 (bikes), Getting started closed. Never names, emails, notes or ids. Privacy
 policy updated (usage statistics, Vercel's role, the cookies section).
-⏳ **Owner:** enable Web Analytics in the Vercel project (Analytics tab);
-nothing is recorded until then. Check that Pro continues after the trial.
+✅ Web Analytics was already on for the project (Vercel serves
+`/_vercel/insights/script.js`; its Analytics tab shows "Get Started" until
+the first visit). First data arrived 2026-10-23 (owner checked). Riders
+with ad or content blockers aren't counted. ⏳ Owner: check that Vercel Pro
+continues after the trial.
 
 Earlier thoughts (2026-10-15):
 
