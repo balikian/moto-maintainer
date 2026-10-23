@@ -3,6 +3,7 @@
 import { isFutureEverywhere, isIsoDate } from '../dates';
 import { baselineFromLogs, fromNewBaseline, logMileage, startTodayBaseline } from '../maintenance';
 import { guessCategory, isTaskCategory, type TaskCategory } from '../taskCategories';
+import { normalizeShop, SHOP_MAX_LENGTH } from '../serviceVisits';
 import { getSignedInClient } from '../supabase/server';
 import { normalizeMileage } from '../units';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
@@ -115,28 +116,46 @@ export async function deleteTaskAction(taskId: string): Promise<ActionResult> {
   return {};
 }
 
-type CompleteTaskActionInput = {
+type LogServiceActionInput = {
   motorcycleId: string;
-  taskId: string | null;
-  taskName: string;
+  /** Checklist tasks done in this visit. */
+  taskIds: string[];
+  /** A job that isn't on the checklist, logged as a one-off. */
+  oneOffName: string | null;
   performedAt: string;
-  /** Null without a reading: the task's miles then count from the bike's odometer. */
+  /** Null without a reading: the tasks' miles then count from the bike's odometer. */
   odometerAtService: number | null;
+  /** The visit's cost and notes, saved on its first record. */
   cost: number | null;
   notes: string | null;
+  /** Where it was done ("Home", a shop's name). */
+  shop: string | null;
 };
 
-/** Records a service log, and moves the task's "last performed" forward if this is its newest service. */
-export async function completeTaskAction(input: CompleteTaskActionInput): Promise<ActionResult> {
+/** The most tasks one visit can log; a bike's whole checklist fits. */
+const MAX_TASKS_PER_VISIT = 200;
+
+/**
+ * Records one service visit: a service record for each task done (and the
+ * one-off job, if any), all with the same date, odometer and place. Each task's
+ * "last performed" moves forward if this is its newest service.
+ */
+export async function logServiceAction(input: LogServiceActionInput): Promise<ActionResult> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
 
-  const taskName = input.taskName.trim();
+  const taskIds = [...new Set(input.taskIds)];
+  const oneOffName = input.oneOffName?.trim() || null;
   const odometer = input.odometerAtService === null ? null : normalizeMileage(input.odometerAtService);
   const cost = input.cost !== null && Number.isFinite(input.cost) && input.cost >= 0 ? input.cost : null;
 
   if (!input.motorcycleId) return { error: 'A motorcycle must be selected.' };
-  if (!taskName) return { error: 'Task name is required.' };
+  if (taskIds.length === 0 && !oneOffName) return { error: 'Choose what was done.' };
+  if (taskIds.length > MAX_TASKS_PER_VISIT) return { error: 'That’s more tasks than one visit can hold.' };
+  if (oneOffName && oneOffName.length > 200) return { error: 'Keep the description under 200 characters.' };
+  if (input.shop && input.shop.trim().length > SHOP_MAX_LENGTH) {
+    return { error: `Keep where it was done under ${SHOP_MAX_LENGTH} characters.` };
+  }
   if (!isIsoDate(input.performedAt)) return { error: 'Please enter a valid date.' };
   if (isFutureEverywhere(input.performedAt)) return { error: 'The service date can’t be in the future.' };
   if (input.odometerAtService !== null && odometer === null) return { error: 'Please enter a valid odometer reading.' };
@@ -148,48 +167,58 @@ export async function completeTaskAction(input: CompleteTaskActionInput): Promis
   const taskMileage = odometer ?? (bike.data.current_mileage as number | null);
   if (taskMileage === null) return { error: 'Enter the odometer reading. Your bike doesn’t have one yet.' };
 
-  let task: { id: string; last_performed_date: string | null } | null = null;
-  let taskHasLogs = false;
-  if (input.taskId) {
+  let tasks: { id: string; task_name: string; last_performed_date: string | null }[] = [];
+  const tasksWithLogs = new Set<string>();
+  if (taskIds.length > 0) {
     const lookup = await supabase
       .from('maintenance_tasks')
-      .select('id,last_performed_date')
-      .eq('id', input.taskId)
-      .eq('motorcycle_id', input.motorcycleId)
-      .maybeSingle();
-
+      .select('id,task_name,last_performed_date')
+      .in('id', taskIds)
+      .eq('motorcycle_id', input.motorcycleId);
     if (lookup.error) return { error: lookup.error.message };
-    if (!lookup.data) return { error: 'Maintenance task not found for this motorcycle.' };
-    task = lookup.data;
+    if ((lookup.data ?? []).length !== taskIds.length) return { error: 'Maintenance task not found for this motorcycle.' };
+    // In the order the rider picked them, so the visit's cost lands on the first.
+    const byId = new Map(lookup.data.map((task) => [task.id as string, task]));
+    tasks = taskIds.map((id) => byId.get(id)!);
 
-    const logs = await supabase.from('service_logs').select('id', { count: 'exact', head: true }).eq('task_id', task.id);
+    const logs = await supabase.from('service_logs').select('task_id').in('task_id', taskIds);
     if (logs.error) return { error: logs.error.message };
-    taskHasLogs = (logs.count ?? 0) > 0;
+    for (const log of logs.data ?? []) tasksWithLogs.add(log.task_id as string);
   }
 
-  const logInsert = await supabase.from('service_logs').insert({
-    user_id: user.id,
-    motorcycle_id: input.motorcycleId,
-    task_id: task?.id ?? null,
-    task_name: taskName,
-    performed_at: input.performedAt,
-    odometer_at_service: odometer,
-    // What the task counts from, kept so deleting a newer service later can fall back to it exactly.
-    baseline_mileage: taskMileage,
-    cost,
-    notes: input.notes?.trim() || null,
-  });
+  const shop = normalizeShop(input.shop);
+  const entries = [
+    ...tasks.map((task) => ({ taskId: task.id, taskName: task.task_name })),
+    ...(oneOffName ? [{ taskId: null, taskName: oneOffName }] : []),
+  ];
+  const logInsert = await supabase.from('service_logs').insert(
+    entries.map((entry, index) => ({
+      user_id: user.id,
+      motorcycle_id: input.motorcycleId,
+      task_id: entry.taskId,
+      task_name: entry.taskName,
+      performed_at: input.performedAt,
+      odometer_at_service: odometer,
+      // What the task counts from, kept so deleting a newer service later can fall back to it exactly.
+      baseline_mileage: taskMileage,
+      shop,
+      cost: index === 0 ? cost : null,
+      notes: index === 0 ? input.notes?.trim() || null : null,
+    }))
+  );
   if (logInsert.error) return { error: logInsert.error.message };
 
   // Back-filling an older service shouldn't rewind the task's schedule. But a
   // start point no service backs up ("start today", "from new") was only a
   // guess, so the task's first logged service replaces it, however old.
-  const lastPerformed = task?.last_performed_date?.slice(0, 10) ?? '';
-  if (task && (!taskHasLogs || input.performedAt >= lastPerformed)) {
+  const moveForward = tasks
+    .filter((task) => !tasksWithLogs.has(task.id) || input.performedAt >= (task.last_performed_date?.slice(0, 10) ?? ''))
+    .map((task) => task.id);
+  if (moveForward.length > 0) {
     const { error } = await supabase
       .from('maintenance_tasks')
       .update({ last_performed_mileage: taskMileage, last_performed_date: input.performedAt })
-      .eq('id', task.id);
+      .in('id', moveForward);
     if (error) return { error: error.message };
   }
 

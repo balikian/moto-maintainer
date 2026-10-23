@@ -2,7 +2,7 @@ import type { Motorcycle, ServiceLog, UnitSystem } from './types';
 import { distanceUnitLabel, toDisplayDistance } from './units';
 
 export type ReportBike = Pick<Motorcycle, 'year' | 'make' | 'model' | 'current_mileage'>;
-export type ReportLog = Pick<ServiceLog, 'id' | 'task_id' | 'task_name' | 'performed_at' | 'odometer_at_service' | 'cost' | 'notes'>;
+export type ReportLog = Pick<ServiceLog, 'id' | 'task_id' | 'task_name' | 'performed_at' | 'odometer_at_service' | 'cost' | 'notes' | 'shop'>;
 
 export function bikeTitle(bike: Pick<Motorcycle, 'year' | 'make' | 'model'>): string {
   return `${bike.year} ${bike.make} ${bike.model}`;
@@ -41,12 +41,13 @@ function csvField(value: string | number | null | undefined): string {
 export function buildServiceHistoryCsv(bike: ReportBike, logs: ReportLog[], unitSystem: UnitSystem): string {
   const unit = distanceUnitLabel(unitSystem);
   const rows: (string | number | null)[][] = [
-    ['Date', 'Type', 'Service', `Odometer (${unit})`, 'Cost', 'Notes'],
+    ['Date', 'Type', 'Service', `Odometer (${unit})`, 'Where', 'Cost', 'Notes'],
     ...logs.map((log) => [
       log.performed_at.slice(0, 10),
       serviceType(log),
       log.task_name,
       log.odometer_at_service === null ? null : toDisplayDistance(Number(log.odometer_at_service), unitSystem),
+      log.shop ?? null,
       log.cost !== null && Number.isFinite(Number(log.cost)) ? Number(log.cost).toFixed(2) : null,
       log.notes,
     ]),

@@ -150,7 +150,8 @@ export default async function HelpPage() {
           <ul className="list-disc space-y-1.5 pl-6">
             <li>
               <Ui>Log a past service</Ui>: the last time you know it was done (an old receipt or a dealer stamp is fine).
-              The task counts from that date and odometer reading.
+              The task counts from that date and odometer reading. Tick every task done at that visit to fill them in
+              at once; the next past service starts on the same date.
             </li>
             <li>
               <Ui>Start today</Ui>: if you don’t know, the task counts a full interval from today’s odometer reading.
@@ -177,22 +178,28 @@ export default async function HelpPage() {
               Tap <Ui>Log service</Ui> in the bar, or open a task and tap its <Ui>Log service</Ui> button.
             </li>
             <li>
-              Pick the task, or <Ui>+ Something else (one-off job)</Ui> for work that isn’t on your checklist, like a
-              new tire or fork seals.
+              Tick everything done at that visit. Tasks that need attention are listed first, and related jobs coming up
+              too (like the air filter with the oil change) say <Ui>Do it with this</Ui>. <Ui>Show all tasks</Ui> lists
+              the rest. Tick <Ui>Something else (one-off job)</Ui> for work that isn’t on your checklist, like a new tire
+              or fork seals.
             </li>
             <li>
-              Enter the date and, if you have it, the odometer reading when it was done. Without a reading, the task’s
-              miles count from your current odometer. Cost and notes (oil type, parts) are optional.
+              Enter the date and, if you have it, the odometer reading when it was done. Without a reading, the tasks’
+              miles count from your current odometer.
             </li>
             <li>
-              Under <Ui>While you’re at it</Ui>, SwingArm lists related jobs that are coming up too, like the air filter
-              with the oil change. Tick any you did, and they’re logged with the same date and odometer.
+              <Ui>Where</Ui>, cost and notes (oil type, parts) are optional. Where is <Ui>Home</Ui> or the shop’s name;
+              places you’ve used before show up as choices. The cost is for the whole visit.
             </li>
             <li>
               Tap <Ui>Save service</Ui>.
             </li>
           </Steps>
-          <p>The task’s countdown starts again from that date and reading.</p>
+          <p>
+            Each ticked task’s countdown starts again from that date and reading. History shows the visit as one entry,
+            listing everything done. Services on the same day, at the same odometer and place, are one visit, even if
+            you logged them separately.
+          </p>
         </Section>
 
         <Section id="your-checklist">
@@ -244,8 +251,8 @@ export default async function HelpPage() {
           </p>
           <p>
             <Ui>Share</Ui> on History, then <Ui>Create share link</Ui>, gives you a read-only page anyone with the link
-            can open, handy when you sell the bike or hand it to a shop. It shows dates, odometer readings, costs and
-            notes, never your email. <Ui>Turn off link</Ui> stops it working.
+            can open, handy when you sell the bike or hand it to a shop. It shows dates, odometer readings, where it
+            was done, costs and notes, never your email. <Ui>Turn off link</Ui> stops it working.
           </p>
           <p>
             <Ui>Export</Ui> on History gives you:

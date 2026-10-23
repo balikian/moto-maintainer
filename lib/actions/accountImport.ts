@@ -48,6 +48,7 @@ async function saveBike(supabase: SignedInClient, userId: string, bike: ImportBi
         task_name: log.taskName,
         performed_at: log.performedAt,
         odometer_at_service: log.odometerMiles,
+        shop: log.shop,
         cost: log.cost,
         notes: log.notes,
       }))

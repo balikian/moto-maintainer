@@ -4,17 +4,18 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { addBikeAction, deleteBikeAction, updateBikeAction, updateOdometerAction } from '@/lib/actions/bikes';
 import {
-  completeTaskAction,
   createMaintenanceTaskAction,
   deleteServiceLogAction,
   deleteTaskAction,
+  logServiceAction,
   setTaskStartAction,
   updateTaskIntervalsAction,
 } from '@/lib/actions/tasks';
 import type { CustomModel } from '@/lib/bikeCatalog';
 import { todayIsoDate } from '@/lib/dates';
-import { countTasksByStatus, findDefaultTask, scheduleOverlapsTasks } from '@/lib/maintenance';
+import { countTasksByStatus, findDefaultTask, hasStartPoint, scheduleOverlapsTasks } from '@/lib/maintenance';
 import { fetchModelSchedule } from '@/lib/modelData';
+import { shopSuggestions } from '@/lib/serviceVisits';
 import { createClient } from '@/lib/supabase/client';
 import type { MaintenanceTask, ModelSchedule, Motorcycle, ServiceLog } from '@/lib/types';
 import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
@@ -57,7 +58,7 @@ type OpenDialog =
   | { type: 'addBike' }
   | { type: 'editBike'; bike: Motorcycle }
   | { type: 'addTask' }
-  | { type: 'logService'; task: MaintenanceTask | null }
+  | { type: 'logService'; task: MaintenanceTask | null; past?: boolean }
   | { type: 'share' }
   | { type: 'manual' }
   | null;
@@ -108,6 +109,18 @@ export default function GarageApp() {
       .order('created_at', { ascending: false })
   );
   const loggedTaskIds = new Set((logsQuery.data ?? []).flatMap((log) => (log.task_id ? [log.task_id] : [])));
+
+  // Places used on any bike, newest first, offered as choices when logging service.
+  const shopsQuery = useSupabaseQuery<Pick<ServiceLog, 'shop'>[]>(userId, () =>
+    supabase
+      .from('service_logs')
+      .select('shop')
+      .not('shop', 'is', null)
+      .order('performed_at', { ascending: false })
+      .limit(100)
+  );
+  // The date of the last past service entered, so the next one starts there (most were done together).
+  const [lastPastDate, setLastPastDate] = useState<string | undefined>(undefined);
 
   // Every bike's tasks, for the "2 overdue · 1 soon" lines in Garage and the desktop bike list.
   const allTasksQuery = useSupabaseQuery<MaintenanceTask[]>(userId, () =>
@@ -269,37 +282,24 @@ export default function GarageApp() {
 
   const handleLogService = async (values: LogServiceValues) => {
     if (!activeBike) return 'Select a bike before logging service.';
-    const result = await completeTaskAction({
+    const result = await logServiceAction({
       motorcycleId: activeBike.id,
-      taskId: values.taskId,
-      taskName: values.taskName,
+      taskIds: values.taskIds,
+      oneOffName: values.oneOffName,
       performedAt: values.performedAt,
       odometerAtService: values.odometer,
       cost: values.cost,
       notes: values.notes,
+      shop: values.shop,
     });
     if (result.error) return result.error;
 
-    // Related jobs done in the same visit: same date and odometer, no cost of their own.
-    for (const taskId of values.alsoTaskIds) {
-      const related = tasks.find((candidate) => candidate.id === taskId);
-      if (!related) continue;
-      const extra = await completeTaskAction({
-        motorcycleId: activeBike.id,
-        taskId,
-        taskName: related.task_name,
-        performedAt: values.performedAt,
-        odometerAtService: values.odometer,
-        cost: null,
-        notes: `Done with ${values.taskName}.`,
-      });
-      if (extra.error) reportError(`Logged ${values.taskName}, but not ${related.task_name}: ${extra.error}`);
-    }
-
+    if (values.performedAt !== todayIsoDate()) setLastPastDate(values.performedAt);
     setDialog(null);
     bikesQuery.reload();
     reloadTasks();
     logsQuery.reload();
+    shopsQuery.reload();
     return null;
   };
 
@@ -419,6 +419,7 @@ export default function GarageApp() {
                 onAddTask={() => setDialog({ type: 'addTask' })}
                 onOpenManual={() => setDialog({ type: 'manual' })}
                 onLogTask={(task) => setDialog({ type: 'logService', task })}
+                onLogPast={() => setDialog({ type: 'logService', task: null, past: true })}
                 onSaveIntervals={handleSaveIntervals}
                 onResetTask={(task) => void handleResetTask(task)}
                 onDeleteTask={(task) => void handleDeleteTask(task)}
@@ -514,8 +515,11 @@ export default function GarageApp() {
         <LogServiceModal
           tasks={tasks}
           task={dialog.task}
+          past={dialog.past}
           unitSystem={unitSystem}
           defaultOdometer={activeBike.current_mileage}
+          initialDate={dialog.past || (dialog.task && !hasStartPoint(dialog.task)) ? lastPastDate : undefined}
+          shopChoices={shopSuggestions(shopsQuery.data ?? [])}
           onClose={() => setDialog(null)}
           onSubmit={handleLogService}
         />

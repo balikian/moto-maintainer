@@ -15,7 +15,7 @@ add a line when a feature ships. Main code paths are in brackets.
 ## Tasks
 
 - New bike's tasks: the manufacturer schedule if there is one, else generic tasks by final drive and cooling, all without a start point. [`addBikeAction`, `getDefaultTasks`, `genericTasksFor`]
-- "When were these last done?": Log a past service, Start today, Never done, and Start all today / None done yet, each with a confirm. [`MaintenanceChecklist`, `setTaskStartAction`]
+- "When were these last done?": Log a past service (any of these tasks, the next one starts on the same date), Start today, Never done, and Start all today / None done yet, each with a confirm. [`MaintenanceChecklist`, `setTaskStartAction`]
 - Start today needs an odometer reading; Never done counts from 0 and January 1 of the model year. [`setTaskStartAction`, `fromNewBaseline`]
 - Due states: distance or time, whichever comes first; Soon at 25% left, Urgent at 10%, Overdue past due; no-interval and no-start tasks. [`getTaskDueState`]
 - Sorting: no-start group first, then cards most due first, then "All good" rows; ties by name. [`groupTasksByUrgency`]
@@ -27,18 +27,18 @@ add a line when a feature ships. Main code paths are in brackets.
 
 ## Log service (bottom bar and task cards)
 
-- Log service from the bar or a task card: date (not in the future), optional odometer, cost, notes; the task's baseline moves only if this is its newest service. [`LogServiceModal`, `completeTaskAction`]
-- The first logged service replaces a guessed start point (today, never done), however old. [`completeTaskAction`]
-- "While you're at it": ticked related tasks are logged with the same date and odometer. [`batchCandidates`, `handleLogService`]
-- Logging with a higher odometer raises the bike's odometer; a lower one never lowers it. [`completeTaskAction`]
+- Log service from the bar or a task card: tick any tasks plus an optional one-off, date (not in the future), optional odometer, where (Home and earlier places as choices), cost for the visit, notes; each task's baseline moves only if this is its newest service. [`LogServiceModal`, `logServiceAction`]
+- The first logged service replaces a guessed start point (today, never done), however old. [`logServiceAction`]
+- A task card's related jobs say "Do it with this" at the top of the list; tasks needing attention come next, the rest behind Show all tasks. [`batchCandidates`, `LogServiceModal`]
+- Logging with a higher odometer raises the bike's odometer; a lower one never lowers it. [`logServiceAction`]
 - Log service from pages outside the dashboard (`/?log=service`) opens the dialog once. [`AppNav`, `GarageApp`]
 
 ## History
 
-- Service records newest first, with odometer (when there is one), cost and notes; delete a record with a confirm. [`ServiceHistoryView`, `deleteServiceLogAction`]
+- Service records newest first, grouped into visits (same day, odometer and place), with odometer (when there is one), where, cost and notes; delete a record with a confirm. [`ServiceHistoryView`, `groupServiceVisits`, `deleteServiceLogAction`]
 - Deleting the record a task counts from moves the task back to its latest remaining record, or to no start point. [`rewindTaskIfNeeded`, `baselineFromLogs`]
 - Spending: this year or all time, by category. [`SpendSummary`, `summarizeSpend`]
-- Export: CSV (formulas neutralized), printable page, share link. [`ExportMenu`, `buildServiceHistoryCsv`]
+- Share button, and Export: CSV (with Where; formulas neutralized), printable page (owner only; anyone else gets "This page is private"). [`ExportMenu`, `ShareButton`, `buildServiceHistoryCsv`]
 
 ## Garage
 

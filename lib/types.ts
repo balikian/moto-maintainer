@@ -97,5 +97,7 @@ export interface ServiceLog {
   baseline_mileage?: number | null;
   cost: number | null;
   notes: string | null;
+  /** Where it was done ("Home", a shop's name); null if not given, missing on older shared data. */
+  shop?: string | null;
   created_at?: string;
 }

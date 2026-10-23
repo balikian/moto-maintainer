@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { isIsoDate } from './dates';
+import { normalizeShop, SHOP_MAX_LENGTH } from './serviceVisits';
 import { guessCategory, TASK_CATEGORIES, type TaskCategory } from './taskCategories';
 
 // Reading a "Download my data" file (lib/accountExport.ts) back in. The file
@@ -49,6 +50,7 @@ const logSchema = z.object({
   service: requiredText(200),
   type: z.string().nullish(),
   odometer_miles: miles.nullish(),
+  where: optionalText(SHOP_MAX_LENGTH),
   cost: z.number().min(0, "can't be negative").max(MAX_COST, 'is too large').nullish(),
   notes: optionalText(2000),
 });
@@ -87,6 +89,8 @@ export type ImportLog = {
   performedAt: string;
   /** Null when there was no reading. */
   odometerMiles: number | null;
+  /** Where it was done; older files don't have it. */
+  shop: string | null;
   cost: number | null;
   notes: string | null;
 };
@@ -178,6 +182,7 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
           routine: log.type?.trim().toLowerCase() === 'routine',
           performedAt: log.date,
           odometerMiles: log.odometer_miles ?? null,
+          shop: normalizeShop(log.where),
           cost: log.cost ?? null,
           notes: log.notes,
         })),

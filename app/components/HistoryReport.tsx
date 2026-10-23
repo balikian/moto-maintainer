@@ -1,5 +1,6 @@
 import { formatDisplayDate } from '@/lib/dates';
 import { bikeTitle, serviceType, totalCost, type ReportBike, type ReportLog } from '@/lib/historyExport';
+import { groupServiceVisits } from '@/lib/serviceVisits';
 import type { UnitSystem } from '@/lib/types';
 import { formatDistance, formatOdometer } from '@/lib/units';
 import BrandLogo from './BrandLogo';
@@ -51,23 +52,33 @@ export default function HistoryReport({ bike, logs, unitSystem, generatedOn }: H
         <p className="py-10 text-center text-sm text-muted">No service records have been logged for this bike yet.</p>
       ) : (
         <ol className="divide-y divide-line">
-          {logs.map((log) => (
-            <li key={log.id} className="grid gap-1 py-4 [break-inside:avoid] sm:grid-cols-[8rem_1fr_auto] sm:gap-4">
-              <div className="text-sm font-bold">{formatDisplayDate(log.performed_at)}</div>
+          {groupServiceVisits(logs).map((visit) => (
+            <li key={visit.key} className="grid gap-1 py-4 [break-inside:avoid] sm:grid-cols-[8rem_1fr_auto] sm:gap-4">
+              <div className="text-sm font-bold">{formatDisplayDate(visit.performedAt)}</div>
               <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold">{log.task_name}</span>
-                  <span className="rounded border border-line-strong px-1.5 text-[10px] font-bold uppercase tracking-wide text-muted">
-                    {serviceType(log)}
-                  </span>
-                </div>
-                {log.odometer_at_service !== null && (
-                  <p className="text-sm text-muted">at {formatDistance(Number(log.odometer_at_service), unitSystem)}</p>
+                <ul className="space-y-0.5">
+                  {visit.logs.map((log) => (
+                    <li key={log.id} className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold">{log.task_name}</span>
+                      <span className="rounded border border-line-strong px-1.5 text-[10px] font-bold uppercase tracking-wide text-muted">
+                        {serviceType(log)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                {(visit.odometer !== null || visit.shop) && (
+                  <p className="text-sm text-muted">
+                    {[visit.odometer !== null ? `at ${formatDistance(visit.odometer, unitSystem)}` : null, visit.shop]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
                 )}
-                {log.notes && <p className="mt-1 whitespace-pre-wrap text-sm">{log.notes}</p>}
+                {visit.notes.map((note) => (
+                  <p key={note} className="mt-1 whitespace-pre-wrap text-sm">{note}</p>
+                ))}
               </div>
               <div className="text-sm font-bold sm:text-right">
-                {log.cost !== null && Number.isFinite(Number(log.cost)) ? currencyFormatter.format(Number(log.cost)) : ''}
+                {visit.cost !== null ? currencyFormatter.format(visit.cost) : ''}
               </div>
             </li>
           ))}

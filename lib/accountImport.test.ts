@@ -37,7 +37,7 @@ const exportFile = () =>
     ],
     logs: [
       { id: 'l1', motorcycle_id: 'b1', task_id: 't1', task_name: 'Front tire', performed_at: '2025-06-01T00:00:00Z', odometer_at_service: 3000, cost: 189.5, notes: null },
-      { id: 'l2', motorcycle_id: 'b1', task_id: null, task_name: 'New grips', performed_at: '2025-07-04', odometer_at_service: 3400, cost: null, notes: 'Heated' },
+      { id: 'l2', motorcycle_id: 'b1', task_id: null, task_name: 'New grips', performed_at: '2025-07-04', odometer_at_service: 3400, cost: null, notes: 'Heated', shop: 'Home' },
     ] as ServiceLog[],
     exportedOn: '2026-10-16',
   });
@@ -69,8 +69,8 @@ describe('parseAccountImport', () => {
           },
         ],
         logs: [
-          { taskName: 'New grips', routine: false, performedAt: '2025-07-04', odometerMiles: 3400, cost: null, notes: 'Heated' },
-          { taskName: 'Front tire', routine: true, performedAt: '2025-06-01', odometerMiles: 3000, cost: 189.5, notes: null },
+          { taskName: 'New grips', routine: false, performedAt: '2025-07-04', odometerMiles: 3400, shop: 'Home', cost: null, notes: 'Heated' },
+          { taskName: 'Front tire', routine: true, performedAt: '2025-06-01', odometerMiles: 3000, shop: null, cost: 189.5, notes: null },
         ],
       },
     ]);

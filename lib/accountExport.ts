@@ -75,6 +75,7 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, exporte
           service: log.task_name,
           type: serviceType(log),
           odometer_miles: log.odometer_at_service,
+          where: log.shop ?? null,
           cost: cost(log.cost),
           notes: log.notes,
         })),

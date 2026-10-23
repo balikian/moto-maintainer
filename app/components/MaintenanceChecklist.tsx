@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, CheckCircle, ChevronDown, Plus } from 'lucide-react';
+import { BookOpen, CheckCircle, ChevronDown, History, Plus } from 'lucide-react';
 import { groupTasksByUrgency, type TaskDueState } from '@/lib/maintenance';
 import { batchCandidates, type TaskCategory } from '@/lib/taskCategories';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
@@ -20,6 +20,8 @@ type MaintenanceChecklistProps = {
   onAddTask: () => void;
   onOpenManual: () => void;
   onLogTask: (task: MaintenanceTask) => void;
+  /** Log a past service for any of the tasks without a start point. */
+  onLogPast: () => void;
   onSaveIntervals: (task: MaintenanceTask, intervals: { intervalMileage: number; intervalMonths: number; category: TaskCategory }) => Promise<string | null>;
   onResetTask: (task: MaintenanceTask) => void;
   onDeleteTask: (task: MaintenanceTask) => void;
@@ -41,6 +43,7 @@ export default function MaintenanceChecklist({
   onAddTask,
   onOpenManual,
   onLogTask,
+  onLogPast,
   onSaveIntervals,
   onResetTask,
   onDeleteTask,
@@ -100,11 +103,15 @@ export default function MaintenanceChecklist({
                 <div>
                   <h3 className="text-base font-bold">When were these last done?</h3>
                   <p className="mt-1 text-sm text-muted">
-                    {count === 1 ? 'This task' : `These ${count} tasks`} won&apos;t come due until they have a start point. Tap
-                    one to log a past service. Don&apos;t know? Start counting today.
+                    {count === 1 ? 'This task' : `These ${count} tasks`} won&apos;t come due until they have a start point. Log
+                    a past service, ticking everything done at that visit. Don&apos;t know? Start counting today.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={onLogPast} className={ui.primaryButton}>
+                    <History size={15} />
+                    Log a past service
+                  </button>
                   <ConfirmPopover
                     align="left"
                     message={`Start counting ${these} today? You can still log past services for them later.`}

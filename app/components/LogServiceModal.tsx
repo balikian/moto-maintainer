@@ -3,82 +3,130 @@
 import { useState, type SubmitEvent } from 'react';
 import { Check } from 'lucide-react';
 import { todayIsoDate } from '@/lib/dates';
-import { getTaskDueState, hasStartPoint } from '@/lib/maintenance';
-import { batchCandidates, categoryLabel, taskCategory } from '@/lib/taskCategories';
+import { groupTasksByUrgency, hasStartPoint, type TaskDueState } from '@/lib/maintenance';
+import { SHOP_MAX_LENGTH } from '@/lib/serviceVisits';
+import { batchCandidates } from '@/lib/taskCategories';
+import { dueLabel } from '@/lib/taskLabels';
 import type { MaintenanceTask, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
 import Modal from './Modal';
 import { ui } from './ui';
 
 export type LogServiceValues = {
-  taskId: string | null;
-  taskName: string;
+  /** Checklist tasks done in this visit, in the order shown. */
+  taskIds: string[];
+  /** A job not on the checklist. */
+  oneOffName: string | null;
   performedAt: string;
-  /** Null when left blank: the task's miles count from the bike's odometer. */
+  /** Null when left blank: the tasks' miles count from the bike's odometer. */
   odometer: number | null;
   cost: number | null;
   notes: string | null;
-  /** Related tasks done in the same visit; logged with the same date and odometer. */
-  alsoTaskIds: string[];
+  shop: string | null;
 };
 
 type LogServiceModalProps = {
   tasks: MaintenanceTask[];
-  /** The task being logged, when opened from a task card. The task picker is locked to it. */
+  /** The task being logged, when opened from a task card. It starts ticked. */
   task: MaintenanceTask | null;
+  /** Filling in past service for tasks without a start point (from "When were these last done?"). */
+  past?: boolean;
   unitSystem: UnitSystem;
   /** The bike's current odometer, in miles; null if it has no reading yet. */
   defaultOdometer: number | null;
+  /** The date to start from, e.g. the last past service entered. Defaults to today. */
+  initialDate?: string;
+  /** Places to offer as one-tap choices for "Where". */
+  shopChoices: string[];
   onClose: () => void;
   /** Receives the odometer in miles; resolves to an error message, or null on success. */
   onSubmit: (values: LogServiceValues) => Promise<string | null>;
 };
 
-const CUSTOM_ONE_OFF_VALUE = '__custom_one_off__';
+type ChecklistEntry = { task: MaintenanceTask; dueState: TaskDueState; hint: string | null };
 
-export default function LogServiceModal({ tasks, task, unitSystem, defaultOdometer, onClose, onSubmit }: LogServiceModalProps) {
-  const [selectedTaskId, setSelectedTaskId] = useState(task?.id ?? tasks[0]?.id ?? CUSTOM_ONE_OFF_VALUE);
-  const [customTaskName, setCustomTaskName] = useState('');
-  const [performedAt, setPerformedAt] = useState(todayIsoDate);
-  // Opened from a task without a start point: the rider is filling in when it was last done.
-  const pastService = task !== null && !hasStartPoint(task);
+const DUE_TONE: Record<TaskDueState['status'], string> = {
+  Overdue: 'text-danger',
+  Urgent: 'text-danger',
+  Soon: 'text-warn',
+  Healthy: 'text-muted',
+  NoStart: 'text-muted',
+};
+
+export default function LogServiceModal({
+  tasks,
+  task,
+  past = false,
+  unitSystem,
+  defaultOdometer,
+  initialDate,
+  shopChoices,
+  onClose,
+  onSubmit,
+}: LogServiceModalProps) {
+  // Opened for a task without a start point, or for all of them: the rider is filling in when they were last done.
+  const pastService = past || (task !== null && !hasStartPoint(task));
+  const [selectedIds, setSelectedIds] = useState<string[]>(task ? [task.id] : []);
+  const [oneOffChecked, setOneOffChecked] = useState(tasks.length === 0);
+  const [oneOffName, setOneOffName] = useState('');
+  const [performedAt, setPerformedAt] = useState(() => initialDate ?? todayIsoDate());
   // A past service wasn't at today's odometer, so it starts blank.
   const [odometer, setOdometer] = useState(() =>
     defaultOdometer === null || pastService ? '' : String(toDisplayDistance(defaultOdometer, unitSystem))
   );
+  const [shop, setShop] = useState('');
   const [cost, setCost] = useState('');
   const [notes, setNotes] = useState('');
+  const [showAll, setShowAll] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [alsoTaskIds, setAlsoTaskIds] = useState<string[]>([]);
-
-  const selectedTask = tasks.find((candidate) => candidate.id === selectedTaskId) ?? null;
-  const isCustom = selectedTask === null;
   // Without a reading, a task counts its miles from the bike's odometer, so a bike without one needs it here.
   const odometerRequired = defaultOdometer === null;
 
-  // Same-category tasks that are coming due: worth doing while the bike is apart anyway.
+  // The checklist, most useful first. The rest of the tasks wait behind "Show all".
   const [today] = useState(() => new Date());
-  const related = selectedTask && !pastService
-    ? batchCandidates(
-        selectedTask,
-        tasks.map((candidate) => ({ task: candidate, dueState: getTaskDueState(candidate, defaultOdometer, today) }))
-      )
-    : [];
+  const groups = groupTasksByUrgency(tasks, defaultOdometer, today);
+  const doItWith = task ? batchCandidates(task, [...groups.needsAttention, ...groups.healthy]).map((other) => other.id) : [];
+  const ordered = pastService
+    ? [...groups.noStart, ...groups.needsAttention, ...groups.healthy]
+    : [...groups.needsAttention, ...groups.healthy, ...groups.noStart];
+  const entries: ChecklistEntry[] = ordered.map(({ task: candidate, dueState }) => ({
+    task: candidate,
+    dueState,
+    hint: doItWith.includes(candidate.id) ? 'Do it with this' : null,
+  }));
+  const isFeatured = (entry: ChecklistEntry) =>
+    entry.task.id === task?.id ||
+    entry.hint !== null ||
+    (pastService ? entry.dueState.status === 'NoStart' : ['Overdue', 'Urgent', 'Soon'].includes(entry.dueState.status));
+  // The opened task goes first, then the ones that pair with it.
+  const featured = entries
+    .filter(isFeatured)
+    .sort((a, b) => Number(b.task.id === task?.id) - Number(a.task.id === task?.id) || Number(b.hint !== null) - Number(a.hint !== null));
+  const others = entries.filter((entry) => !isFeatured(entry));
+  const everythingShown = showAll || featured.length === 0;
+  const visible = everythingShown ? [...featured, ...others] : [...featured, ...others.filter((entry) => selectedIds.includes(entry.task.id))];
+  const hiddenCount = entries.length - visible.length;
 
-  const toggleAlso = (taskId: string) =>
-    setAlsoTaskIds((previous) => (previous.includes(taskId) ? previous.filter((id) => id !== taskId) : [...previous, taskId]));
+  const itemCount = selectedIds.length + (oneOffChecked && oneOffName.trim() ? 1 : 0);
+
+  const toggleTask = (taskId: string) =>
+    setSelectedIds((previous) => (previous.includes(taskId) ? previous.filter((id) => id !== taskId) : [...previous, taskId]));
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
 
-    const taskName = (isCustom ? customTaskName : selectedTask.task_name).trim();
+    const oneOff = oneOffChecked ? oneOffName.trim() : '';
     const miles = odometer.trim() === '' ? null : fromDisplayDistance(odometer, unitSystem);
     const parsedCost = cost.trim() ? Number(cost) : null;
 
-    if (!taskName) {
-      setError('Service name or description is required.');
+    if (oneOffChecked && !oneOff) {
+      setError('Describe the other work, or untick it.');
+      return;
+    }
+    if (selectedIds.length === 0 && !oneOff) {
+      setError('Tick what was done.');
       return;
     }
     if (!performedAt) {
@@ -96,14 +144,16 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
 
     setSaving(true);
     setError(null);
+    // Saved in the order shown, so the cost goes with the first task.
+    const shownOrder = [...featured, ...others].map((entry) => entry.task.id);
     const submitError = await onSubmit({
-      taskId: selectedTask?.id ?? null,
-      taskName,
+      taskIds: shownOrder.filter((id) => selectedIds.includes(id)),
+      oneOffName: oneOff || null,
       performedAt,
       odometer: miles,
       cost: parsedCost,
       notes: notes.trim() || null,
-      alsoTaskIds: alsoTaskIds.filter((id) => related.some((candidate) => candidate.id === id)),
+      shop: shop.trim() || null,
     });
     setSaving(false);
     if (submitError) setError(submitError);
@@ -114,74 +164,71 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
       title={pastService ? 'Log a past service' : 'Log service'}
       description={
         pastService
-          ? 'When was it last done? The task counts from that date and odometer.'
-          : task
-            ? 'Record when it was done and what it cost.'
-            : 'Record maintenance details for this bike.'
+          ? 'Tick everything done at that visit. Each task counts from its date and odometer.'
+          : 'Tick everything done at this visit. They share the date, odometer and cost.'
       }
       size="lg"
       onClose={onClose}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {task ? (
-          // Logging from a task card: the task is fixed, so it's plain text, not something that looks editable.
-          <div>
-            <span className="block text-sm font-semibold text-muted">Task</span>
-            <p className="text-lg font-extrabold leading-snug">{task.task_name}</p>
-          </div>
-        ) : (
-          <div>
-            <label htmlFor="log-task" className={ui.label}>Task</label>
-            <select
-              id="log-task"
-              value={selectedTaskId}
-              onChange={(event) => setSelectedTaskId(event.target.value)}
-              className={ui.input}
-            >
-              {tasks.map((option) => (
-                <option key={option.id} value={option.id}>{option.task_name}</option>
-              ))}
-              <option value={CUSTOM_ONE_OFF_VALUE}>+ Something else (one-off job)</option>
-            </select>
-          </div>
-        )}
-
-        {related.length > 0 && selectedTask && (
-          <fieldset className="rounded-xl border border-warn/30 bg-warn/5 px-3 py-2.5">
-            <legend className="px-1 text-sm font-bold text-warn">
-              While you&apos;re at it: also coming up in {categoryLabel(taskCategory(selectedTask))}
-            </legend>
-            <div className="space-y-1.5">
-              {related.map((candidate) => (
-                <label key={candidate.id} className="flex items-center gap-2 text-sm">
+        <fieldset>
+          <legend className={ui.label}>What was done</legend>
+          <div className="divide-y divide-line rounded-xl border border-line">
+            {visible.map(({ task: candidate, dueState, hint }) => {
+              const due = dueLabel(dueState, unitSystem, candidate.interval_mileage);
+              return (
+                <label key={candidate.id} className="flex min-h-12 cursor-pointer items-center gap-3 px-3 py-2">
                   <input
                     type="checkbox"
-                    checked={alsoTaskIds.includes(candidate.id)}
-                    onChange={() => toggleAlso(candidate.id)}
-                    className="h-4 w-4 accent-brand"
+                    checked={selectedIds.includes(candidate.id)}
+                    onChange={() => toggleTask(candidate.id)}
+                    className="h-5 w-5 shrink-0 accent-brand"
                   />
-                  {candidate.task_name}
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-semibold leading-snug">{candidate.task_name}</span>
+                    {hint && <span className="block text-xs font-bold text-warn">{hint}</span>}
+                  </span>
+                  <span className={`shrink-0 text-right text-xs font-semibold tabular-nums ${DUE_TONE[dueState.status]}`}>
+                    {dueState.status === 'NoStart' ? 'Not started' : `${due.value} ${due.caption}`.trim()}
+                  </span>
                 </label>
-              ))}
+              );
+            })}
+            {hiddenCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowAll(true)}
+                className="block w-full px-3 py-2.5 text-left text-sm font-bold text-accent hover:underline"
+              >
+                Show all tasks ({hiddenCount} more)
+              </button>
+            )}
+            <div className="px-3 py-2">
+              <label className="flex min-h-8 cursor-pointer items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={oneOffChecked}
+                  onChange={(event) => setOneOffChecked(event.target.checked)}
+                  className="h-5 w-5 shrink-0 accent-brand"
+                />
+                <span className="font-semibold">Something else (one-off job)</span>
+              </label>
+              {oneOffChecked && (
+                <input
+                  id="log-custom-name"
+                  type="text"
+                  aria-label="What else was done"
+                  value={oneOffName}
+                  onChange={(event) => setOneOffName(event.target.value)}
+                  placeholder="Replaced rear tire, fork seals, 12,000 mi service"
+                  maxLength={200}
+                  autoFocus={tasks.length > 0}
+                  className={`mt-2 ${ui.input}`}
+                />
+              )}
             </div>
-            <p className={`mt-1.5 text-xs ${ui.muted}`}>Ticked tasks are logged too, with the same date and odometer.</p>
-          </fieldset>
-        )}
-
-        {isCustom && (
-          <div>
-            <label htmlFor="log-custom-name" className={ui.label}>What was done</label>
-            <input
-              id="log-custom-name"
-              type="text"
-              value={customTaskName}
-              onChange={(event) => setCustomTaskName(event.target.value)}
-              placeholder="Replaced rear tire, fork seals, installed skid plate"
-              required
-              className={ui.input}
-            />
           </div>
-        )}
+        </fieldset>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
@@ -211,14 +258,51 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
               required={odometerRequired}
               className={ui.input}
             />
-            {!odometerRequired && odometer.trim() === '' && selectedTask && (
+            {!odometerRequired && odometer.trim() === '' && selectedIds.length > 0 && (
               <p className={`mt-1 text-xs ${ui.muted}`}>Don&apos;t know? Its miles will count from your current odometer.</p>
             )}
           </div>
         </div>
 
         <div>
-          <label htmlFor="log-cost" className={ui.label}>Cost (optional)</label>
+          <label htmlFor="log-shop" className={ui.label}>
+            Where <span className="font-normal text-muted">optional</span>
+          </label>
+          <input
+            id="log-shop"
+            type="text"
+            value={shop}
+            onChange={(event) => setShop(event.target.value)}
+            placeholder="Home, or the shop’s name"
+            maxLength={SHOP_MAX_LENGTH}
+            autoComplete="off"
+            className={ui.input}
+          />
+          {shopChoices.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {shopChoices.map((choice) => (
+                <button
+                  key={choice}
+                  type="button"
+                  onClick={() => setShop(choice)}
+                  aria-pressed={shop.trim().toLowerCase() === choice.toLowerCase()}
+                  className={`rounded-full border px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    shop.trim().toLowerCase() === choice.toLowerCase()
+                      ? 'border-accent bg-accent/10 text-accent'
+                      : 'border-line text-fg hover:bg-raised'
+                  }`}
+                >
+                  {choice}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="log-cost" className={ui.label}>
+            Cost <span className="font-normal text-muted">{itemCount > 1 ? 'optional, for the whole visit' : 'optional'}</span>
+          </label>
           <input
             id="log-cost"
             type="number"
@@ -237,7 +321,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
             id="log-notes"
             value={notes}
             onChange={(event) => setNotes(event.target.value)}
-            rows={4}
+            rows={3}
             placeholder="Oil type, filter brand, torque specs, observations..."
             className={ui.input}
           />
@@ -251,7 +335,7 @@ export default function LogServiceModal({ tasks, task, unitSystem, defaultOdomet
           </button>
           <button type="submit" disabled={saving} className={ui.primaryButton}>
             <Check size={16} />
-            {saving ? 'Saving…' : 'Save service'}
+            {saving ? 'Saving…' : itemCount > 1 ? `Save ${itemCount} services` : 'Save service'}
           </button>
         </div>
       </form>

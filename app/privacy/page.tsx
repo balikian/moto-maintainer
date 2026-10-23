@@ -18,7 +18,7 @@ export default async function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy policy"
-      updated="October 20, 2026"
+      updated="October 23, 2026"
       signedIn={user !== null}
       intro={
         <>
@@ -41,7 +41,7 @@ export default async function PrivacyPage() {
           </li>
           <li>
             <strong>Your bikes and service:</strong> each bike’s year, make, model and odometer readings, your
-            maintenance tasks and intervals, and the service you log (dates, odometer readings, costs and notes).
+            maintenance tasks and intervals, and the service you log (dates, odometer readings, where it was done, costs and notes).
           </li>
           <li>
             <strong>Your settings:</strong> distance units, theme, which reminder emails and push notifications you want,
@@ -90,7 +90,7 @@ export default async function PrivacyPage() {
           </li>
           <li>
             <strong>Share links:</strong> when you create one, anyone with the link can see that bike’s year, make and
-            model and its service history: dates, odometer readings, costs and notes. It never shows your email or name.
+            model and its service history: dates, odometer readings, where it was done, costs and notes. It never shows your email or name.
             You can turn a link off at any time.
           </li>
           <li>
