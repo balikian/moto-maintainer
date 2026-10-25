@@ -395,8 +395,8 @@ export default function MoreView({
 
       <form
         action={async () => {
-          // So whoever uses this device next doesn't get this rider's reminders.
-          await turnOffPushOnThisDevice();
+          // So whoever uses this device next doesn't get this rider's reminders. It comes back on if they sign in again.
+          await turnOffPushOnThisDevice(userId);
           await logout();
         }}
       >

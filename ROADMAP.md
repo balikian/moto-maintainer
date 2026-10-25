@@ -45,6 +45,14 @@ do it; Claude = code or setup Claude can do.
    `profiles.is_dark_mode`, a fixed `search_path` on `handle_new_user()`).
 6. ⏳ Owner: the push checks still open (a tap opens SwingArm, signing out
    turns push off on that device, a real reminder on the iPhone).
+   🔨 Changed (owner, 2026-10-25; on `develop`): signing out still turns push
+   off on the device (so the next rider there doesn't get your reminders),
+   but the device remembers whose push was on (localStorage, last rider
+   only) and `restorePushAfterSignIn` turns it back on when that rider signs
+   in there again, without asking (permission is still granted). Turning
+   push off in More forgets it. If a browser won't subscribe without a tap
+   (possibly iPhone), it stays off until turned on in More: check on the
+   iPhone. Help and privacy policy (dated 2026-10-25) say so.
 7. 💤 Optional: error alerts (Sentry's free plan), an off-site `pg_dump` of
    production now and then (Supabase keeps 7 days of backups).
 8. ⏳ Owner: where to announce (riding forums, Facebook groups, Reddit,

@@ -18,7 +18,7 @@ export default async function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy policy"
-      updated="October 23, 2026"
+      updated="October 25, 2026"
       signedIn={user !== null}
       intro={
         <>
@@ -49,7 +49,8 @@ export default async function PrivacyPage() {
           </li>
           <li>
             <strong>Push addresses:</strong> when you turn on push notifications on a device, your browser gives us an
-            address for sending notifications to that device. Turning push off there, or signing out on it, deletes it.
+            address for sending notifications to that device. Turning push off there, or signing out on it, deletes it. If you sign out with push on, that device remembers it
+            (on the device only), so push comes back on when you sign in there again.
           </li>
           <li>
             <strong>Things you send in for all riders:</strong> owner’s manual links, and makes or models that weren’t in

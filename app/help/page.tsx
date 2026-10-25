@@ -287,7 +287,8 @@ export default async function HelpPage() {
               <Ui>Push notifications</Ui>: the same task and odometer reminders as notifications on your phone or
               computer. Turn them on for each device under <Ui>On this device</Ui>, and use <Ui>Test</Ui> to check one
               arrives. On an iPhone or iPad, add SwingArm to your Home Screen first and turn them on from the Home Screen
-              app. Signing out turns them off on that device.
+              app. Signing out turns them off on that device, so the next person to sign in there doesn&apos;t get
+              your reminders; they come back on when you sign in there again.
             </li>
             <li>
               <Ui>Add to Home Screen</Ui>: SwingArm then opens full screen from its own icon, like an app. On an iPhone or

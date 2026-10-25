@@ -40,6 +40,7 @@ import TopBar from './components/TopBar';
 import { ui } from './components/ui';
 import { useAuthUser } from './hooks/useAuthUser';
 import { usePreferences } from './hooks/usePreferences';
+import { restorePushAfterSignIn } from './hooks/usePush';
 import { useSupabaseQuery } from './hooks/useSupabaseQuery';
 import { useView, viewHref, type View } from './hooks/useView';
 
@@ -132,6 +133,11 @@ export default function GarageApp() {
     tasksQuery.reload();
     allTasksQuery.reload();
   };
+
+  // A rider who had push on here when they signed out gets it back on signing in.
+  useEffect(() => {
+    if (userId) void restorePushAfterSignIn(userId);
+  }, [userId]);
 
   // Admins see a link to the review page. The page itself re-checks on the server.
   const adminQuery = useSupabaseQuery<boolean>(userId, () => supabase.rpc('is_app_admin'));

@@ -8,7 +8,7 @@ add a line when a feature ships. Main code paths are in brackets.
 
 - Sign in with Google: lands on the garage; `next` can only be a path on this site. [`lib/actions/auth.ts`, `app/auth/callback`]
 - Sign in by email: the email has a code and a link; the code typed into the card signs in anywhere (iPhone Home Screen app too), the link on the same browser. [`sendMagicLink`, `verifyEmailCode`, `supabase/templates/magic-link.html`]
-- Sign out: push is turned off on this device first, then back to the home page. [`MoreView`, `turnOffPushOnThisDevice`, `logout`]
+- Sign out: push is turned off on this device first, then back to the home page. The device remembers it was on; the same rider signing in there again gets it back without a tap (if the browser allows), another rider doesn't; turning push off in More forgets it. [`MoreView`, `turnOffPushOnThisDevice`, `restorePushAfterSignIn`, `logout`]
 - Delete account: only after typing DELETE; everything the rider owns is gone, submitted manuals stay; home shows "account deleted". [`deleteAccountAction`, `delete_my_account`]
 - Signed-out visitors get the home page at `/`; signed-in riders get it at `/about`. [`app/page.tsx`, `HomePage`]
 
