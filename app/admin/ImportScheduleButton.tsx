@@ -11,10 +11,12 @@ type ImportScheduleButtonProps = {
   model: string;
   yearFrom: number;
   yearTo: number;
+  /** The manual's link, read directly by the import (no download and upload). */
+  manualUrl: string;
 };
 
 /** Lets an admin import a model's schedule without having that bike in their garage. */
-export default function ImportScheduleButton({ make, model, yearFrom, yearTo }: ImportScheduleButtonProps) {
+export default function ImportScheduleButton({ make, model, yearFrom, yearTo, manualUrl }: ImportScheduleButtonProps) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [summary, setSummary] = useState<string | null>(null);
@@ -29,6 +31,7 @@ export default function ImportScheduleButton({ make, model, yearFrom, yearTo }: 
         <ImportScheduleModal
           bike={{ make, model, year: yearTo }}
           years={{ from: yearFrom, to: yearTo }}
+          manualUrl={manualUrl}
           onClose={() => setOpen(false)}
           onImported={(message) => {
             setOpen(false);

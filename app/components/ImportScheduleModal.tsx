@@ -7,8 +7,9 @@ import { bikeTitle } from '@/lib/historyExport';
 import { formatPageList } from '@/lib/pageRanges';
 import { applySummary } from '@/lib/scheduleImport';
 import { isTaskCategory, TASK_CATEGORIES } from '@/lib/taskCategories';
-import { renderPdfPages } from '@/lib/pdfPages';
+import { fetchManualPdf, renderPdfPages } from '@/lib/pdfPages';
 import type { ExtractedTask } from '@/lib/scheduleExtraction';
+import { isHttpUrl } from '@/lib/modelData';
 import type { Motorcycle } from '@/lib/types';
 import Modal from './Modal';
 import { ui } from './ui';
@@ -18,6 +19,11 @@ type ImportScheduleModalProps = {
   bike: Pick<Motorcycle, 'year' | 'make' | 'model'> & { id?: string };
   /** Model years the schedule should cover; defaults to the bike's year. */
   years?: { from: number; to: number };
+  /**
+   * Offers reading the manual from its link (admins only; the fetch goes
+   * through an admin-only route). The link starts filled in when one is known.
+   */
+  manualUrl?: string;
   onClose: () => void;
   /** Called after a schedule is saved (and applied, if chosen) with a summary for the rider. */
   onImported: (summary: string) => void;
@@ -32,9 +38,14 @@ type Stage =
 const cellInput =
   'w-full rounded-lg border border-line-strong bg-page px-2 py-1.5 text-sm text-fg';
 
-export default function ImportScheduleModal({ bike, years, onClose, onImported }: ImportScheduleModalProps) {
+export default function ImportScheduleModal({ bike, years, manualUrl, onClose, onImported }: ImportScheduleModalProps) {
   const [stage, setStage] = useState<Stage>({ name: 'select' });
   const [file, setFile] = useState<File | null>(null);
+  const linkImport = manualUrl !== undefined;
+  const [link, setLink] = useState(manualUrl ?? '');
+  // The last PDF downloaded from a link, so trying other pages doesn't download it again.
+  const [downloaded, setDownloaded] = useState<{ url: string; file: Blob } | null>(null);
+  const [readingStep, setReadingStep] = useState('');
   const [pageSelection, setPageSelection] = useState('');
   const [tasks, setTasks] = useState<ExtractedTask[]>([]);
   const [yearFrom, setYearFrom] = useState(String(years?.from ?? bike.year));
@@ -46,17 +57,37 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
 
   const handleRead = async (event: SubmitEvent) => {
     event.preventDefault();
-    if (!file) {
-      setError('Choose the owner’s manual PDF first.');
+    const url = link.trim();
+    if (!file && !(linkImport && url)) {
+      setError(linkImport ? 'Paste the manual’s link or choose the PDF first.' : 'Choose the owner’s manual PDF first.');
       return;
     }
 
     setError(null);
     setStage({ name: 'reading' });
     try {
-      const excerpt = await renderPdfPages(file, pageSelection);
+      // A chosen file wins over the link.
+      let pdf: Blob | null = file;
+      if (!pdf && downloaded?.url === url) pdf = downloaded.file;
+      if (!pdf) {
+        setReadingStep('Downloading the manual…');
+        const fetched = await fetchManualPdf(url);
+        if ('error' in fetched) {
+          setError(`${fetched.error} You can also download the PDF and choose it below.`);
+          setStage({ name: 'select' });
+          return;
+        }
+        pdf = fetched.file;
+        setDownloaded({ url, file: pdf });
+      }
+
+      setReadingStep('Reading the schedule… (up to a minute)');
+      const excerpt = await renderPdfPages(pdf, pageSelection);
       if ('error' in excerpt) {
-        setError(excerpt.error);
+        // A link to a web page about the manual downloads that page, not the PDF.
+        const notPdf = !file && excerpt.error.startsWith('That file couldn’t be opened');
+        setError(notPdf ? 'That link didn’t give a PDF. Use the link that opens the PDF itself, or download it and choose it below.' : excerpt.error);
+        if (notPdf) setDownloaded(null);
         setStage({ name: 'select' });
         return;
       }
@@ -139,8 +170,32 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
     >
       {!reviewing ? (
         <form onSubmit={handleRead} className="space-y-4">
+          {linkImport && (
+            <div>
+              <label htmlFor="manual-link" className={ui.label}>Link to the manual PDF</label>
+              <input
+                id="manual-link"
+                type="url"
+                value={link}
+                onChange={(event) => setLink(event.target.value)}
+                placeholder="https://…/owners-manual.pdf"
+                disabled={stage.name === 'reading'}
+                className={ui.input}
+              />
+              <p className="mt-1.5 text-xs text-muted">
+                SwingArm downloads it for you. It has to be the PDF itself, not a page that links to it.{' '}
+                {isHttpUrl(link.trim()) && (
+                  <a href={link.trim()} target="_blank" rel="noreferrer noopener" className="font-bold text-accent hover:underline">
+                    Open it to find the schedule pages
+                  </a>
+                )}
+              </p>
+            </div>
+          )}
           <div>
-            <label htmlFor="manual-pdf" className={ui.label}>Owner&apos;s manual (PDF)</label>
+            <label htmlFor="manual-pdf" className={ui.label}>
+              {linkImport ? 'Or choose the PDF' : 'Owner’s manual (PDF)'}
+            </label>
             <input
               id="manual-pdf"
               type="file"
@@ -177,7 +232,7 @@ export default function ImportScheduleModal({ bike, years, onClose, onImported }
             </button>
             <button type="submit" disabled={stage.name === 'reading'} className={ui.primaryButton}>
               <Sparkles size={16} />
-              {stage.name === 'reading' ? 'Reading the schedule… (up to a minute)' : 'Read schedule'}
+              {stage.name === 'reading' ? readingStep || 'Reading the schedule… (up to a minute)' : 'Read schedule'}
             </button>
           </div>
         </form>

@@ -9,8 +9,27 @@ import { parsePageSelection } from './pageRanges';
 const PAGE_IMAGE_LONG_EDGE = 2000;
 const JPEG_QUALITY = 0.82;
 
+/** Fetches a manual PDF from its link through the admin-only route; the error says what went wrong. */
+export async function fetchManualPdf(url: string): Promise<{ file: Blob } | { error: string }> {
+  let response: Response;
+  try {
+    response = await fetch(`/api/admin/manual-pdf?url=${encodeURIComponent(url)}`);
+  } catch {
+    return { error: 'Couldn’t download the manual. Check your connection and try again.' };
+  }
+  if (!response.ok) {
+    const message = (await response.text().catch(() => '')).slice(0, 200);
+    return { error: message || `Couldn’t download the manual (${response.status}).` };
+  }
+  try {
+    return { file: await response.blob() };
+  } catch {
+    return { error: 'The download stopped partway (the file may be over 150 MB). Try uploading the PDF instead.' };
+  }
+}
+
 export async function renderPdfPages(
-  file: File,
+  file: Blob,
   selection: string
 ): Promise<{ pages: number[]; images: Blob[] } | { error: string }> {
   // Loaded on demand: pdf.js needs browser APIs, and most visits never import a manual.

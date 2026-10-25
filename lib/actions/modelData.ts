@@ -1,7 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { isHttpUrl } from '../modelData';
+import { BASE_CATALOG, isInCatalog, mergeCatalog } from '../bikeCatalog';
+import { isHttpUrl, literalPattern } from '../modelData';
 import { getSignedInClient } from '../supabase/server';
 import type { ReviewStatus } from '../types';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
@@ -111,4 +112,73 @@ export async function reviewManualAction(formData: FormData): Promise<void> {
   // Non-admins are refused by row-level security, so this is a no-op for them.
   await supabase.from('bike_manuals').update(changes).eq('id', id);
   revalidatePath('/admin');
+}
+
+type AdminManualInput = {
+  make: string;
+  model: string;
+  yearFrom: number;
+  yearTo: number;
+  url: string;
+};
+
+/**
+ * Admin-only, from the admin page's "Add a schedule": saves a manual link for
+ * a model and range of years, approved at once, so the admin needn't add the
+ * bike to a garage first. A make or model that isn't in the dropdown lists is
+ * added to them, approved. The same link for the same model isn't saved twice.
+ */
+export async function addManualAsAdminAction(input: AdminManualInput): Promise<ActionResult<{ added: boolean }>> {
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
+  const { data: isAdmin } = await supabase.rpc('is_app_admin');
+  if (!isAdmin) return { error: 'Only admins can do this.' };
+
+  const make = input.make.trim();
+  const model = input.model.trim();
+  const url = input.url.trim();
+  const yearFrom = Math.round(input.yearFrom);
+  const yearTo = Math.round(input.yearTo);
+  if (!make || !model) return { error: 'Make and model are required.' };
+  if (!Number.isInteger(yearFrom) || !Number.isInteger(yearTo) || yearFrom > yearTo || yearFrom < 1900 || yearTo > 2100) {
+    return { error: 'Please enter a valid range of model years.' };
+  }
+  if (!isHttpUrl(url)) return { error: 'Please paste a full web link, starting with https://' };
+
+  const now = new Date().toISOString();
+  const { data: customModels, error: modelsError } = await supabase.from('custom_models').select('make,model').eq('status', 'approved');
+  if (modelsError) return { error: modelsError.message };
+  if (!isInCatalog(mergeCatalog(BASE_CATALOG, customModels ?? []), make, model)) {
+    const { error } = await supabase
+      .from('custom_models')
+      .insert({ make, model, status: 'approved', submitted_by: user.id, reviewed_at: now });
+    if (error) return { error: error.message };
+  }
+
+  const existing = await supabase
+    .from('bike_manuals')
+    .select('id')
+    .ilike('make', literalPattern(make))
+    .ilike('model', literalPattern(model))
+    .eq('url', url)
+    .neq('status', 'rejected')
+    .limit(1);
+  if (existing.error) return { error: existing.error.message };
+  if ((existing.data ?? []).length > 0) return { data: { added: false } };
+
+  const { error } = await supabase.from('bike_manuals').insert({
+    make,
+    model,
+    year_from: yearFrom,
+    year_to: yearTo,
+    url,
+    label: "Owner's manual",
+    status: 'approved',
+    submitted_by: user.id,
+    reviewed_at: now,
+  });
+  if (error) return { error: error.message };
+
+  revalidatePath('/admin');
+  return { data: { added: true } };
 }

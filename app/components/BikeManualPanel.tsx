@@ -265,6 +265,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
       {importOpen && (
         <ImportScheduleModal
           bike={bike}
+          manualUrl={isAdmin ? (list.find((manual) => isHttpUrl(manual.url))?.url ?? '') : undefined}
           onClose={() => setImportOpen(false)}
           onImported={(summary) => {
             setImportOpen(false);

@@ -2,11 +2,12 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { reviewCustomModelAction, reviewManualAction } from '@/lib/actions/modelData';
-import { manualsWithoutSchedule } from '@/lib/bikeCatalog';
+import { BASE_CATALOG, manualsWithoutSchedule, mergeCatalog } from '@/lib/bikeCatalog';
 import { isHttpUrl } from '@/lib/modelData';
 import { getSignedInClient } from '@/lib/supabase/server';
 import type { BikeManual, ModelEntry } from '@/lib/types';
 import { ui } from '../components/ui';
+import AddScheduleForm from './AddScheduleForm';
 import ImportScheduleButton from './ImportScheduleButton';
 
 type PendingCustomModel = { id: string; make: string; model: string; created_at: string };
@@ -30,11 +31,14 @@ export default async function AdminPage() {
   const { data: isAdmin } = await supabase.rpc('is_app_admin');
   if (!isAdmin) notFound();
 
-  const [manualsResult, schedulesResult, customModelsResult] = await Promise.all([
+  const [manualsResult, schedulesResult, customModelsResult, approvedModelsResult] = await Promise.all([
     supabase.from('bike_manuals').select('*').neq('status', 'rejected').order('created_at', { ascending: true }),
     supabase.from('model_schedules').select('id,make,model,year_from,year_to,status,submitted_by,created_at'),
     supabase.from('custom_models').select('*').eq('status', 'pending').order('created_at', { ascending: true }),
+    supabase.from('custom_models').select('make,model').eq('status', 'approved'),
   ]);
+  // The make and model lists riders pick from, for "Add a schedule".
+  const catalog = mergeCatalog(BASE_CATALOG, approvedModelsResult.data ?? []);
   if (manualsResult.error) throw new Error(manualsResult.error.message);
   if (schedulesResult.error) throw new Error(schedulesResult.error.message);
 
@@ -58,6 +62,15 @@ export default async function AdminPage() {
         </div>
 
         <section className="space-y-3">
+          <h2 className={ui.sectionTitle}>Add a schedule</h2>
+          <p className={`text-sm ${ui.muted}`}>
+            For any bike, without adding it to a garage: name the model and years, paste the manual&apos;s link, then
+            pick the schedule pages.
+          </p>
+          <AddScheduleForm catalog={catalog} />
+        </section>
+
+        <section className="space-y-3">
           <h2 className={ui.sectionTitle}>Bikes with a manual but no schedule ({needSchedule.length})</h2>
           {needSchedule.length === 0 ? (
             <div className={ui.emptyState}>Every approved manual has a schedule.</div>
@@ -70,11 +83,17 @@ export default async function AdminPage() {
                   </p>
                   {isHttpUrl(manual.url) && (
                     <a href={manual.url} target="_blank" rel="noreferrer noopener" className="text-xs font-bold text-accent hover:underline">
-                      Open the manual to download the PDF
+                      Open the manual
                     </a>
                   )}
                 </div>
-                <ImportScheduleButton make={manual.make} model={manual.model} yearFrom={manual.year_from} yearTo={manual.year_to} />
+                <ImportScheduleButton
+                  make={manual.make}
+                  model={manual.model}
+                  yearFrom={manual.year_from}
+                  yearTo={manual.year_to}
+                  manualUrl={isHttpUrl(manual.url) ? manual.url : ''}
+                />
               </div>
             ))
           )}

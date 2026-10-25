@@ -75,6 +75,7 @@ add a line when a feature ships. Main code paths are in brackets.
 
 - `/admin` is 404 for non-admins; admins see manuals without a schedule, new makes/models and manual links to review. [`app/admin/page.tsx`, `is_app_admin`]
 - Import a schedule from manual pages (admin-only Claude call), review, save as approved; older copies for the same model and years are replaced. [`extractScheduleAction`, `saveModelScheduleAction`]
+- Add a schedule (admin page): make/model from the lists, years, manual link saved as approved (new make/model added to the lists), then import reading the PDF from the link; links also prefill the import on "manual but no schedule" rows and Manual & schedule. Link fetch is admin-only and only to public addresses, re-checked on redirects. [`AddScheduleForm`, `addManualAsAdminAction`, `app/api/admin/manual-pdf`, `parseManualUrl`]
 - Approve or reject manual links and makes/models; review badge on the avatar and in More. [`reviewManualAction`, `reviewCustomModelAction`, `CountBadge`]
 
 ## Reminders and push

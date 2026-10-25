@@ -15,10 +15,22 @@ accounts are being set up; the phone apps follow. Owner = only the owner can
 do it; Claude = code or setup Claude can do.
 
 **Web launch**
-1. ⏳ Owner: confirm Vercel Pro continues after the trial (Billing).
+1. ✅ Vercel Pro continues after the trial (Vercel's email, 2026-10-24:
+   the trial ends in 3 days, then $20+ a month).
 2. ⏳ Owner + Claude: import manufacturer schedules for the most popular
    bikes (admin page), so most new riders get a real schedule instead of
    starter tasks. Testers didn't know what their list should be.
+   🔨 Made easier (2026-10-25, on `develop`): **Add a schedule** on the
+   admin page takes a make and model (from the riders' lists), the years and
+   the manual's link, saves the link as an approved manual (a new make or
+   model joins the lists), and the import reads the PDF straight from the
+   link: no second account, no download and upload. "Manual but no
+   schedule" rows and Manual & schedule (for admins) prefill the link too.
+   The fetch goes through `app/api/admin/manual-pdf`: admins only, public
+   addresses only (checked again on every redirect, `lib/manualUrl.ts`),
+   streamed (Vercel's 4.5 MB limit doesn't apply to streams), 150 MB cap,
+   always served as a downloadable PDF. The link must be the PDF itself;
+   choosing a file still works.
 3. ✅ Supabase production: Authentication → Rate Limits, "Rate limit for
    sending emails" raised to 60 an hour (owner, 2026-10-24; other limits
    left at their defaults). ⏳ Resend's free plan is 100 emails a day, shared
