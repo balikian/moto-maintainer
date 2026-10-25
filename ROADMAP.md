@@ -19,10 +19,12 @@ do it; Claude = code or setup Claude can do.
 2. ⏳ Owner + Claude: import manufacturer schedules for the most popular
    bikes (admin page), so most new riders get a real schedule instead of
    starter tasks. Testers didn't know what their list should be.
-3. ⏳ Owner: Supabase → Authentication → Rate Limits on production; the
-   sign-in email limit starts at 30 an hour. Resend's free plan is 100
-   emails a day (the reminder run stops at 80); move to Pro ($20 a month)
-   when daily reminders get close.
+3. ✅ Supabase production: Authentication → Rate Limits, "Rate limit for
+   sending emails" raised to 60 an hour (owner, 2026-10-24; other limits
+   left at their defaults). ⏳ Resend's free plan is 100 emails a day, shared
+   by sign-in codes and reminders (the reminder run stops at 80): switch to
+   Pro ($20 a month, no daily cap) the day before announcing; drop back if
+   sign-ups stay low.
 4. ⏳ Claude: link previews and search basics: an Open Graph image and
    description (what a link shows in texts and Facebook groups), a sitemap
    and robots file; owner submits the sitemap in Search Console (swingarm.app
