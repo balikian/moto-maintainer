@@ -1,10 +1,11 @@
 'use client';
 
 import { useMemo, useState, type SubmitEvent } from 'react';
-import { BASE_CATALOG, mergeCatalog, type BikeCatalog, type CustomModel } from '@/lib/bikeCatalog';
+import { BASE_CATALOG, mergeCatalog, type CustomModel } from '@/lib/bikeCatalog';
 import { DEFAULT_BIKE_SETUP, type BikeSetup } from '@/lib/maintenance';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance } from '@/lib/units';
+import MakeModelFields, { modelYears, useMakeModel } from './MakeModelFields';
 import Modal from './Modal';
 import { ui } from './ui';
 
@@ -59,61 +60,20 @@ type BikeFormModalProps = {
   onSubmit: (values: BikeFormValues) => Promise<string | null>;
 };
 
-// Option value for "Other / Not Listed". Can't collide with a real make or model name.
-const OTHER = '__other__';
-
-const sameName = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
-
-/** Maps a saved bike onto the dropdowns, using "Other" + a text box for names not in the list. */
-function initialSelection(catalog: BikeCatalog, bike?: Motorcycle) {
-  if (!bike) return { make: '', model: '', customMake: '', customModel: '' };
-
-  const knownMake = Object.keys(catalog).find((make) => sameName(make, bike.make));
-  if (!knownMake) return { make: OTHER, model: '', customMake: bike.make, customModel: bike.model };
-
-  const models = catalog[knownMake]?.models ?? [];
-  const knownModel = models.find((model) => sameName(model, bike.model));
-  if (knownModel) return { make: knownMake, model: knownModel, customMake: '', customModel: '' };
-
-  return { make: knownMake, model: models.length > 0 ? OTHER : '', customMake: '', customModel: bike.model };
-}
-
 export default function BikeFormModal({ bike, customModels, unitSystem, onClose, onSubmit }: BikeFormModalProps) {
   const isEditing = Boolean(bike);
   const currentYear = new Date().getFullYear();
   const catalog = useMemo(() => mergeCatalog(BASE_CATALOG, customModels), [customModels]);
-  const makes = useMemo(() => Object.keys(catalog).sort((a, b) => a.localeCompare(b)), [catalog]);
-  const [initial] = useState(() => initialSelection(catalog, bike));
+  const picker = useMakeModel(catalog, bike);
   const [year, setYear] = useState(bike?.year ?? currentYear);
-  const [make, setMake] = useState(initial.make);
-  const [model, setModel] = useState(initial.model);
-  const [customMake, setCustomMake] = useState(initial.customMake);
-  const [customModel, setCustomModel] = useState(initial.customModel);
   const [odometer, setOdometer] = useState('');
   const [setup, setSetup] = useState<BikeSetup>(DEFAULT_BIKE_SETUP);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const years = useMemo(
-    () => Array.from({ length: currentYear + 2 - 1970 }, (_, index) => currentYear + 1 - index),
-    [currentYear]
-  );
-  const models = make && make !== OTHER ? catalog[make]?.models ?? [] : [];
-
-  // A custom model name is needed for a custom make, a make with no known
-  // models, or when the user picks "Other" from the model list.
-  const needsCustomMake = make === OTHER;
-  const hasModelList = models.length > 0;
-  const needsCustomModel = Boolean(make) && (!hasModelList || model === OTHER);
-  const resolvedMake = (needsCustomMake ? customMake : make).trim();
-  const resolvedModel = (needsCustomModel ? customModel : model).trim();
-
-  const handleMakeChange = (value: string) => {
-    setMake(value);
-    setModel('');
-    setCustomMake('');
-    setCustomModel('');
-  };
+  const years = useMemo(() => modelYears(currentYear), [currentYear]);
+  const resolvedMake = picker.make;
+  const resolvedModel = picker.model;
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
@@ -157,57 +117,7 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
           </select>
         </div>
 
-        <div>
-          <label htmlFor="bike-make" className={ui.label}>Make</label>
-          <select id="bike-make" required value={make} onChange={(event) => handleMakeChange(event.target.value)} className={ui.input}>
-            <option value="">Select a make</option>
-            {makes.map((option) => (
-              <option key={option} value={option}>{option}</option>
-            ))}
-            <option value={OTHER}>Other / Not Listed</option>
-          </select>
-          {needsCustomMake && (
-            <input
-              type="text"
-              required
-              placeholder="Enter make"
-              aria-label="Custom make"
-              value={customMake}
-              onChange={(event) => setCustomMake(event.target.value)}
-              className={`mt-2 ${ui.input}`}
-            />
-          )}
-        </div>
-
-        <div>
-          <label htmlFor="bike-model" className={ui.label}>Model</label>
-          {hasModelList && (
-            <select id="bike-model" required value={model} onChange={(event) => setModel(event.target.value)} className={ui.input}>
-              <option value="">Select a model</option>
-              {models.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
-              <option value={OTHER}>Other / Not Listed</option>
-            </select>
-          )}
-          {!make && (
-            <select id="bike-model" disabled className={ui.input}>
-              <option>Select a make first</option>
-            </select>
-          )}
-          {needsCustomModel && (
-            <input
-              id={hasModelList ? undefined : 'bike-model'}
-              type="text"
-              required
-              placeholder="Enter model"
-              aria-label="Custom model"
-              value={customModel}
-              onChange={(event) => setCustomModel(event.target.value)}
-              className={hasModelList ? `mt-2 ${ui.input}` : ui.input}
-            />
-          )}
-        </div>
+        <MakeModelFields picker={picker} idPrefix="bike" />
 
         {isEditing ? (
           <p className={`text-xs ${ui.muted}`}>

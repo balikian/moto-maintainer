@@ -30,7 +30,13 @@ do it; Claude = code or setup Claude can do.
    addresses only (checked again on every redirect, `lib/manualUrl.ts`),
    streamed (Vercel's 4.5 MB limit doesn't apply to streams), 150 MB cap,
    always served as a downloadable PDF. The link must be the PDF itself;
-   choosing a file still works.
+   choosing a file still works. Owner's first try (2026-10-25): the make
+   field didn't act like the bike form's (a typed list that only offered
+   the current make), so the form now uses the bike form's own dropdowns
+   (shared `MakeModelFields`, with Other / Not Listed) and year dropdowns.
+   Also (owner, 2026-10-25): More's groups open and close, closed by default
+   with a one-line summary ("Miles · Auto theme", "All on", "On for this
+   device"), remembered per browser.
 3. ✅ Supabase production: Authentication → Rate Limits, "Rate limit for
    sending emails" raised to 60 an hour (owner, 2026-10-24; other limits
    left at their defaults). ⏳ Resend's free plan is 100 emails a day, shared

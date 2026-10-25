@@ -2,9 +2,10 @@
 
 import { useId, useState, type ReactNode } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { BellRing, ChevronRight, LogOut, Share, SquarePlus, Upload } from 'lucide-react';
+import { BellRing, ChevronDown, ChevronRight, LogOut, Share, SquarePlus, Upload } from 'lucide-react';
 import { useInstallPrompt } from '../hooks/useInstallPrompt';
-import { turnOffPushOnThisDevice, usePush } from '../hooks/usePush';
+import { turnOffPushOnThisDevice, usePush, type PushStatus } from '../hooks/usePush';
+import { useStoredToggle } from '../hooks/useStoredToggle';
 import { logout } from '@/lib/actions/auth';
 import type { Motorcycle, PushPreferences, ReminderPreferences, Theme, UnitSystem } from '@/lib/types';
 import Avatar from './Avatar';
@@ -71,13 +72,62 @@ function providerLabel(provider: string | null) {
   return 'Signed in with an email link';
 }
 
-function Group({ title, children }: { title: string; children: ReactNode }) {
+/**
+ * A settings group that opens and closes, so More isn't a wall of switches.
+ * Closed (the default), its header shows a one-line summary. Remembered per browser.
+ */
+function Group({ id, title, summary, note, children }: {
+  id: string;
+  title: string;
+  summary?: ReactNode;
+  /** A line under the group's rows, shown while it's open. */
+  note?: ReactNode;
+  children: ReactNode;
+}) {
+  const [collapsed, toggle] = useStoredToggle(`moto-maintain:more-${id}-collapsed`, true);
+  const contentId = `more-${id}`;
   return (
-    <section className="space-y-2">
-      <h2 className="mx-1 text-sm font-bold text-muted">{title}</h2>
-      <div className={`${ui.card} px-3.5`}>{children}</div>
+    <section className={ui.card}>
+      <h2>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={!collapsed}
+          aria-controls={contentId}
+          className="flex min-h-14 w-full items-center gap-3 px-3.5 py-2 text-left"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-base font-extrabold">{title}</span>
+            {collapsed && summary && <span className="block truncate text-sm font-medium text-muted">{summary}</span>}
+          </span>
+          <ChevronDown size={18} className={`shrink-0 text-muted transition-transform ${collapsed ? '-rotate-90' : ''}`} aria-hidden="true" />
+        </button>
+      </h2>
+      <div id={contentId} hidden={collapsed} className="border-t border-line px-3.5">
+        <div>{children}</div>
+        {note && <p className="border-t border-line py-3 text-sm text-muted">{note}</p>}
+      </div>
     </section>
   );
+}
+
+const optionLabel = <T extends string>(options: { value: T; label: string }[], value: T) =>
+  options.find((option) => option.value === value)?.label ?? value;
+
+const PUSH_SUMMARY: Record<PushStatus, string> = {
+  loading: '',
+  on: 'On for this device',
+  off: 'Off on this device',
+  blocked: 'Blocked in this browser',
+  'home-screen': 'Needs the Home Screen app',
+  unsupported: 'Not available in this browser',
+};
+
+/** "All on", "2 of 3 on" or "Off". */
+function switchesSummary(values: boolean[]): string {
+  const on = values.filter(Boolean).length;
+  if (on === 0) return 'Off';
+  return on === values.length ? 'All on' : `${on} of ${values.length} on`;
 }
 
 /** Buttons for picking one of a few values, like Miles / Kilometers. */
@@ -204,7 +254,17 @@ function PushGroup({ supabase, preferences, onChange }: {
 
   return (
     <div className="space-y-2">
-      <Group title="Push notifications">
+      <Group
+        id="push"
+        title="Push notifications"
+        summary={PUSH_SUMMARY[push.status]}
+        note={
+          <>
+            At most one a day, on each device where you turn them on.
+            {push.otherDevices > 0 && <> On for {plural(push.otherDevices, 'other device')}.</>}
+          </>
+        }
+      >
         {deviceRow}
         {push.status === 'on' && (
           <div className={sideControlRowClass}>
@@ -232,10 +292,6 @@ function PushGroup({ supabase, preferences, onChange }: {
           ))}
       </Group>
       {push.error && <p className={ui.errorBox}>{push.error}</p>}
-      <p className="mx-1 text-sm text-muted">
-        At most one a day, on each device where you turn them on.
-        {push.otherDevices > 0 && <> On for {plural(push.otherDevices, 'other device')}.</>}
-      </p>
     </div>
   );
 }
@@ -307,32 +363,36 @@ export default function MoreView({
         </div>
       </div>
 
-      <Group title="Preferences">
+      <Group
+        id="preferences"
+        title="Preferences"
+        summary={`${optionLabel(UNIT_OPTIONS, unitSystem)} · ${optionLabel(THEME_OPTIONS, theme)} theme`}
+      >
         <Segmented label="Distance" options={UNIT_OPTIONS} value={unitSystem} onChange={onChangeUnits} />
         <Segmented label="Theme" options={THEME_OPTIONS} value={theme} onChange={onChangeTheme} />
       </Group>
 
-      <div className="space-y-2">
-        <Group title="Reminder emails">
-          {REMINDER_OPTIONS.map((option) => (
-            <SwitchRow
-              key={option.key}
-              label={option.label}
-              detail={option.detail}
-              checked={reminders[option.key]}
-              onChange={(checked) => onChangeReminders({ ...reminders, [option.key]: checked })}
-            />
-          ))}
-        </Group>
-        <p className="mx-1 text-sm text-muted">
-          At most one email a day{email && <>, sent to {email}</>}.
-        </p>
-      </div>
+      <Group
+        id="reminder-emails"
+        title="Reminder emails"
+        summary={switchesSummary(REMINDER_OPTIONS.map((option) => reminders[option.key]))}
+        note={<>At most one email a day{email && <>, sent to {email}</>}.</>}
+      >
+        {REMINDER_OPTIONS.map((option) => (
+          <SwitchRow
+            key={option.key}
+            label={option.label}
+            detail={option.detail}
+            checked={reminders[option.key]}
+            onChange={(checked) => onChangeReminders({ ...reminders, [option.key]: checked })}
+          />
+        ))}
+      </Group>
 
       <PushGroup supabase={supabase} preferences={push} onChange={onChangePush} />
 
       <div className="space-y-2">
-        <Group title="Your data">
+        <Group id="your-data" title="Your data" summary="Download a copy, or import a backup">
           <div className={sideControlRowClass}>
             <span className="min-w-0">
               <span className="block text-base font-bold">Download a copy</span>
@@ -356,7 +416,7 @@ export default function MoreView({
         {downloadError && <p className={ui.errorBox}>{downloadError}</p>}
       </div>
 
-      <Group title="SwingArm">
+      <Group id="swingarm" title="SwingArm" summary="About, how it works, help, privacy and terms">
         <InstallRow />
         <a href="/about" className={`${rowClass} text-base font-bold`}>
           About SwingArm
@@ -381,7 +441,11 @@ export default function MoreView({
       </Group>
 
       {isAdmin && (
-        <Group title="Admins only">
+        <Group
+          id="admin"
+          title="Admins only"
+          summary={reviewCount > 0 ? `${plural(reviewCount, 'submission')} waiting for review` : 'Nothing waiting for review'}
+        >
           <a href="/admin" className={`${rowClass} text-base font-bold`}>
             Review submissions
             <span className="flex items-center gap-2">
