@@ -251,10 +251,13 @@ export default function ImportScheduleModal({ bike, years, manualUrl, onClose, o
             </div>
           )}
 
-          {/* One block per task: the full name on top (wrapping, never cut off), its intervals below. */}
+          {/*
+            One block per task, at every width: the full name on top (wrapping, never cut off), its intervals below.
+            A side-by-side desktop layout doesn't fit: the intervals row alone is about as wide as the dialog.
+          */}
           <ul className="divide-y divide-line">
             {tasks.map((task, index) => (
-              <li key={index} className="grid gap-2 py-2.5 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+              <li key={index} className="grid gap-2 py-2.5">
                 <textarea
                   rows={1}
                   value={task.task_name}
