@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { reviewCustomModelAction, reviewManualAction } from '@/lib/actions/modelData';
-import { BASE_CATALOG, manualsWithoutSchedule, mergeCatalog } from '@/lib/bikeCatalog';
+import { BASE_CATALOG, manualsWithoutSchedule, mergeCatalog, otherModelsOf } from '@/lib/bikeCatalog';
 import { isHttpUrl } from '@/lib/modelData';
 import { getSignedInClient } from '@/lib/supabase/server';
 import type { BikeManual, ModelEntry } from '@/lib/types';
@@ -95,6 +95,7 @@ export default async function AdminPage() {
                   yearFrom={manual.year_from}
                   yearTo={manual.year_to}
                   manualUrl={isHttpUrl(manual.url) ? manual.url : ''}
+                  otherModels={otherModelsOf(catalog, manual.make, manual.model)}
                 />
               </div>
             ))

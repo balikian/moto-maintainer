@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { isInCatalog, manualsWithoutSchedule, mergeCatalog, type BikeCatalog } from './bikeCatalog';
+import { isInCatalog, manualsWithoutSchedule, mergeCatalog, otherModelsOf, type BikeCatalog } from './bikeCatalog';
 import type { ModelEntry } from './types';
 
 const base: BikeCatalog = {
@@ -17,6 +17,17 @@ describe('isInCatalog', () => {
     assert.equal(isInCatalog(base, 'Husqvarna', 'Norden 901 Expedition'), false);
     assert.equal(isInCatalog(base, 'CFMoto', '450MT'), false);
     assert.equal(isInCatalog(base, 'Honda', 'Africa Twin'), false);
+  });
+});
+
+describe('otherModelsOf', () => {
+  it('lists the make’s other models, ignoring case', () => {
+    assert.deepEqual(otherModelsOf(base, 'HUSQVARNA', 'norden 901'), ['Svartpilen 401']);
+    assert.deepEqual(otherModelsOf(base, 'Husqvarna', 'Norden 901 Expedition'), ['Norden 901', 'Svartpilen 401']);
+  });
+
+  it('is empty for an unknown make', () => {
+    assert.deepEqual(otherModelsOf(base, 'CFMoto', '450MT'), []);
   });
 });
 

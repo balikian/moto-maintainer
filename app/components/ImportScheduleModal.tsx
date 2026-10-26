@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, type SubmitEvent } from 'react';
-import { Plus, Sparkles, Trash2 } from 'lucide-react';
+import { Plus, Sparkles, Trash2, X } from 'lucide-react';
+import { addManualAsAdminAction } from '@/lib/actions/modelData';
 import { applyModelScheduleAction, extractScheduleAction, saveModelScheduleAction } from '@/lib/actions/schedules';
 import { bikeTitle } from '@/lib/historyExport';
 import { formatPageList } from '@/lib/pageRanges';
@@ -24,6 +25,11 @@ type ImportScheduleModalProps = {
    * through an admin-only route). The link starts filled in when one is known.
    */
   manualUrl?: string;
+  /**
+   * The make's other models (admins only), offered as "Also use this schedule
+   * for": editions the same manual covers, like a base model and its Expedition.
+   */
+  otherModels?: string[];
   onClose: () => void;
   /** Called after a schedule is saved (and applied, if chosen) with a summary for the rider. */
   onImported: (summary: string) => void;
@@ -40,7 +46,8 @@ type Stage =
 const cellInput =
   'rounded-lg border border-line-strong bg-page px-2 py-1.5 text-sm text-fg';
 
-export default function ImportScheduleModal({ bike, years, manualUrl, onClose, onImported }: ImportScheduleModalProps) {
+export default function ImportScheduleModal({ bike, years, manualUrl, otherModels = [], onClose, onImported }: ImportScheduleModalProps) {
+  const [alsoModels, setAlsoModels] = useState<string[]>([]);
   const [stage, setStage] = useState<Stage>({ name: 'select' });
   const [file, setFile] = useState<File | null>(null);
   const linkImport = manualUrl !== undefined;
@@ -137,6 +144,7 @@ export default function ImportScheduleModal({ bike, years, manualUrl, onClose, o
       yearTo: Number(yearTo),
       source,
       tasks,
+      alsoModels,
     });
     if (saved.error || !saved.data) {
       setError(saved.error ?? 'Couldn’t save the schedule.');
@@ -144,9 +152,21 @@ export default function ImportScheduleModal({ bike, years, manualUrl, onClose, o
       return;
     }
 
-    let summary = saved.data.status === 'approved'
-      ? `Saved the ${bikeTitle(bike)} schedule for everyone with this bike.`
-      : 'Saved your schedule; it will be shared once it’s reviewed.';
+    const savedModels = saved.data.models;
+    let summary = saved.data.status !== 'approved'
+      ? 'Saved your schedule; it will be shared once it’s reviewed.'
+      : savedModels.length > 1
+        ? `Saved the schedule for the ${bike.make} ${savedModels.join(', ')} (${yearFrom}–${yearTo}), for everyone with these bikes.`
+        : `Saved the ${bikeTitle(bike)} schedule for everyone with this bike.`;
+
+    // The other models get the manual's link too, so riders with them see it.
+    const url = link.trim();
+    if (linkImport && isHttpUrl(url)) {
+      for (const otherModel of savedModels.slice(1)) {
+        const added = await addManualAsAdminAction({ make: bike.make, model: otherModel, yearFrom: Number(yearFrom), yearTo: Number(yearTo), url });
+        if (added.error) summary += ` The manual link wasn’t saved for the ${otherModel}: ${added.error}`;
+      }
+    }
 
     if (applyToBike && bike.id) {
       const applied = await applyModelScheduleAction(bike.id);
@@ -360,6 +380,51 @@ export default function ImportScheduleModal({ bike, years, manualUrl, onClose, o
           <p className="-mt-2 text-xs text-muted">
             Widen the years if the same schedule applies to other model years; it will be used for all of them.
           </p>
+
+          {otherModels.length > 0 && (
+            <div>
+              <label htmlFor="schedule-also" className={ui.label}>
+                Also use this schedule for <span className="font-normal text-muted">optional</span>
+              </label>
+              <select
+                id="schedule-also"
+                value=""
+                onChange={(event) => {
+                  const picked = event.target.value;
+                  if (picked) setAlsoModels((previous) => (previous.includes(picked) ? previous : [...previous, picked]));
+                }}
+                className={ui.input}
+              >
+                <option value="">Add another {bike.make} model…</option>
+                {otherModels
+                  .filter((name) => !alsoModels.includes(name))
+                  .map((name) => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+              </select>
+              {alsoModels.length > 0 && (
+                <ul className="mt-2 flex flex-wrap gap-2">
+                  {alsoModels.map((name) => (
+                    <li key={name} className="inline-flex items-center gap-1 rounded-full border border-line bg-raised py-1 pl-3 pr-1 text-sm font-semibold">
+                      {name}
+                      <button
+                        type="button"
+                        onClick={() => setAlsoModels((previous) => previous.filter((other) => other !== name))}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted hover:bg-surface hover:text-fg"
+                        aria-label={`Don’t use it for the ${name}`}
+                      >
+                        <X size={14} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="mt-1.5 text-xs text-muted">
+                For editions the same manual covers, like a base model and its Expedition or S. Each gets its own copy
+                {linkImport ? ', and the manual link' : ''}.
+              </p>
+            </div>
+          )}
 
           {bike.id ? (
             <label className="flex items-center gap-2 text-sm">

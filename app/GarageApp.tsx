@@ -545,6 +545,7 @@ export default function GarageApp() {
           bike={activeBike}
           currentUserId={user.id}
           isAdmin={isAdmin}
+          customModels={customModels}
           onTasksChanged={() => {
             reloadTasks();
             logsQuery.reload();

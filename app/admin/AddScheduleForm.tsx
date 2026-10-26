@@ -4,7 +4,7 @@ import { useMemo, useState, type SubmitEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Sparkles } from 'lucide-react';
 import { addManualAsAdminAction } from '@/lib/actions/modelData';
-import type { BikeCatalog } from '@/lib/bikeCatalog';
+import { otherModelsOf, type BikeCatalog } from '@/lib/bikeCatalog';
 import { isHttpUrl } from '@/lib/modelData';
 import ImportScheduleModal from '../components/ImportScheduleModal';
 import MakeModelFields, { modelYears, useMakeModel } from '../components/MakeModelFields';
@@ -115,6 +115,7 @@ export default function AddScheduleForm({ catalog }: { catalog: BikeCatalog }) {
           bike={{ make: target.make, model: target.model, year: target.yearTo }}
           years={{ from: target.yearFrom, to: target.yearTo }}
           manualUrl={target.url}
+          otherModels={otherModelsOf(catalog, target.make, target.model)}
           onClose={() => {
             setTarget(null);
             router.refresh();

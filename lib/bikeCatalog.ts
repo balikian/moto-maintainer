@@ -17,6 +17,12 @@ export function isInCatalog(catalog: BikeCatalog, make: string, model: string): 
   return Boolean(knownMake && catalog[knownMake].models.some((name) => sameName(name, model)));
 }
 
+/** The make's other models (ignoring case), for sharing one manual's schedule with its editions. */
+export function otherModelsOf(catalog: BikeCatalog, make: string, model: string): string[] {
+  const knownMake = Object.keys(catalog).find((name) => sameName(name, make));
+  return knownMake ? catalog[knownMake].models.filter((name) => !sameName(name, model)) : [];
+}
+
 /** Adds riders' makes and models to the catalog, keeping the catalog's spelling where they overlap. */
 export function mergeCatalog(base: BikeCatalog, custom: CustomModel[]): BikeCatalog {
   const merged: BikeCatalog = Object.fromEntries(

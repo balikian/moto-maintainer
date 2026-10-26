@@ -37,6 +37,12 @@ do it; Claude = code or setup Claude can do.
    Also (owner, 2026-10-25): More's groups open and close, closed by default
    with a one-line summary ("Miles · Auto theme", "All on", "On for this
    device"), remembered per browser.
+   **Editions (owner, 2026-10-26):** the import's review step has "Also
+   use this schedule for" (admins), a dropdown of the make's other models
+   (Norden 901 → Norden 901 Expedition). **Decided:** copies, not linked
+   models: each model gets its own schedule rows (and the manual link), so
+   no database change and no change to how schedules are looked up;
+   re-importing with the same models replaces every copy.
 3. ✅ Supabase production: Authentication → Rate Limits, "Rate limit for
    sending emails" raised to 60 an hour (owner, 2026-10-24; other limits
    left at their defaults). ⏳ Resend's free plan is 100 emails a day, shared

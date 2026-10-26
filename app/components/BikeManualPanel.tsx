@@ -6,6 +6,7 @@ import { BookOpen, ExternalLink, ListChecks, Plus, Search, Sparkles, X } from 'l
 import { deleteManualAction, submitManualAction } from '@/lib/actions/modelData';
 import { applyModelScheduleAction } from '@/lib/actions/schedules';
 import { trackEvent } from '@/lib/analytics';
+import { BASE_CATALOG, mergeCatalog, otherModelsOf, type CustomModel } from '@/lib/bikeCatalog';
 import { manualPortalFor, manualSearchUrl } from '@/lib/data/manualPortals';
 import { bikeTitle } from '@/lib/historyExport';
 import { fetchManuals, fetchModelSchedule, isHttpUrl } from '@/lib/modelData';
@@ -22,6 +23,8 @@ type BikeManualPanelProps = {
   bike: Motorcycle;
   currentUserId: string;
   isAdmin: boolean;
+  /** Approved makes/models riders added, so an admin's import can offer the make's other models. */
+  customModels: CustomModel[];
   /** Called after the bike's checklist changed, so the page can reload its tasks. */
   onTasksChanged: () => void;
   onClose: () => void;
@@ -34,7 +37,7 @@ function yearsLabel(entry: Pick<ModelEntry, 'year_from' | 'year_to'>): string {
   return entry.year_from === entry.year_to ? String(entry.year_from) : `${entry.year_from}–${entry.year_to}`;
 }
 
-export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin, onTasksChanged, onClose }: BikeManualPanelProps) {
+export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin, customModels, onTasksChanged, onClose }: BikeManualPanelProps) {
   const lookupKey = `${bike.id}|${bike.year}|${bike.make}|${bike.model}`;
   const manuals = useSupabaseQuery<BikeManual[]>(lookupKey, () => fetchManuals(supabase, bike));
   const schedule = useSupabaseQuery<ModelSchedule | null>(lookupKey, () => fetchModelSchedule(supabase, bike));
@@ -266,6 +269,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
         <ImportScheduleModal
           bike={bike}
           manualUrl={isAdmin ? (list.find((manual) => isHttpUrl(manual.url))?.url ?? '') : undefined}
+          otherModels={isAdmin ? otherModelsOf(mergeCatalog(BASE_CATALOG, customModels), bike.make, bike.model) : undefined}
           onClose={() => setImportOpen(false)}
           onImported={(summary) => {
             setImportOpen(false);

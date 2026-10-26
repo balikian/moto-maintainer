@@ -52,12 +52,23 @@ type SaveScheduleInput = {
   yearTo: number;
   source: string;
   tasks: ExtractedTask[];
+  /**
+   * Admins only: other models of the same make the manual covers (editions
+   * like "Norden 901 Expedition"). Each gets its own copy of the schedule.
+   */
+  alsoModels?: string[];
 };
 
-/** Saves a reviewed schedule as the shared schedule for this model. Admins' saves are approved immediately. */
+/** At most this many extra models per save. */
+const MAX_ALSO_MODELS = 20;
+
+/**
+ * Saves a reviewed schedule as the shared schedule for this model, and for any
+ * other models an admin listed. Admins' saves are approved immediately.
+ */
 export async function saveModelScheduleAction(
   input: SaveScheduleInput
-): Promise<ActionResult<{ id: string; status: ReviewStatus }>> {
+): Promise<ActionResult<{ id: string; status: ReviewStatus; models: string[] }>> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
 
@@ -85,48 +96,62 @@ export async function saveModelScheduleAction(
 
   const { data: isAdmin } = await supabase.rpc('is_app_admin');
   const status: ReviewStatus = isAdmin ? 'approved' : 'pending';
+  const source = input.source.trim().slice(0, 300) || null;
 
-  const { data: schedule, error } = await supabase
-    .from('model_schedules')
-    .insert({
-      make,
-      model,
-      year_from: yearFrom,
-      year_to: yearTo,
-      source: input.source.trim().slice(0, 300) || null,
-      status,
-      submitted_by: user.id,
-      reviewed_at: isAdmin ? new Date().toISOString() : null,
-    })
-    .select('id')
-    .single();
-  if (error || !schedule) return { error: error?.message ?? 'Unable to save the schedule.' };
-
-  const { error: tasksError } = await supabase
-    .from('model_schedule_tasks')
-    .insert(tasks.map((task) => ({ ...task, schedule_id: schedule.id })));
-  if (tasksError) {
-    // Don't leave an empty schedule behind.
-    await supabase.from('model_schedules').delete().eq('id', schedule.id);
-    return { error: tasksError.message };
+  // The model itself first, then the others (admins only), each name once.
+  const models: string[] = [];
+  for (const name of [model, ...(isAdmin ? (input.alsoModels ?? []).slice(0, MAX_ALSO_MODELS) : [])]) {
+    const clean = name.trim().slice(0, 80);
+    if (clean && !models.some((other) => other.toLowerCase() === clean.toLowerCase())) models.push(clean);
   }
 
-  // An admin's import replaces earlier schedules for exactly this model and
-  // years (re-imports, or a rider's pending one), so they don't pile up.
-  // Riders' checklists are copies, so nothing on a bike changes.
-  if (isAdmin) {
-    const { error: cleanupError } = await supabase
+  let firstId: string | null = null;
+  for (const [index, current] of models.entries()) {
+    const { data: schedule, error } = await supabase
       .from('model_schedules')
-      .delete()
-      .ilike('make', literalPattern(make))
-      .ilike('model', literalPattern(model))
-      .eq('year_from', yearFrom)
-      .eq('year_to', yearTo)
-      .neq('id', schedule.id);
-    if (cleanupError) return { error: `Saved, but couldn’t remove the older copy: ${cleanupError.message}` };
+      .insert({
+        make,
+        model: current,
+        year_from: yearFrom,
+        year_to: yearTo,
+        source,
+        status,
+        submitted_by: user.id,
+        reviewed_at: isAdmin ? new Date().toISOString() : null,
+      })
+      .select('id')
+      .single();
+    const savedSoFar = models.slice(0, index).join(', ');
+    const failed = (message: string) => ({ error: savedSoFar ? `Saved for ${savedSoFar}, but not ${current}: ${message}` : message });
+    if (error || !schedule) return failed(error?.message ?? 'Unable to save the schedule.');
+
+    const { error: tasksError } = await supabase
+      .from('model_schedule_tasks')
+      .insert(tasks.map((task) => ({ ...task, schedule_id: schedule.id })));
+    if (tasksError) {
+      // Don't leave an empty schedule behind.
+      await supabase.from('model_schedules').delete().eq('id', schedule.id);
+      return failed(tasksError.message);
+    }
+
+    // An admin's import replaces earlier schedules for exactly this model and
+    // years (re-imports, or a rider's pending one), so they don't pile up.
+    // Riders' checklists are copies, so nothing on a bike changes.
+    if (isAdmin) {
+      const { error: cleanupError } = await supabase
+        .from('model_schedules')
+        .delete()
+        .ilike('make', literalPattern(make))
+        .ilike('model', literalPattern(current))
+        .eq('year_from', yearFrom)
+        .eq('year_to', yearTo)
+        .neq('id', schedule.id);
+      if (cleanupError) return failed(`Saved, but couldn’t remove the older copy: ${cleanupError.message}`);
+    }
+    firstId ??= schedule.id as string;
   }
 
-  return { data: { id: schedule.id as string, status } };
+  return { data: { id: firstId as string, status, models } };
 }
 
 /**
