@@ -35,8 +35,10 @@ type Stage =
   | { name: 'review' }
   | { name: 'saving' };
 
+// No width here: each field sets its own. A full width on the small interval
+// fields made them fill the row on desktop and squeezed the task name.
 const cellInput =
-  'w-full rounded-lg border border-line-strong bg-page px-2 py-1.5 text-sm text-fg';
+  'rounded-lg border border-line-strong bg-page px-2 py-1.5 text-sm text-fg';
 
 export default function ImportScheduleModal({ bike, years, manualUrl, onClose, onImported }: ImportScheduleModalProps) {
   const [stage, setStage] = useState<Stage>({ name: 'select' });
@@ -257,7 +259,7 @@ export default function ImportScheduleModal({ bike, years, manualUrl, onClose, o
                   rows={1}
                   value={task.task_name}
                   onChange={(e) => updateTask(index, { task_name: e.target.value.replace(/\n/g, ' ') })}
-                  className={`${cellInput} field-sizing-content min-h-8 resize-none`}
+                  className={`${cellInput} field-sizing-content min-h-8 w-full resize-none`}
                   aria-label="Task name"
                   placeholder="Task name"
                 />
