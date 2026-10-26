@@ -20,7 +20,9 @@ do it; Claude = code or setup Claude can do.
 2. ⏳ Owner + Claude: import manufacturer schedules for the most popular
    bikes (admin page), so most new riders get a real schedule instead of
    starter tasks. Testers didn't know what their list should be.
-   🔨 Made easier (2026-10-25, on `develop`): **Add a schedule** on the
+   ✅ Made easier (2026-10-25; owner checked on test; released 2026-10-26
+   with the editions picker, More's collapsible groups, the dropdown arrows
+   and the admin page's bottom bar): **Add a schedule** on the
    admin page takes a make and model (from the riders' lists), the years and
    the manual's link, saves the link as an approved manual (a new make or
    model joins the lists), and the import reads the PDF straight from the
@@ -57,7 +59,7 @@ do it; Claude = code or setup Claude can do.
    `profiles.is_dark_mode`, a fixed `search_path` on `handle_new_user()`).
 6. ⏳ Owner: the push checks still open (a tap opens SwingArm, signing out
    turns push off on that device, a real reminder on the iPhone).
-   🔨 Changed (owner, 2026-10-25; on `develop`): signing out still turns push
+   ✅ Changed (owner, 2026-10-25; released 2026-10-26): signing out still turns push
    off on the device (so the next rider there doesn't get your reminders),
    but the device remembers whose push was on (localStorage, last rider
    only) and `restorePushAfterSignIn` turns it back on when that rider signs
