@@ -45,6 +45,9 @@ do it; Claude = code or setup Claude can do.
    models: each model gets its own schedule rows (and the manual link), so
    no database change and no change to how schedules are looked up;
    re-importing with the same models replaces every copy.
+   **The list (2026-10-26):** `docs/schedule-imports.md`, 30 popular US
+   models with manual links where public ones exist (19 of 30; Kawasaki,
+   Suzuki, Harley, Tiger 900 and Indian Scout need a downloaded PDF).
 3. ✅ Supabase production: Authentication → Rate Limits, "Rate limit for
    sending emails" raised to 60 an hour (owner, 2026-10-24; other limits
    left at their defaults). ⏳ Resend's free plan is 100 emails a day, shared
@@ -84,6 +87,7 @@ do it; Claude = code or setup Claude can do.
    push off in More forgets it. If a browser won't subscribe without a tap
    (possibly iPhone), it stays off until turned on in More: check on the
    iPhone. Help and privacy policy (dated 2026-10-25) say so.
+   ✅ All working on Android (owner, 2026-10-26). ⏳ iPhone still to check.
 7. 💤 Optional: error alerts (Sentry's free plan), an off-site `pg_dump` of
    production now and then (Supabase keeps 7 days of backups).
 8. ⏳ Owner: where to announce (riding forums, Facebook groups, Reddit,
