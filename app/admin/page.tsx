@@ -6,6 +6,7 @@ import { BASE_CATALOG, manualsWithoutSchedule, mergeCatalog } from '@/lib/bikeCa
 import { isHttpUrl } from '@/lib/modelData';
 import { getSignedInClient } from '@/lib/supabase/server';
 import type { BikeManual, ModelEntry } from '@/lib/types';
+import AppNav from '../components/AppNav';
 import { ui } from '../components/ui';
 import AddScheduleForm from './AddScheduleForm';
 import ImportScheduleButton from './ImportScheduleButton';
@@ -49,8 +50,9 @@ export default async function AdminPage() {
   const pendingModels = (customModelsResult.data ?? []) as PendingCustomModel[];
 
   return (
-    <div className={`p-4 md:p-8 ${ui.page}`}>
-      <div className="mx-auto max-w-4xl space-y-6">
+    // A column at least as tall as the screen, so the phone's bottom bar sits at the bottom.
+    <div className={`flex flex-col ${ui.page}`}>
+      <div className="mx-auto w-full max-w-4xl flex-1 space-y-6 p-4 md:p-8">
         <div className="flex items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight">Review submissions</h1>
@@ -167,6 +169,8 @@ export default async function AdminPage() {
           )}
         </section>
       </div>
+      {/* Reached from More, so More shows as current. */}
+      <AppNav view="more" />
     </div>
   );
 }

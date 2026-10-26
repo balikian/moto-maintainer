@@ -275,7 +275,7 @@ export default function ImportScheduleModal({ bike, years, manualUrl, onClose, o
                   <select
                     value={task.distance_unit}
                     onChange={(e) => updateTask(index, { distance_unit: e.target.value === 'km' ? 'km' : 'mi' })}
-                    className={`${cellInput} w-16`}
+                    className={`${cellInput} select-compact w-16`}
                     aria-label="Distance unit"
                   >
                     <option value="km">km</option>
@@ -304,7 +304,7 @@ export default function ImportScheduleModal({ bike, years, manualUrl, onClose, o
                   <select
                     value={task.category}
                     onChange={(e) => updateTask(index, { category: isTaskCategory(e.target.value) ? e.target.value : 'other' })}
-                    className={`${cellInput} w-auto`}
+                    className={`${cellInput} select-compact w-auto`}
                     aria-label="Category"
                   >
                     {TASK_CATEGORIES.map((category) => (
