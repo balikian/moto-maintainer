@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { COMPANY_NAME } from '@/lib/site';
+import { COMPANY_NAME, OPEN_GRAPH } from '@/lib/site';
 import { getSignedInClient } from '@/lib/supabase/server';
 import { Bullets, LegalPage, LegalSection, PageLink, SupportLink } from '../components/LegalPage';
 
-export const metadata: Metadata = {
-  title: 'Privacy policy · SwingArm',
-  description: 'What SwingArm collects, why, who helps us run it, and how to delete your data.',
-};
+const title = 'Privacy policy · SwingArm';
+const description = 'What SwingArm collects, why, who helps us run it, and how to delete your data.';
+
+export const metadata: Metadata = { title, description, openGraph: { ...OPEN_GRAPH, title, description } };
 
 // Keep this in step with the app: a new kind of data, a new service that
 // handles riders' data (analytics, payments, push), or a change to deletion

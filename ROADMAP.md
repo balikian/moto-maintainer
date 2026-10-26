@@ -51,12 +51,30 @@ do it; Claude = code or setup Claude can do.
    by sign-in codes and reminders (the reminder run stops at 80): switch to
    Pro ($20 a month, no daily cap) the day before announcing; drop back if
    sign-ups stay low.
-4. ⏳ Claude: link previews and search basics: an Open Graph image and
+4. 🔨 Claude: link previews and search basics: an Open Graph image and
    description (what a link shows in texts and Facebook groups), a sitemap
    and robots file; owner submits the sitemap in Search Console (swingarm.app
    is verified there).
-5. ⏳ Claude: database cleanup migration (unused `bikes` table,
+   ✅ Built (2026-10-26, on develop): `app/opengraph-image.tsx` draws the
+   picture at build time (dark theme, logo, the home page's headline in
+   Manrope from `assets/fonts/`); the root layout sets the description,
+   Open Graph and Twitter card tags; pages with their own title (help,
+   privacy, terms) spread `OPEN_GRAPH` from `lib/site.ts` so they keep the
+   picture. Share links preview as "<year make model> service history" with
+   the record count. `app/robots.ts` and `app/sitemap.ts` (/, /help,
+   /privacy, /terms; /about names / as canonical). Only production is
+   indexable: the test site and local dev say noindex on every page.
+   ⏳ Owner: check a test.swingarm.app link in a text or Facebook's Sharing
+   Debugger; after release, submit `https://swingarm.app/sitemap.xml` in
+   Search Console.
+5. 🔨 Claude: database cleanup migration (unused `bikes` table,
    `profiles.is_dark_mode`, a fixed `search_path` on `handle_new_user()`).
+   ✅ `20261026120000_cleanup.sql` on test (2026-10-26): drops `bikes`
+   (stops instead if it has any rows), rewrites `handle_new_user()` without
+   `is_dark_mode` and with `search_path` '', drops the column. Checked on
+   test: a sign-up in a rolled-back transaction still gets its profile.
+   No code uses either, so it can go to production any time, before or
+   after the release. ⏳ Production push (owner's go-ahead).
 6. ⏳ Owner: the push checks still open (a tap opens SwingArm, signing out
    turns push off on that device, a real reminder on the iPhone).
    ✅ Changed (owner, 2026-10-25; released 2026-10-26): signing out still turns push
@@ -477,9 +495,10 @@ for now.
      a dump of test matches prod exactly. ✅ Marked applied on prod
      (`migration repair`). From now on, migrations apply to test first,
      then prod, with the CLI (see CLAUDE.md).
-     Cleanup for later, in a migration: prod still has an unused `bikes`
-     table and `profiles.is_dark_mode`, and `handle_new_user()` is
-     security definer without a fixed `search_path`.
+     Cleanup: prod still had an unused `bikes` table and
+     `profiles.is_dark_mode`, and `handle_new_user()` was security definer
+     without a fixed `search_path`; `20261026120000_cleanup.sql` fixes all
+     three (launch checklist item 5).
   3. ✅ Test project setup (2026-10-14): Google sign-in with prod's Google
      client (the test callback URL added in Google Cloud, and a second
      client secret for test). Auth URL Configuration: Site URL

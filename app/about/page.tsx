@@ -4,6 +4,8 @@ import HomePage from '../components/HomePage';
 
 export const metadata: Metadata = {
   title: 'About SwingArm',
+  // The same page as the home page, so search engines list only that one.
+  alternates: { canonical: '/' },
 };
 
 /** The public home page, reachable while signed in (More → About SwingArm). */

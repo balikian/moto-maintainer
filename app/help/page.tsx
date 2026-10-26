@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { SUPPORT_EMAIL } from '@/lib/site';
+import { OPEN_GRAPH, SUPPORT_EMAIL } from '@/lib/site';
 import { getSignedInClient } from '@/lib/supabase/server';
 import { SITE_WRAP, SiteFooter, SiteHeader } from '../components/SiteChrome';
 import { ui } from '../components/ui';
 
-export const metadata: Metadata = {
-  title: 'How SwingArm works',
-  description: 'Add your bike, see what’s due, log service, and share your bike’s history: SwingArm step by step.',
-};
+const title = 'How SwingArm works';
+const description = 'Add your bike, see what’s due, log service, and share your bike’s history: SwingArm step by step.';
+
+export const metadata: Metadata = { title, description, openGraph: { ...OPEN_GRAPH, title, description } };
 
 // The how-to, public so it can be linked from anywhere (More → How SwingArm
 // works, the home page). Keep it in step with the app when features change.

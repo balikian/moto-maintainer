@@ -1,8 +1,15 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { getSignedInClient } from '@/lib/supabase/server';
 import GarageApp from './GarageApp';
 import HomePage from './components/HomePage';
 import LoadingScreen from './components/LoadingScreen';
+
+// The title search results show for swingarm.app.
+export const metadata: Metadata = {
+  title: 'SwingArm: motorcycle maintenance tracker',
+  alternates: { canonical: '/' },
+};
 
 // Signed-out visitors get the public home page, rendered on the server;
 // signed-in riders get their garage.

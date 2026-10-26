@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import { COMPANY_NAME } from '@/lib/site';
+import { COMPANY_NAME, OPEN_GRAPH } from '@/lib/site';
 import { getSignedInClient } from '@/lib/supabase/server';
 import { Bullets, LegalPage, LegalSection, PageLink, SupportLink } from '../components/LegalPage';
 
-export const metadata: Metadata = {
-  title: 'Terms of use · SwingArm',
-  description: 'The terms for using SwingArm, the motorcycle maintenance tracker.',
-};
+const title = 'Terms of use · SwingArm';
+const description = 'The terms for using SwingArm, the motorcycle maintenance tracker.';
+
+export const metadata: Metadata = { title, description, openGraph: { ...OPEN_GRAPH, title, description } };
 
 // Keep this in step with the app, especially when paid plans arrive.
 
