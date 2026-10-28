@@ -17,6 +17,7 @@ const config: CapacitorConfig = {
   appName: 'SwingArm',
   webDir: 'mobile',
   // The dark theme's page color (--sa-page), shown while the site loads.
+  // Android uses the light or dark one to match the phone (MainActivity).
   backgroundColor: '#141619',
   // Lets the site and its logs tell the app from a browser.
   appendUserAgent: 'SwingArmApp',

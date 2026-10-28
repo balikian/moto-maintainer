@@ -2,4 +2,9 @@
 <resources>
     <!-- Notification icon tint: SwingArm's accent color (light theme). -->
     <color name="notification_accent">#B5281F</color>
+    <!-- The page color (light theme), behind the splash icon and the web
+         view until the site paints. values-night has the dark theme's. These
+         follow the phone's dark mode: the rider's own theme is only known
+         once the site loads. -->
+    <color name="page_background">#ECE6DC</color>
 </resources>

@@ -811,8 +811,13 @@ for now.
   1. ⏳ Owner: install Android Studio (it brings Java and the Android SDK),
      then a first build on the owner's Android phone, pointed at the test
      site.
-  2. Splash on Android 12+: background color per theme (the phone draws
-     the icon on it); check on the phone.
+  2. ✅ Splash on Android 12+ (2026-10-28): the icon on the page color for
+     the phone's light or dark mode (`windowSplashScreenBackground`,
+     `page_background` in `values/` and `values-night/`), and the web view
+     shows the same color until the site paints (MainActivity), so light
+     mode no longer flashes dark. Both follow the phone, not the rider's
+     theme, which is only known once the site loads. Checked dark on the
+     Pixel. Android 11 and older still show the light splash image.
   3. 🔨 Sign-in in the app (built 2026-10-28): Google opens in an in-app
      browser tab (`@capacitor/browser`; Google blocks sign-in inside web
      views) and returns to `app.swingarm://auth/callback`
@@ -869,7 +874,10 @@ for now.
      site's Home Screen app is named "SwingArm Test".
      ⏳ Print / Save as PDF does nothing in the app (web views can't print):
      needs a print plugin, or a PDF made another way.
-     ⏳ Status bar icons follow the phone's theme, not SwingArm's.
+     ✅ Status bar icons follow SwingArm's theme (2026-10-28,
+     `NativeSystemBars`: watches the `dark` class, `SystemBars.setStyle`).
+     Checked on the Pixel: light icons on dark, dark icons on light with the
+     phone in dark mode.
      Found (owner, 2026-10-28): Excel on Android says any of our CSVs is
      corrupted, Chrome's download too, with or without the UTF-8 marker, so
      it's Excel's phone app, not SwingArm. Google Sheets on the phone opens
