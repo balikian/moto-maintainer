@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from 'react';
 import { installOption, type InstallOption } from '@/lib/install';
+import { isNativeApp } from '@/lib/nativeApp';
 
 // Chrome, Edge and Android browsers fire `beforeinstallprompt` once the site
 // can be installed (it has a manifest, app/manifest.ts). The event can fire
@@ -44,6 +45,8 @@ function subscribe(listener: () => void) {
 }
 
 function getSnapshot(): InstallOption {
+  // Already an app; nothing to add to the Home Screen.
+  if (isNativeApp()) return 'none';
   return installOption({
     runningInstalled:
       installedThisVisit ||

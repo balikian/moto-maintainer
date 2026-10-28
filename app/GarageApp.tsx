@@ -357,7 +357,7 @@ export default function GarageApp() {
     // A column at least as tall as the screen, so the phone's bottom bar
     // (sticky, not fixed, so it shares the page's width and doesn't shift
     // when a scrollbar comes and goes) always sits at the bottom.
-    <div className="flex min-h-dvh flex-col bg-page text-fg">
+    <div className="flex min-h-[calc(100dvh_-_env(safe-area-inset-top))] flex-col bg-page text-fg">
       <DesktopHeader
         view={view}
         avatarUrl={avatarUrl}

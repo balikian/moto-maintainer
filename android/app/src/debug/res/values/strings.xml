@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- Development builds' name, so they can't be mistaken for the store app. -->
+    <string name="app_name">SwingArm Dev</string>
+    <string name="title_activity_main">SwingArm Dev</string>
+</resources>

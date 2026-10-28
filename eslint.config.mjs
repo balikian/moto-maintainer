@@ -14,6 +14,9 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Third-party pdf.js worker copied in by scripts/copy-pdf-worker.mjs.
     "public/pdf.worker.min.mjs",
+    // Native phone app projects (Capacitor), with generated and copied files.
+    "android/**",
+    "ios/**",
   ]),
 ]);
 

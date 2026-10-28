@@ -10,14 +10,14 @@ Status key: ✅ done · 🔨 in progress · ⏳ next · 💤 later
 
 ## Launch checklist (2026-10-23)
 
-Two phases: tell the public about the web app first, while the store
-accounts are being set up; the phone apps follow. Owner = only the owner can
+Two phases: get the web app ready, then the phone apps; the public
+announcement waits for both (decided 2026-10-27, below). Owner = only the owner can
 do it; Claude = code or setup Claude can do.
 
 **Web launch**
 1. ✅ Vercel Pro continues after the trial (Vercel's email, 2026-10-24:
    the trial ends in 3 days, then $20+ a month).
-2. ⏳ Owner + Claude: import manufacturer schedules for the most popular
+2. ✅ Owner + Claude: import manufacturer schedules for the most popular
    bikes (admin page), so most new riders get a real schedule instead of
    starter tasks. Testers didn't know what their list should be.
    ✅ Made easier (2026-10-25; owner checked on test; released 2026-10-26
@@ -52,6 +52,8 @@ do it; Claude = code or setup Claude can do.
    (2026-10-27). Added 23
    adventure bikes (#31–53, 2026-10-27): 15 with checked links, 2 Honda
    links found by search, 6 need a downloaded PDF.
+   ✅ Done enough for launch (owner, 2026-10-27); more easy ones get added
+   along the way.
 3. ✅ Supabase production: Authentication → Rate Limits, "Rate limit for
    sending emails" raised to 60 an hour (owner, 2026-10-24; other limits
    left at their defaults). ⏳ Resend's free plan is 100 emails a day, shared
@@ -71,9 +73,8 @@ do it; Claude = code or setup Claude can do.
    the record count. `app/robots.ts` and `app/sitemap.ts` (/, /help,
    /privacy, /terms; /about names / as canonical). Only production is
    indexable: the test site and local dev say noindex on every page.
-   ⏳ Owner: check a swingarm.app link in Facebook (Sharing Debugger or a
-   post) and a text; submit `https://swingarm.app/sitemap.xml` in
-   Search Console.
+   ✅ Owner checked the Facebook preview and submitted
+   `https://swingarm.app/sitemap.xml` in Search Console (2026-10-27).
 5. ✅ Claude: database cleanup migration (unused `bikes` table,
    `profiles.is_dark_mode`, a fixed `search_path` on `handle_new_user()`).
    ✅ `20261026120000_cleanup.sql` on test and production (2026-10-26): drops `bikes`
@@ -81,7 +82,7 @@ do it; Claude = code or setup Claude can do.
    `is_dark_mode` and with `search_path` '', drops the column. Checked on
    test: a sign-up in a rolled-back transaction still gets its profile.
    Production's `bikes` was empty too (the guard let it through).
-6. ⏳ Owner: the push checks still open (a tap opens SwingArm, signing out
+6. ✅ Owner: the push checks still open (a tap opens SwingArm, signing out
    turns push off on that device, a real reminder on the iPhone).
    ✅ Changed (owner, 2026-10-25; released 2026-10-26): signing out still turns push
    off on the device (so the next rider there doesn't get your reminders),
@@ -91,15 +92,30 @@ do it; Claude = code or setup Claude can do.
    push off in More forgets it. If a browser won't subscribe without a tap
    (possibly iPhone), it stays off until turned on in More: check on the
    iPhone. Help and privacy policy (dated 2026-10-25) say so.
-   ✅ All working on Android (owner, 2026-10-26). ⏳ iPhone still to check.
+   ✅ All working on Android (owner, 2026-10-26) and iPhone (owner,
+   2026-10-27), including push coming back on after signing in again.
 7. 💤 Optional: error alerts (Sentry's free plan), an off-site `pg_dump` of
    production now and then (Supabase keeps 7 days of backups).
-8. ⏳ Owner: where to announce (riding forums, Facebook groups, Reddit,
-   friends' clubs), and a short post. Claude can draft it.
+8. ⏳ Owner + Claude: an announcing strategy: where (riding forums,
+   Facebook groups, Reddit, friends' clubs), in what order, and the posts.
+   Claude can draft them.
+
+**Decided (owner, 2026-10-27): announce after the phone apps and Sign in
+with Apple**, not before as first planned, so riders who hear about it can
+get the app from the stores straight away. Sign in with Apple must work at
+launch, so riders who want it never have to move their data to a new
+account later. (Supabase can also add a sign-in method to an existing
+account, so "Add Sign in with Apple" on More could cover riders who
+signed up another way.)
 
 **Phone apps** (step 7 below)
 1. ✅ D-U-N-S number for Cheese and Beer LLC: **025614636** (2026-10-23).
    Apple can take up to 2 business days to see a new number.
+   ⏳ Blocked (2026-10-27): the D-U-N-S record shows an old,
+   out-of-business company of the same name (the LLC reuses an old
+   business name). The owner has a case open with Dun & Bradstreet to fix
+   it. No Apple Developer account until then; Google Play's organization
+   account checks the D-U-N-S too.
 2. Owner: Apple Developer Program as the LLC ($99 a year) and a Google Play
    organization account ($25 once). Organization accounts skip Google's
    12-tester, 14-day closed test.
@@ -605,7 +621,7 @@ for now.
   settings and every bike's tasks and service history
   (`lib/accountExport.ts`). Owner checked the rest of step 4 on test.
 
-## 5. Notifications 🔨 (email ✅, web push 🔨)
+## 5. Notifications ✅ (email ✅, web push ✅; native push comes with the phone apps)
 
 - **Decided (2026-10-16):** email first. A **Vercel Cron** (`vercel.json`,
   daily at 15:00 UTC: 8 am Pacific in summer, 7 am in winter) calls
@@ -697,9 +713,9 @@ for now.
     and the iPhone Home Screen app (Apple's push service); a real run
     (from the local server, same database and keys) pushed "10
     maintenance tasks need attention" to Android, and a repeat run found
-    nothing to send. ⏳ Still to check: a tap opens SwingArm, sign out
-    turns push off on that device, a real reminder on the iPhone (its
-    account is a week from its first task reminders).
+    nothing to send. ✅ Checked (Android 2026-10-26, iPhone 2026-10-27): a
+    tap opens SwingArm, sign out turns push off on that device, a real
+    reminder arrives.
   - ✅ Released 2026-10-20: production VAPID pair in Vercel Production
     (generated by the owner, never in a file), migration on production
     (checked: RLS and 2 policies, the columns, function grants,
@@ -774,8 +790,50 @@ for now.
   `importAccountDataAction`, which adds bikes without going through
   `addBikeAction`.
 
-## 7. Phone apps (iOS and Android) 💤
+## 7. Phone apps (iOS and Android) 🔨
 
+- 🔨 **Started 2026-10-27** (store accounts wait on the D-U-N-S fix, so
+  Android first): Capacitor 8.5.3, app id `app.swingarm`,
+  `capacitor.config.ts` loads swingarm.app (`CAPACITOR_SERVER_URL` points
+  a build at the test site), an offline page (`mobile/offline.html`, "Can't
+  reach SwingArm"), the user agent ends in `SwingArmApp`. `android/`
+  generated; icons and splash from SVGs in `assets/app/` (`npm run
+  app:icons`; Android's adaptive icon zooms the artwork out to fit the
+  round crop). Capacitor's docs say a remote `server.url` is "not intended
+  for production"; it's still the plan, since the site needs its server
+  (server actions) and can't be bundled into the app.
+  Next:
+  1. ⏳ Owner: install Android Studio (it brings Java and the Android SDK),
+     then a first build on the owner's Android phone, pointed at the test
+     site.
+  2. Splash on Android 12+: background color per theme (the phone draws
+     the icon on it); check on the phone.
+  3. Sign-in in the app: Google through the phone's browser and back
+     (Supabase redirect to an app link), email code as now.
+  4. Links that open the app (Android App Links: `assetlinks.json` on
+     swingarm.app), e.g. the sign-in email's link and share links.
+  5. Native push: Firebase project (free) for Android, the device token
+     saved like web push subscriptions, sent by the daily job.
+  6. ✅ Inside the app (2026-10-28, owner testing on a Pixel): no Add to
+     Home Screen; push on More says "Coming soon to the app"; Download my
+     data and the CSV go to the phone's share sheet (`@capacitor/filesystem`
+     and `@capacitor/share`, since the web view can't download), and so does
+     the share link. Also: the page starts below the status bar, a
+     page-colored strip covers it when scrolling, the bottom bar hides while
+     a text field has focus (the app shrinks the page for the keyboard, so
+     the bar sat over forms' buttons), dialogs clear both system bars.
+     Development builds are "SwingArm Dev" (`app.swingarm.dev`); the test
+     site's Home Screen app is named "SwingArm Test".
+     ⏳ Print / Save as PDF does nothing in the app (web views can't print):
+     needs a print plugin, or a PDF made another way.
+     ⏳ Status bar icons follow the phone's theme, not SwingArm's.
+     Found (owner, 2026-10-28): Excel on Android says any of our CSVs is
+     corrupted, Chrome's download too, with or without the UTF-8 marker, so
+     it's Excel's phone app, not SwingArm. Google Sheets on the phone opens
+     it but shows the marker as "ï»¿" before "Date". 💤 Maybe an `.xlsx`
+     export later.
+  7. iPhone once Apple approves: `ios/`, Sign in with Apple (web too),
+     Apple's push key. Building needs a Mac (Xcode) or a cloud build.
 - Wrap the web app with **Capacitor** (already the plan). The app loads the
   hosted site, plus native push, app icon, splash screen, and deep links.
 - Apple rejects apps that are "just a website", so native push and a

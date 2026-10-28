@@ -7,6 +7,9 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(__dirname),
   },
+  // Dev only: let a phone on the home network use the dev server by the PC's
+  // address (the phone app pointed at http://<PC>:3000; see CLAUDE.md).
+  allowedDevOrigins: ["192.168.*.*"],
   experimental: {
     serverActions: {
       // Room for the owner's-manual pages sent to the schedule import (see lib/actions/schedules.ts).

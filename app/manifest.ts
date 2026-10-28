@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { HOME_SCREEN_NAME } from '@/lib/site';
 
 // The web app manifest: lets riders add SwingArm to their Home Screen (or
 // install it on a computer), where it opens full screen with its own icon.
@@ -7,8 +8,8 @@ import type { MetadataRoute } from 'next';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'SwingArm',
-    short_name: 'SwingArm',
+    name: HOME_SCREEN_NAME,
+    short_name: HOME_SCREEN_NAME,
     description: 'Track motorcycle maintenance by mileage and time.',
     start_url: '/',
     scope: '/',

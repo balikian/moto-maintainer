@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
-import { OPEN_GRAPH, SITE_URL, TEST_SITE_URL } from "@/lib/site";
+import { HOME_SCREEN_NAME, OPEN_GRAPH, SITE_URL, TEST_SITE_URL } from "@/lib/site";
 import SiteAnalytics from "./components/SiteAnalytics";
 import "./globals.css";
 
@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   // name (the manifest, app/manifest.ts, covers other browsers).
   appleWebApp: {
     capable: true,
-    title: "SwingArm",
+    title: HOME_SCREEN_NAME,
     statusBarStyle: "default",
   },
 };

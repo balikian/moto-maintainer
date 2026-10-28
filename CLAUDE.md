@@ -18,6 +18,7 @@ Run Node commands in **PowerShell**: it has Node 22. Git Bash on this machine re
 - `npm run build`: production build. **Never run it while the dev server is running.** Both write `.next/`, and a concurrent build once corrupted the dev cache and hung the server. If the dev server ever hangs at high CPU: stop it, delete `.next/`, restart.
 - `npm run sync:bikes`: refresh `lib/data/motorcycles.json` (makes and models) from the NHTSA API.
 - `npm install` also runs `scripts/copy-pdf-worker.mjs`, which copies the pdf.js worker into `public/` (gitignored).
+- Phone apps (Capacitor): `npx cap sync android` after changing `capacitor.config.ts`, `mobile/` or Capacitor plugins. The app loads production unless synced with `$env:CAPACITOR_SERVER_URL='http://<PC's address>:3000'` (PowerShell), the dev server on this PC (test database); sync again without it before a store build. The test site can't be used: Vercel's login sends the app out to the phone's browser. `npm run app:icons` regenerates the icons and splash from `assets/app/`. Building and running needs Android Studio (`npx cap open android`).
 
 ## Layout
 
@@ -34,6 +35,7 @@ Run Node commands in **PowerShell**: it has Node 22. Git Bash on this machine re
 - Reminder emails: `lib/reminders.ts` (what each rider gets), `lib/reminderEmail.ts` (templates), `lib/reminderJob.ts` (the daily run, called by Vercel Cron at `app/api/cron/reminders`), `lib/email.ts` (Resend). Unsubscribe links go to `app/unsubscribe` and `app/api/unsubscribe`.
 - Web push: the same daily job also pushes (`lib/pushMessage.ts` text, `lib/push.ts` sending). Devices are rows in `push_subscriptions`, turned on per device on More (`app/hooks/usePush.ts`, `lib/actions/push.ts`); `public/sw.js` is the service worker that shows them.
 - `supabase/migrations/`: SQL for the schema and row-level security.
+- Phone apps: `capacitor.config.ts` (app id `app.swingarm`, which can't change once published; development builds are `app.swingarm.dev`, "SwingArm Dev", so they install beside the store app), `android/` (the native Android project; `ios/` later). The apps are a native shell whose web view loads the hosted site, so web changes reach them without a store update. `mobile/` is all that ships inside the app (the offline page). Icon and splash sources are SVGs in `assets/app/`.
 
 ## Conventions
 

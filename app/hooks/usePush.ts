@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { removePushDeviceAction, savePushDeviceAction, sendTestPushAction } from '@/lib/actions/push';
 import { trackEvent } from '@/lib/analytics';
+import { isNativeApp } from '@/lib/nativeApp';
 import { decodeVapidKey, pushAvailability } from '@/lib/pushSupport';
 
 // Push notifications on this device, for More's switch. Turning them on asks
@@ -13,9 +14,11 @@ import { decodeVapidKey, pushAvailability } from '@/lib/pushSupport';
 // for this rider: the job deletes addresses the push service says are gone,
 // and another account may have turned push on in this browser.
 
-export type PushStatus = 'loading' | 'unsupported' | 'home-screen' | 'blocked' | 'off' | 'on';
+// 'app': the phone app, whose web view has no web push; it'll get the phone's own notifications.
+export type PushStatus = 'loading' | 'unsupported' | 'home-screen' | 'app' | 'blocked' | 'off' | 'on';
 
 function availability() {
+  if (isNativeApp()) return 'app' as const;
   return pushAvailability({
     hasServiceWorker: 'serviceWorker' in navigator,
     hasPushManager: 'PushManager' in window,

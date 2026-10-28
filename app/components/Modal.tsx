@@ -46,7 +46,8 @@ export default function Modal({ title, description, size = 'md', closeOnOutsideC
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-2 backdrop-blur-sm sm:p-4"
+      // Padded clear of the phone's status bar and gesture bar in the app.
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-2 pt-[calc(0.5rem_+_env(safe-area-inset-top))] pb-[calc(0.5rem_+_env(safe-area-inset-bottom))] backdrop-blur-sm sm:px-4 sm:pt-[calc(1rem_+_env(safe-area-inset-top))] sm:pb-[calc(1rem_+_env(safe-area-inset-bottom))]"
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
@@ -60,7 +61,7 @@ export default function Modal({ title, description, size = 'md', closeOnOutsideC
       }}
     >
       <div
-        className={`relative max-h-[calc(100dvh-1rem)] w-full overflow-y-auto overscroll-contain p-4 sm:max-h-[calc(100dvh-2rem)] sm:p-6 ${ui.popover} ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'}`}
+        className={`relative max-h-full w-full overflow-y-auto overscroll-contain p-4 sm:p-6 ${ui.popover} ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'}`}
       >
         <button
           type="button"

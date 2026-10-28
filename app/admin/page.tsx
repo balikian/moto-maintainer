@@ -58,7 +58,7 @@ export default async function AdminPage() {
             <h1 className="text-2xl font-extrabold tracking-tight">Review submissions</h1>
             <p className={`text-sm ${ui.muted}`}>Manuals, schedules, and bike names from riders. Approved entries are shared with everyone.</p>
           </div>
-          <Link href="/" className="text-sm font-bold text-muted hover:text-fg">
+          <Link href="/" className="shrink-0 text-sm font-bold text-muted hover:text-fg">
             ← Back to garage
           </Link>
         </div>

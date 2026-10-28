@@ -70,6 +70,8 @@ export default function AppNav(props: AppNavProps) {
   return (
     <nav
       aria-label="Main"
+      // Hidden while typing on a phone (globals.css), so it can't ride up on the keyboard.
+      data-app-nav
       className="sticky bottom-0 z-30 border-t border-line bg-surface pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 print:hidden lg:hidden"
     >
       <div className="mx-auto grid max-w-lg grid-cols-5 items-end px-2">

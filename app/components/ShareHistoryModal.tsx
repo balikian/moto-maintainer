@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { Share } from '@capacitor/share';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Check, Copy, ExternalLink, Link2, Mail, Share2 } from 'lucide-react';
 import { createShareLinkAction, revokeShareLinkAction } from '@/lib/actions/shares';
 import { trackEvent } from '@/lib/analytics';
 import { bikeTitle } from '@/lib/historyExport';
+import { isNativeApp } from '@/lib/nativeApp';
 import type { Motorcycle } from '@/lib/types';
 import { useSupabaseQuery } from '../hooks/useSupabaseQuery';
 import ConfirmPopover from './ConfirmPopover';
@@ -35,7 +37,10 @@ export default function ShareHistoryModal({ supabase, bike, onClose }: ShareHist
   const token = share.data?.token ?? null;
   const shareUrl = token ? `${window.location.origin}/share/${token}` : null;
   const title = `${bikeTitle(bike)} service history`;
-  const canUseShareSheet = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
+  // The phone app's web view has no Web Share, so the app uses the phone's own
+  // share sheet. (The dialog only opens in the browser, so this can run while rendering.)
+  const inApp = isNativeApp();
+  const canUseShareSheet = inApp || (typeof navigator !== 'undefined' && typeof navigator.share === 'function');
 
   const runAction = async (action: () => Promise<{ error?: string }>) => {
     setBusy(true);
@@ -63,7 +68,8 @@ export default function ShareHistoryModal({ supabase, bike, onClose }: ShareHist
   const openShareSheet = async () => {
     if (!shareUrl) return;
     try {
-      await navigator.share({ title, url: shareUrl });
+      if (inApp) await Share.share({ title, url: shareUrl, dialogTitle: title });
+      else await navigator.share({ title, url: shareUrl });
     } catch {
       // The user closed the share sheet; nothing to do.
     }

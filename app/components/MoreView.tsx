@@ -120,6 +120,7 @@ const PUSH_SUMMARY: Record<PushStatus, string> = {
   off: 'Off on this device',
   blocked: 'Blocked in this browser',
   'home-screen': 'Needs the Home Screen app',
+  app: 'Coming soon to the app',
   unsupported: 'Not available in this browser',
 };
 
@@ -229,6 +230,13 @@ function PushGroup({ supabase, preferences, onChange }: {
       <NoteRow
         label="Add SwingArm to your Home Screen first"
         detail="On iPhone and iPad, notifications work in the Home Screen app. Add it from Safari’s Share menu, open it from its icon, then come back here."
+      />
+    );
+  } else if (push.status === 'app') {
+    deviceRow = (
+      <NoteRow
+        label="Coming soon to the app"
+        detail="Notifications on this phone are on the way. Until then, email reminders keep you posted."
       />
     );
   } else if (push.status === 'unsupported') {

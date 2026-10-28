@@ -27,3 +27,10 @@ export const OPEN_GRAPH = {
 
 /** The test site, where `develop` deploys (Vercel's Preview environment). */
 export const TEST_SITE_URL = 'https://test.swingarm.app';
+
+/**
+ * The name under a Home Screen icon (app/manifest.ts, the iPhone title in
+ * app/layout.tsx): the test site's says Test, so a phone with both can tell
+ * them apart. Server-only (VERCEL_ENV isn't in the browser).
+ */
+export const HOME_SCREEN_NAME = process.env.VERCEL_ENV === 'preview' ? 'SwingArm Test' : 'SwingArm';

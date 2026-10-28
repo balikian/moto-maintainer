@@ -82,6 +82,32 @@
 body {
   @apply bg-page text-fg;
   font-family: var(--font-manrope), "Helvetica Neue", Arial, sans-serif;
+  /* The Android app draws under the phone's status bar (viewport-fit=cover in
+     layout.tsx), so the page starts below it. 0 in browsers. */
+  padding-top: env(safe-area-inset-top);
+}
+
+/* The status bar is see-through in the app, so scrolled content would show
+   behind it: a page-colored strip covers that area (under dialogs' backdrops,
+   z-50, over the bottom bar, z-30). 0 tall in browsers. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 40;
+  height: env(safe-area-inset-top);
+  background: var(--sa-page);
+  pointer-events: none;
+}
+
+/* While a text field has focus on a phone, the keyboard is up. Browsers keep
+   the page's size, so the bottom bar stays behind the keyboard, but the app
+   shrinks the page and the bar would sit on the keyboard over the form's
+   buttons: hide it until typing ends. */
+@media (pointer: coarse) {
+  body:has(:is(textarea, input:not([type="checkbox"], [type="radio"], [type="button"], [type="submit"], [type="reset"], [type="range"], [type="file"], [type="color"])):focus) [data-app-nav] {
+    display: none;
+  }
 }
 
 /*
