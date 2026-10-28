@@ -836,7 +836,8 @@ for now.
      (gitignored: the repo is public and GitHub flags its API key).
      `@capacitor/push-notifications` registers with Firebase; the token is
      saved in `push_subscriptions` as kind `fcm` (migration
-     `20261028120000_app_push.sql`, ✅ pushed to test; not production yet:
+     `20261028120000_app_push.sql` and `20261028130000_app_push_token_check.sql`
+     (Postgres caps regex repeat counts at 255), ✅ pushed to test; not production yet:
      `save_app_push_device`, `reminder_job_data` with each device's kind).
      The job and Test send through FCM's HTTP v1 API (`lib/fcm.ts`, signed
      in as the service account with a JWT, no extra library; UNREGISTERED
