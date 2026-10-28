@@ -872,8 +872,13 @@ for now.
      the bar sat over forms' buttons), dialogs clear both system bars.
      Development builds are "SwingArm Dev" (`app.swingarm.dev`); the test
      site's Home Screen app is named "SwingArm Test".
-     ⏳ Print / Save as PDF does nothing in the app (web views can't print):
-     needs a print plugin, or a PDF made another way.
+     ✅ Print / Save as PDF in the app (2026-10-28): web views ignore
+     window.print(), so `PrintPlugin` (the app's own) opens Android's print
+     screen, which has Save as PDF. Print styles now drop the status bar
+     space and strip, print on white with a light color scheme, and set
+     12 mm margins (`@page`; Android's print screen has none); the web view's
+     background is white while printing, or the margins print dark. Checked
+     on the Pixel in the dark theme: one clean page.
      ✅ Status bar icons follow SwingArm's theme (2026-10-28,
      `NativeSystemBars`: watches the `dark` class, `SystemBars.setStyle`).
      Checked on the Pixel: light icons on dark, dark icons on light with the

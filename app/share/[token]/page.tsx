@@ -55,7 +55,7 @@ export default async function SharedHistoryPage({ params }: Props) {
   }
 
   return (
-    <div className="theme-light min-h-screen w-full bg-page text-fg print:bg-white">
+    <div className="theme-light min-h-screen w-full bg-page text-fg print:min-h-0 print:bg-white">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 p-4 print:hidden">
         <p className="text-sm text-muted">Shared with you from SwingArm</p>
         <PrintButton />

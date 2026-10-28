@@ -100,6 +100,34 @@ body::before {
   pointer-events: none;
 }
 
+/* Printing (the history pages; Save as PDF in the app): no status bar space
+   or strip, and white paper even when the app is in the dark theme. The app's
+   print screen gives no margins of its own, so the page sets them. */
+@page {
+  margin: 12mm;
+}
+
+@media print {
+  /* The dark theme's color scheme would paint the page margins dark. */
+  :root,
+  .dark {
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    background: #fff;
+  }
+
+  body {
+    padding-top: 0;
+  }
+
+  body::before {
+    display: none;
+  }
+}
+
 /* While a text field has focus on a phone, the keyboard is up. Browsers keep
    the page's size, so the bottom bar stays behind the keyboard, but the app
    shrinks the page and the bar would sit on the keyboard over the form's

@@ -65,7 +65,7 @@ export default async function PrintHistoryPage({ params }: { params: Promise<{ b
   const bike = bikeResult.data as Motorcycle;
 
   return (
-    <div className="theme-light min-h-screen w-full bg-page text-fg print:bg-white">
+    <div className="theme-light min-h-screen w-full bg-page text-fg print:min-h-0 print:bg-white">
       <div className="mx-auto max-w-3xl p-4 print:hidden">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link href="/" className="text-sm font-bold text-muted hover:text-fg">

@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         // The app's own plugins, before the bridge starts.
         registerPlugin(DownloadsPlugin.class);
+        registerPlugin(PrintPlugin.class);
         super.onCreate(savedInstanceState);
         // Until the site paints, the web view shows the page color for the
         // phone's light or dark mode (values/colors.xml, values-night).
