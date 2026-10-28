@@ -7,10 +7,13 @@ import { getSignedInClient } from '../supabase/server';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
 
 // This device's push address (see app/hooks/usePush.ts), saved for the
-// signed-in rider so the daily reminder job can push to it.
+// signed-in rider so the daily reminder job can push to it: a browser's push
+// subscription, or the phone app's Firebase token.
 
-function isDevice(value: unknown): value is PushDevice {
-  const device = value as Partial<PushDevice> | null;
+type WebPushAddress = { endpoint: string; p256dh: string; auth: string };
+
+function isWebAddress(value: unknown): value is WebPushAddress {
+  const device = value as Partial<WebPushAddress> | null;
   return (
     typeof device?.endpoint === 'string' &&
     device.endpoint.startsWith('https://') &&
@@ -24,8 +27,11 @@ function isDevice(value: unknown): value is PushDevice {
   );
 }
 
-export async function savePushDeviceAction(device: PushDevice): Promise<ActionResult> {
-  if (!isDevice(device)) return { error: 'This browser gave an unexpected push address.' };
+/** Firebase tokens are letters, digits, colons, dashes and underscores (the database checks the same). */
+const isAppToken = (value: unknown): value is string => typeof value === 'string' && /^[A-Za-z0-9:_-]{1,4096}$/.test(value);
+
+export async function savePushDeviceAction(device: WebPushAddress): Promise<ActionResult> {
+  if (!isWebAddress(device)) return { error: 'This browser gave an unexpected push address.' };
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
 
@@ -38,15 +44,27 @@ export async function savePushDeviceAction(device: PushDevice): Promise<ActionRe
   return {};
 }
 
-export async function removePushDeviceAction(endpoint: string): Promise<ActionResult> {
-  if (typeof endpoint !== 'string') return {};
+/** Saves the phone app's Firebase token. */
+export async function saveAppPushDeviceAction(token: string): Promise<ActionResult> {
+  if (!isAppToken(token)) return { error: 'The phone gave an unexpected notification address.' };
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
+
+  const { error } = await supabase.rpc('save_app_push_device', { device_token: token });
+  if (error) return { error: `Couldn't turn on notifications: ${error.message}` };
+  return {};
+}
+
+/** Deletes this device's address. `data` says whether the rider had one saved. */
+export async function removePushDeviceAction(endpoint: string): Promise<ActionResult<boolean>> {
+  if (typeof endpoint !== 'string') return { data: false };
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
 
   // Row-level security limits this to the rider's own devices.
-  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
+  const { data, error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint).select('id');
   if (error) return { error: `Couldn't turn off push notifications: ${error.message}` };
-  return {};
+  return { data: data.length > 0 };
 }
 
 /** Sends a test notification to this device. */
@@ -57,9 +75,9 @@ export async function sendTestPushAction(endpoint: string): Promise<ActionResult
 
   const { data, error } = await supabase
     .from('push_subscriptions')
-    .select('endpoint, p256dh, auth')
+    .select('kind, endpoint, p256dh, auth')
     .eq('endpoint', endpoint)
-    .maybeSingle();
+    .maybeSingle<PushDevice>();
   if (error) return { error: `Couldn't send a test: ${error.message}` };
   if (!data) return { error: 'Push notifications aren’t on for this device. Turn them off and on again.' };
 

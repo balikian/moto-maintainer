@@ -54,8 +54,14 @@ export type ReminderRider = {
   bikes: ReminderBike[];
 };
 
-/** A browser's push address (its PushSubscription), saved in `push_subscriptions`. */
-export type PushDevice = { endpoint: string; p256dh: string; auth: string };
+/**
+ * A device the rider turned push on for, saved in `push_subscriptions`: a
+ * browser's push address (its PushSubscription), or the phone app's Firebase
+ * token, kept in `endpoint`.
+ */
+export type PushDevice =
+  | { kind: 'web'; endpoint: string; p256dh: string; auth: string }
+  | { kind: 'fcm'; endpoint: string };
 
 export type TaskReminder = {
   key: string;

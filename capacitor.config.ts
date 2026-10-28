@@ -26,6 +26,10 @@ const config: CapacitorConfig = {
     cleartext: serverUrl.startsWith('http://'),
     errorPath: 'offline.html',
   },
+  plugins: {
+    // Show notifications while the app is open too (Android only shows them on its own while it's closed).
+    PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] },
+  },
 };
 
 export default config;

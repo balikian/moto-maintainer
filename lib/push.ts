@@ -1,4 +1,5 @@
 import webpush from 'web-push';
+import { sendFcm } from './fcm';
 import type { PushMessage } from './pushMessage';
 import type { PushDevice } from './reminders';
 import { SUPPORT_EMAIL } from './site';
@@ -9,7 +10,8 @@ import { SUPPORT_EMAIL } from './site';
 // NEXT_PUBLIC_VAPID_PUBLIC_KEY (browsers subscribe with it); the private key
 // is VAPID_PRIVATE_KEY, never prefixed with NEXT_PUBLIC_. Devices subscribe
 // to one key pair, so each database's environments share theirs: local and
-// Preview use test's, Production its own.
+// Preview use test's, Production its own. The phone app's devices go through
+// Firebase instead (lib/fcm.ts).
 
 /** A reminder older than this isn't worth showing; the push service drops it. */
 const TIME_TO_LIVE_SECONDS = 24 * 60 * 60;
@@ -21,6 +23,8 @@ export type PushSendResult = {
 };
 
 export async function sendPush(device: PushDevice, message: PushMessage): Promise<PushSendResult> {
+  if (device.kind === 'fcm') return sendFcm(device.endpoint, message);
+
   const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const privateKey = process.env.VAPID_PRIVATE_KEY;
   if (!publicKey || !privateKey) return { error: 'The VAPID keys are not set.' };

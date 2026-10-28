@@ -62,7 +62,9 @@ captures/
 .cxx/
 
 # Google Services (e.g. APIs or Firebase)
-# google-services.json
+# Firebase's app config: kept out of the public repo (GitHub flags its API key).
+# Download it from Firebase's Project settings, Your apps (see CLAUDE.md).
+app/google-services.json
 
 # Freeline
 freeline.py

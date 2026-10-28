@@ -122,7 +122,7 @@ describe('planDailyReminders', () => {
 });
 
 describe('planPushReminders', () => {
-  const device = { endpoint: 'https://push.example.com/abc', p256dh: 'key', auth: 'secret' };
+  const device = { kind: 'web' as const, endpoint: 'https://push.example.com/abc', p256dh: 'key', auth: 'secret' };
   const stale = bike({ odometer_updated_at: '2026-09-10T18:00:00+00:00', tasks: [task('t', { interval_mileage: 2500 })] });
 
   it('sends nothing without a push device', () => {

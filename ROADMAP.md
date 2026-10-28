@@ -824,15 +824,37 @@ for now.
      (the dev server said localhost). ⏳ Owner: add `app.swingarm.dev://auth/callback`
      and `app.swingarm://auth/callback` to swingarm-test's Redirect URLs
      (Authentication → URL Configuration), then try Google in the app.
+     ✅ Owner added both (2026-10-28).
      Production gets `app.swingarm://auth/callback` with the store build.
      The email's link still opens the browser (needs Android App Links,
      below).
   4. Links that open the app (Android App Links: `assetlinks.json` on
      swingarm.app), e.g. the sign-in email's link and share links.
-  5. Native push: Firebase project (free) for Android, the device token
-     saved like web push subscriptions, sent by the daily job.
+  5. 🔨 Native push (built 2026-10-28): Firebase Cloud Messaging. ✅ Owner
+     made the Firebase project `swingarm-e40d2` (Analytics off) with both
+     app ids, and downloaded `android/app/google-services.json`
+     (gitignored: the repo is public and GitHub flags its API key).
+     `@capacitor/push-notifications` registers with Firebase; the token is
+     saved in `push_subscriptions` as kind `fcm` (migration
+     `20261028120000_app_push.sql`, ✅ pushed to test; not production yet:
+     `save_app_push_device`, `reminder_job_data` with each device's kind).
+     The job and Test send through FCM's HTTP v1 API (`lib/fcm.ts`, signed
+     in as the service account with a JWT, no extra library; UNREGISTERED
+     and SENDER_ID_MISMATCH delete the device). Android: the
+     POST_NOTIFICATIONS permission, a one-color swingarm icon
+     (`ic_stat_swingarm`), accent color, a "Maintenance reminders" channel,
+     notifications shown while the app is open too, and a tap opens the
+     notification's page. More's switch works the same as in a browser
+     (signing out turns it off, signing back in turns it on); "Coming
+     soon" is gone. Privacy policy (Google sees the notification text, it
+     isn't end-to-end encrypted like web push) and help updated.
+     ⏳ Owner: the service account key in `.env.local` and Vercel
+     (`FIREBASE_SERVICE_ACCOUNT`), then try it on the phone.
+     Known gap: if Firebase ever changes an install's token, push stops on
+     that phone until the rider turns it off and on (rare: tokens change on
+     reinstall or clearing the app's data, which start fresh anyway).
   6. ✅ Inside the app (2026-10-28, owner testing on a Pixel): no Add to
-     Home Screen; push on More says "Coming soon to the app"; Download my
+     Home Screen; push on More said "Coming soon to the app" (until item 5); Download my
      data and the CSV go to the phone's share sheet (`@capacitor/filesystem`
      and `@capacitor/share`, since the web view can't download), and so does
      the share link. Also: the page starts below the status bar, a

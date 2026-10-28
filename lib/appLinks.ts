@@ -20,3 +20,12 @@ export function appLinkPath(link: string): string | null {
   const path = `/${url.host}${url.pathname}`;
   return APP_LINK_PATHS.includes(path) ? `${path}${url.search}` : null;
 }
+
+/**
+ * The page a tapped notification opens in the phone app (its `url`, see
+ * lib/fcm.ts): a path on the site, or null for anything else.
+ */
+export function notificationPath(url: unknown): string | null {
+  if (typeof url !== 'string' || !url.startsWith('/') || url.startsWith('//') || url.startsWith('/\\')) return null;
+  return url;
+}

@@ -3,7 +3,8 @@ import type { DailyReminders } from './reminders';
 import type { UnitSystem } from './types';
 import { formatDistance } from './units';
 
-// The push notification for the daily reminders: what public/sw.js shows.
+// The push notification for the daily reminders: what public/sw.js shows,
+// and the phone app's notifications (lib/fcm.ts).
 // Phones show a few lines, so the body lists the first few reminders and
 // counts the rest.
 
@@ -17,6 +18,9 @@ export type PushMessage = {
 };
 
 const MAX_LINES = 4;
+
+/** The Android notification channel the phone app files reminders under; its name shows in the phone's settings. */
+export const APP_NOTIFICATION_CHANNEL = 'reminders';
 
 export function dailyPush({ tasks, odometer }: DailyReminders, units: UnitSystem): PushMessage {
   const severalBikes = new Set([...tasks, ...odometer].map((entry) => entry.bike.id)).size > 1;

@@ -18,7 +18,7 @@ export default async function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy policy"
-      updated="October 25, 2026"
+      updated="October 28, 2026"
       signedIn={user !== null}
       intro={
         <>
@@ -48,8 +48,8 @@ export default async function PrivacyPage() {
             and which bike you had open last.
           </li>
           <li>
-            <strong>Push addresses:</strong> when you turn on push notifications on a device, your browser gives us an
-            address for sending notifications to that device. Turning push off there, or signing out on it, deletes it. If you sign out with push on, that device remembers it
+            <strong>Push addresses:</strong> when you turn on push notifications on a device, your browser (or the
+            SwingArm app) gives us an address for sending notifications to that device. Turning push off there, or signing out on it, deletes it. If you sign out with push on, that device remembers it
             (on the device only), so push comes back on when you sign in there again.
           </li>
           <li>
@@ -137,7 +137,9 @@ export default async function PrivacyPage() {
             <strong>Push services:</strong> if you turn on push notifications, the company behind your browser delivers
             them to your device: Google (Chrome and Android), Apple (Safari, iPhone and iPad), Microsoft (Edge) or
             Mozilla (Firefox). The notification’s text is encrypted on the way, so they can’t read it; they see your
-            device’s push address and when a notification is sent.
+            device’s push address and when a notification is sent. In the SwingArm app for Android, Google’s Firebase
+            Cloud Messaging delivers them instead; Google handles the notification’s text, along with the app’s push
+            address, to deliver it.
           </li>
           <li>
             <strong>Google:</strong> if you choose Sign in with Google.

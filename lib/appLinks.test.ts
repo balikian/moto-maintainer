@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { appLinkPath } from './appLinks';
+import { appLinkPath, notificationPath } from './appLinks';
 
 describe('appLinkPath', () => {
   it("turns Google sign-in's return into the site's callback, query and all", () => {
@@ -22,5 +22,20 @@ describe('appLinkPath', () => {
   it('ignores text that isn’t a link', () => {
     assert.equal(appLinkPath('not a link'), null);
     assert.equal(appLinkPath(''), null);
+  });
+});
+
+describe('notificationPath', () => {
+  it('opens paths on the site', () => {
+    assert.equal(notificationPath('/'), '/');
+    assert.equal(notificationPath('/?view=more'), '/?view=more');
+  });
+
+  it('ignores other sites and anything not a path', () => {
+    assert.equal(notificationPath('https://evil.example/'), null);
+    assert.equal(notificationPath('//evil.example/'), null);
+    assert.equal(notificationPath('/\\evil.example/'), null);
+    assert.equal(notificationPath(undefined), null);
+    assert.equal(notificationPath(42), null);
   });
 });

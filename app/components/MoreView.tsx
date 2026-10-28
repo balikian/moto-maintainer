@@ -120,8 +120,13 @@ const PUSH_SUMMARY: Record<PushStatus, string> = {
   off: 'Off on this device',
   blocked: 'Blocked in this browser',
   'home-screen': 'Needs the Home Screen app',
-  app: 'Coming soon to the app',
   unsupported: 'Not available in this browser',
+};
+
+/** The same in the phone app, where it's the phone's settings, not a browser's. */
+const APP_PUSH_SUMMARY: Partial<Record<PushStatus, string>> = {
+  blocked: 'Blocked in the phone’s settings',
+  unsupported: 'Not available on this phone',
 };
 
 /** "All on", "2 of 3 on" or "Off". */
@@ -232,20 +237,21 @@ function PushGroup({ supabase, preferences, onChange }: {
         detail="On iPhone and iPad, notifications work in the Home Screen app. Add it from Safari’s Share menu, open it from its icon, then come back here."
       />
     );
-  } else if (push.status === 'app') {
-    deviceRow = (
-      <NoteRow
-        label="Coming soon to the app"
-        detail="Notifications on this phone are on the way. Until then, email reminders keep you posted."
-      />
-    );
   } else if (push.status === 'unsupported') {
-    deviceRow = <NoteRow label="Not available in this browser" detail="This browser can’t show notifications from websites." />;
+    deviceRow = push.inApp ? (
+      <NoteRow label="Not available on this phone" detail="This phone couldn’t sign up for notifications. Email reminders still work." />
+    ) : (
+      <NoteRow label="Not available in this browser" detail="This browser can’t show notifications from websites." />
+    );
   } else if (push.status === 'blocked') {
     deviceRow = (
       <NoteRow
         label="Notifications are blocked"
-        detail="Allow notifications for SwingArm in this browser’s or device’s settings, then come back here."
+        detail={
+          push.inApp
+            ? 'Allow notifications for SwingArm in the phone’s settings (Apps, SwingArm, Notifications), then come back here.'
+            : 'Allow notifications for SwingArm in this browser’s or device’s settings, then come back here.'
+        }
       />
     );
   } else {
@@ -265,7 +271,7 @@ function PushGroup({ supabase, preferences, onChange }: {
       <Group
         id="push"
         title="Push notifications"
-        summary={PUSH_SUMMARY[push.status]}
+        summary={(push.inApp && APP_PUSH_SUMMARY[push.status]) || PUSH_SUMMARY[push.status]}
         note={
           <>
             At most one a day, on each device where you turn them on.
