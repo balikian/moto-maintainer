@@ -72,6 +72,7 @@ export default function LoginCard() {
         return;
       }
       // A full load, so the whole app starts out signed in.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- the full load is the point
       window.location.assign('/');
     } catch {
       setError('Unable to check the code right now. Please try again.');
