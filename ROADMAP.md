@@ -48,6 +48,10 @@ do it; Claude = code or setup Claude can do.
    **The list (2026-10-26):** `docs/schedule-imports.md`, 30 popular US
    models with manual links where public ones exist (19 of 30; Kawasaki,
    Suzuki, Harley, Tiger 900 and Indian Scout need a downloaded PDF).
+   The owner imported those 30 on production, maybe missing one or two
+   (2026-10-27). Added 23
+   adventure bikes (#31–53, 2026-10-27): 15 with checked links, 2 Honda
+   links found by search, 6 need a downloaded PDF.
 3. ✅ Supabase production: Authentication → Rate Limits, "Rate limit for
    sending emails" raised to 60 an hour (owner, 2026-10-24; other limits
    left at their defaults). ⏳ Resend's free plan is 100 emails a day, shared
