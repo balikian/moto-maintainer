@@ -851,6 +851,9 @@ for now.
      isn't end-to-end encrypted like web push) and help updated.
      ⏳ Owner: the service account key in `.env.local` and Vercel
      (`FIREBASE_SERVICE_ACCOUNT`), then try it on the phone.
+     ✅ Key in `.env.local`; turning on and Test work on the Pixel (owner,
+     2026-10-28), from the shade with the app closed too, and a tap opens
+     the notification's page. ✅ Key in Vercel (Production and Preview).
      Known gap: if Firebase ever changes an install's token, push stops on
      that phone until the rider turns it off and on (rare: tokens change on
      reinstall or clearing the app's data, which start fresh anyway).
