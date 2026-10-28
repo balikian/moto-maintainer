@@ -835,6 +835,16 @@ for now.
      below).
   4. Links that open the app (Android App Links: `assetlinks.json` on
      swingarm.app), e.g. the sign-in email's link and share links.
+     💤 Waits for the Play account (Claude, 2026-10-28): Android checks
+     `assetlinks.json` against the store build's signing key, which Play
+     makes. A development build can't really try it: it loads the dev
+     server (test database), so swingarm.app links would open it on pages
+     that don't exist there, and the test site's Vercel login keeps Android
+     from checking a test.swingarm.app file. The sign-in email's link goes
+     through Supabase's address first, so it also needs the templates to
+     link to swingarm.app (`/auth/confirm` with `{{ .TokenHash }}`, which
+     works in any browser, no sign-in cookie needed). Meanwhile the app
+     signs in with the email's code or Google.
   5. 🔨 Native push (built 2026-10-28): Firebase Cloud Messaging. ✅ Owner
      made the Firebase project `swingarm-e40d2` (Analytics off) with both
      app ids, and downloaded `android/app/google-services.json`
