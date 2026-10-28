@@ -910,8 +910,15 @@ for now.
      Apple's push key. Building needs a Mac (Xcode) or a cloud build.
      ⚠ Owner may not have a Mac (2026-10-28): maybe, maybe not. Without
      one, build in the cloud (a Mac build service, or GitHub Actions' macOS
-     runners) and test through TestFlight on the owner's iPhone. Not
+     runners) and test through TestFlight on a borrowed iPhone. Not
      decided; it decides whether iPhone ships with Android or after it.
+     Owner has no regular iPhone either (the owner's wife's, when she's home), but
+     may have an old MacBook (2026-10-28). It works only if it runs macOS
+     Sequoia 15.6 or later: App Store uploads need Xcode 26 since
+     2026-04-28, Capacitor 8 needs Xcode 26 too, and Xcode 26.0 to 26.3 run
+     on Sequoia 15.6 (26.4.1 needs Tahoe 26.2). Most testing can use
+     Xcode's iPhone simulator; push and Sign in with Apple are best checked
+     once on a real iPhone (TestFlight on the owner's wife's, or a tester's).
 - Wrap the web app with **Capacitor** (already the plan). The app loads the
   hosted site, plus native push, app icon, splash screen, and deep links.
 - Apple rejects apps that are "just a website", so native push and a
