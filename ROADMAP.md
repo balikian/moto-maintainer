@@ -792,6 +792,11 @@ for now.
 
 ## 7. Phone apps (iOS and Android) 🔨
 
+- ✅ **Released 2026-10-28** (all of `develop`, owner's go-ahead): the
+  security update (Next.js 16.4.3, Zod 4.6.7; Next 16.2.9 had critical
+  advisories) with the app work below. The site changes are invisible in
+  browsers; the app-only code switches on inside the app. Checked: pages
+  load, the sign-in callback redirects to swingarm.app.
 - 🔨 **Started 2026-10-27** (store accounts wait on the D-U-N-S fix, so
   Android first): Capacitor 8.5.3, app id `app.swingarm`,
   `capacitor.config.ts` loads swingarm.app (`CAPACITOR_SERVER_URL` points
