@@ -29,6 +29,16 @@ export const OPEN_GRAPH = {
 export const TEST_SITE_URL = 'https://test.swingarm.app';
 
 /**
+ * The phone apps' ids (capacitor.config.ts; development builds add .dev),
+ * which are also their link schemes: `app.swingarm://auth/callback` opens the app.
+ */
+export const APP_IDS = ['app.swingarm', 'app.swingarm.dev'] as const;
+
+export function isAppId(value: string): value is (typeof APP_IDS)[number] {
+  return (APP_IDS as readonly string[]).includes(value);
+}
+
+/**
  * The name under a Home Screen icon (app/manifest.ts, the iPhone title in
  * app/layout.tsx): the test site's says Test, so a phone with both can tell
  * them apart. Server-only (VERCEL_ENV isn't in the browser).

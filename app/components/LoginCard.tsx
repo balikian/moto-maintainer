@@ -2,7 +2,10 @@
 
 import Link from 'next/link';
 import { useState, type SubmitEvent } from 'react';
+import { App } from '@capacitor/app';
+import { Browser } from '@capacitor/browser';
 import { sendMagicLink, signInWithGoogle, verifyEmailCode } from '@/lib/actions/auth';
+import { isNativeApp } from '@/lib/nativeApp';
 import BrandLogo from './BrandLogo';
 import { ui } from './ui';
 
@@ -18,9 +21,12 @@ export default function LoginCard() {
   const handleGoogleLogin = async () => {
     setRedirecting(true);
     setError(null);
-    const result = await signInWithGoogle();
-    // On success the action redirects to Google, so we only get here on failure.
-    if (result?.error) setError(result.error);
+    // In the phone app, Google opens in an in-app browser tab and comes back
+    // through NativeAppLinks; in a browser the action redirects to Google.
+    const appId = isNativeApp() ? (await App.getInfo()).id : undefined;
+    const result = await signInWithGoogle(appId);
+    if (result?.url) await Browser.open({ url: result.url });
+    else if (result?.error) setError(result.error);
     setRedirecting(false);
   };
 

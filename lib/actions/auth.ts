@@ -1,6 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
+import { isAppId } from '../site';
 import { createClient } from '../supabase/server';
 import { redirect } from 'next/navigation';
 
@@ -19,13 +20,23 @@ async function siteUrl(): Promise<string> {
   return host ? `${protocol}://${host}` : 'http://localhost:3000';
 }
 
-export async function signInWithGoogle() {
+/**
+ * Starts Google sign-in. In a browser it redirects to Google. The phone app
+ * passes its id instead: Google won't sign in inside an app's web view, so the
+ * app gets the address back to open in an in-app browser tab, and Google
+ * returns to `<app id>://auth/callback`, which the app hands back to its web
+ * view (NativeAppLinks), where this request's sign-in cookie waits.
+ */
+export async function signInWithGoogle(appId?: string): Promise<{ error?: string; url?: string } | undefined> {
+  if (appId !== undefined && !isAppId(appId)) {
+    return { error: 'Sign-in isn’t set up for this app.' };
+  }
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${await siteUrl()}/auth/callback`,
+      redirectTo: appId ? `${appId}://auth/callback` : `${await siteUrl()}/auth/callback`,
     },
   });
 
@@ -33,6 +44,7 @@ export async function signInWithGoogle() {
     return { error: error.message };
   }
 
+  if (appId) return { url: data.url };
   if (data.url) {
     redirect(data.url);
   }

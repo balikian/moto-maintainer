@@ -808,8 +808,20 @@ for now.
      site.
   2. Splash on Android 12+: background color per theme (the phone draws
      the icon on it); check on the phone.
-  3. Sign-in in the app: Google through the phone's browser and back
-     (Supabase redirect to an app link), email code as now.
+  3. 🔨 Sign-in in the app (built 2026-10-28): Google opens in an in-app
+     browser tab (`@capacitor/browser`; Google blocks sign-in inside web
+     views) and returns to `app.swingarm://auth/callback`
+     (`app.swingarm.dev://` for development builds), which Android hands to
+     the app (`NativeAppLinks`, `lib/appLinks.ts`) and the web view finishes
+     at /auth/callback, where the sign-in cookie waits. The email code works
+     as before. Checked with a test link (lands in the app, fake code
+     rejected). The callback now redirects to the address it was reached on
+     (the dev server said localhost). ⏳ Owner: add `app.swingarm.dev://auth/callback`
+     and `app.swingarm://auth/callback` to swingarm-test's Redirect URLs
+     (Authentication → URL Configuration), then try Google in the app.
+     Production gets `app.swingarm://auth/callback` with the store build.
+     The email's link still opens the browser (needs Android App Links,
+     below).
   4. Links that open the app (Android App Links: `assetlinks.json` on
      swingarm.app), e.g. the sign-in email's link and share links.
   5. Native push: Firebase project (free) for Android, the device token

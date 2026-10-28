@@ -9,8 +9,21 @@ function safeRedirectPath(next: string | null): string {
   return next;
 }
 
+/**
+ * The address the request came in on. Not request.url's: the dev server says
+ * localhost there even when a phone reached it by the PC's address (the phone
+ * app in development), and a redirect to localhost goes nowhere on the phone.
+ */
+function requestOrigin(request: Request): string {
+  const url = new URL(request.url);
+  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host') ?? url.host;
+  const protocol = request.headers.get('x-forwarded-proto') ?? url.protocol.replace(/:$/, '');
+  return `${protocol}://${host}`;
+}
+
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = requestOrigin(request);
   const code = searchParams.get('code');
   const next = safeRedirectPath(searchParams.get('next'));
 

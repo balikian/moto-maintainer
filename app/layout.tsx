@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import { HOME_SCREEN_NAME, OPEN_GRAPH, SITE_URL, TEST_SITE_URL } from "@/lib/site";
+import NativeAppLinks from "./components/NativeAppLinks";
 import SiteAnalytics from "./components/SiteAnalytics";
 import "./globals.css";
 
@@ -69,6 +70,7 @@ export default function RootLayout({
       </head>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         {children}
+        <NativeAppLinks />
         {/* Production only, so the test site and local dev don't skew the numbers. */}
         {process.env.VERCEL_ENV === 'production' && <SiteAnalytics />}
       </body>
