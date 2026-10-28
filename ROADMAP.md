@@ -99,6 +99,11 @@ do it; Claude = code or setup Claude can do.
 8. ⏳ Owner + Claude: an announcing strategy: where (riding forums,
    Facebook groups, Reddit, friends' clubs), in what order, and the posts.
    Claude can draft them.
+   🔨 Drafted (2026-10-28): "SwingArm launch announcement plan", a Claude
+   doc (https://claude.ai/artifact/EzoLhk6dsh9zSMMJmY1kkG): two waves
+   (people who know the owner at store approval, then model groups, forums
+   and Reddit at spring prep), goals, channels, a readiness checklist, open
+   decisions. ⏳ Owner: read it and settle the open decisions.
 
 **Decided (owner, 2026-10-27): announce after the phone apps and Sign in
 with Apple**, not before as first planned, so riders who hear about it can
@@ -903,6 +908,10 @@ for now.
      export later.
   7. iPhone once Apple approves: `ios/`, Sign in with Apple (web too),
      Apple's push key. Building needs a Mac (Xcode) or a cloud build.
+     ⚠ Owner may not have a Mac (2026-10-28): maybe, maybe not. Without
+     one, build in the cloud (a Mac build service, or GitHub Actions' macOS
+     runners) and test through TestFlight on the owner's iPhone. Not
+     decided; it decides whether iPhone ships with Android or after it.
 - Wrap the web app with **Capacitor** (already the plan). The app loads the
   hosted site, plus native push, app icon, splash screen, and deep links.
 - Apple rejects apps that are "just a website", so native push and a
