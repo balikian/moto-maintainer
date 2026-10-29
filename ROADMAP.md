@@ -1189,6 +1189,26 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   - Torque values are tempting but safety-critical: only from the manual,
     with the source shown.
   - Open: Free or Pro.
+  - 🔨 **Building (2026-10-29, branch `feature/specs`).** Decided with the
+    owner: the list in `lib/specs.ts` (fuel, engine oil, air filter, tires
+    and wheels, chain drive, shaft drive, cooling, brakes and clutch,
+    suspension, valve clearances, electrical, plus the rider's own rows).
+    Values keep the unit they were entered in and convert for display;
+    torques always show both systems. Each group has task-name patterns
+    (`specGroupsForTask`) for showing specs on tasks.
+    - ✅ Data: `motorcycles.specs` (the bike's own values, over the
+      manual's) and `model_specs` (shared, pending/approved like
+      schedules), migration `20261029120000_bike_specs.sql`, on test only.
+    - ✅ Specs dialog from each bike in Garage: a quick read-only list
+      ("Manual p. 142" or "Yours" under each value), and Edit, where the
+      manual's values are gray placeholders and an empty field keeps them.
+    - ⏳ Import: a second page field in the schedule import ("Pages with
+      specifications"), read by its own Claude call alongside the
+      schedule's; either field can be left empty, so specs can be imported
+      for bikes that already have a schedule. Reviewed with the schedule.
+    - ⏳ Show the matching specs on task cards and in Log service.
+    - ⏳ Specs in the account export/import and the shared history; a way
+      to open Specs from Tasks too.
 
 ## Smaller items and ideas
 

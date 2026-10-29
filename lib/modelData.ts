@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { BikeManual, ModelEntry, ModelSchedule, Motorcycle } from './types';
+import type { BikeManual, ModelEntry, ModelSchedule, ModelSpecs, Motorcycle } from './types';
 
-// Lookups for the shared per-model tables (bike_manuals, model_schedules).
+// Lookups for the shared per-model tables (bike_manuals, model_schedules, model_specs).
 // Works with either the browser or the server Supabase client; row-level
 // security decides what's visible (approved entries, plus your own submissions).
 
@@ -63,5 +63,20 @@ export async function fetchModelSchedule(supabase: SupabaseClient, bike: BikeIde
 
   if (error) return { data: null, error };
   const best = rankMatches((data ?? []) as ModelSchedule[], bike.year)[0] ?? null;
+  return { data: best, error: null };
+}
+
+/** The best manual specs for this bike, or null if there aren't any yet. */
+export async function fetchModelSpecs(supabase: SupabaseClient, bike: BikeIdentity) {
+  const { data, error } = await supabase
+    .from('model_specs')
+    .select('*')
+    .ilike('make', literalPattern(bike.make))
+    .ilike('model', literalPattern(bike.model))
+    .lte('year_from', bike.year)
+    .gte('year_to', bike.year);
+
+  if (error) return { data: null, error };
+  const best = rankMatches((data ?? []) as ModelSpecs[], bike.year)[0] ?? null;
   return { data: best, error: null };
 }

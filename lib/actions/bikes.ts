@@ -3,6 +3,7 @@
 import { BASE_CATALOG, isInCatalog } from '../bikeCatalog';
 import { DEFAULT_BIKE_SETUP, getDefaultTasks, NO_START, type BikeSetup } from '../maintenance';
 import { fetchModelSchedule } from '../modelData';
+import { cleanBikeSpecs, type BikeSpecs } from '../specs';
 import { getSignedInClient } from '../supabase/server';
 import type { Motorcycle } from '../types';
 import { normalizeMileage } from '../units';
@@ -133,6 +134,22 @@ export async function updateOdometerAction(bikeId: string, mileage: number): Pro
   const { data, error } = await supabase
     .from('motorcycles')
     .update({ current_mileage: currentMileage })
+    .eq('id', bikeId)
+    .select('id');
+
+  if (error) return { error: error.message };
+  if (!data?.length) return { error: 'Motorcycle not found.' };
+  return {};
+}
+
+/** Saves the bike's own spec values and rows, replacing what it had. Malformed values are dropped. */
+export async function updateBikeSpecsAction(bikeId: string, specs: BikeSpecs): Promise<ActionResult> {
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
+
+  const { data, error } = await supabase
+    .from('motorcycles')
+    .update({ specs: cleanBikeSpecs(specs) })
     .eq('id', bikeId)
     .select('id');
 
