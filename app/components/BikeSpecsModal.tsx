@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, type SubmitEvent } from 'react';
+import { useState, type ReactNode, type SubmitEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useSupabaseQuery } from '@/app/hooks/useSupabaseQuery';
 import { fetchModelSpecs } from '@/lib/modelData';
 import {
@@ -147,6 +147,42 @@ function startDraft(key: SpecKey, kind: SpecKind, own: SpecValues, manual: SpecV
   return { text: '', unit: fromManual && isMeasured(fromManual) ? fromManual.unit : unitsFor(kind, units)[0] };
 }
 
+const filledSummary = (filled: number, total: number) => (filled === 0 ? 'Empty' : `${filled} of ${total} filled`);
+
+/** One group of the form, opened and closed by its header like More's groups; closed, it shows how much is filled in. */
+function FormGroup({ id, title, summary, open, onToggle, children }: {
+  id: string;
+  title: string;
+  summary: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+}) {
+  const contentId = `spec-group-${id}`;
+  return (
+    <section className={ui.card}>
+      <h3>
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-expanded={open}
+          aria-controls={contentId}
+          className="flex min-h-14 w-full items-center gap-3 px-3.5 py-2 text-left"
+        >
+          <span className="min-w-0 flex-1">
+            <span className="block text-base font-extrabold">{title}</span>
+            {!open && <span className="block truncate text-sm font-medium text-muted">{summary}</span>}
+          </span>
+          <ChevronDown size={18} className={`shrink-0 text-muted transition-transform ${open ? '' : '-rotate-90'}`} aria-hidden="true" />
+        </button>
+      </h3>
+      <div id={contentId} hidden={!open} className="space-y-2.5 border-t border-line px-3.5 py-3.5">
+        {children}
+      </div>
+    </section>
+  );
+}
+
 function SpecsForm({
   own,
   manual,
@@ -169,6 +205,16 @@ function SpecsForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Every group starts closed, so the form opens as a short list.
+  const [openGroups, setOpenGroups] = useState<Set<string>>(() => new Set());
+  const toggleGroup = (id: string) =>
+    setOpenGroups((previous) => {
+      const next = new Set(previous);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  const openGroup = (id: string) => setOpenGroups((previous) => new Set(previous).add(id));
+
   const setDraft = (key: string, change: Partial<Draft>) => setDrafts((previous) => ({ ...previous, [key]: { ...previous[key], ...change } }));
 
   const handleSubmit = async (event: SubmitEvent) => {
@@ -185,6 +231,7 @@ function SpecsForm({
         }
         const amount = parseSpecNumber(text);
         if (!amount || !draft.unit) {
+          openGroup(group.id);
           setError(`${spec.label}: enter a number, or a range like 25–35.`);
           return;
         }
@@ -193,6 +240,7 @@ function SpecsForm({
     }
     const rows = custom.map((row) => ({ label: row.label.trim(), text: row.text.trim() })).filter((row) => row.label || row.text);
     if (rows.some((row) => !row.label || !row.text)) {
+      openGroup('custom');
       setError('Give each of your own rows a name and a value.');
       return;
     }
@@ -204,8 +252,8 @@ function SpecsForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <p className={`text-sm ${ui.muted}`}>
+    <form onSubmit={handleSubmit} className="space-y-2.5">
+      <p className={`pb-2.5 text-sm ${ui.muted}`}>
         {manual
           ? 'Values from the manual are shown in gray. Type over one to use your own; leave it empty to keep the manual’s.'
           : 'Fill in the ones you look up most. Leave the rest empty.'}{' '}
@@ -213,8 +261,14 @@ function SpecsForm({
       </p>
 
       {SPEC_GROUPS.map((group) => (
-        <fieldset key={group.id} className="space-y-2.5">
-          <legend className={`${ui.subTitle} mb-1.5`}>{group.label}</legend>
+        <FormGroup
+          key={group.id}
+          id={group.id}
+          title={group.label}
+          summary={filledSummary(group.specs.filter((spec) => drafts[spec.key].text.trim() || manual?.[spec.key]).length, group.specs.length)}
+          open={openGroups.has(group.id)}
+          onToggle={() => toggleGroup(group.id)}
+        >
           {group.specs.map((spec) => {
             const draft = drafts[spec.key];
             const fromManual = manual?.[spec.key];
@@ -242,30 +296,38 @@ function SpecsForm({
                       onChange={(event) => setDraft(spec.key, { text: event.target.value })}
                       placeholder={placeholder}
                       inputMode="decimal"
-                      className={`${ui.input} min-w-0`}
+                      className={`${ui.input} min-w-0 flex-1`}
                     />
-                    <select
-                      value={draft.unit ?? ''}
-                      onChange={(event) => setDraft(spec.key, { unit: event.target.value as SpecUnit })}
-                      aria-label={`${spec.label} unit`}
-                      className={`${ui.input} w-24 shrink-0`}
-                    >
-                      {unitsFor(spec.kind, unitSystem).map((unit) => (
-                        <option key={unit} value={unit}>
-                          {UNITS[unit].label}
-                        </option>
-                      ))}
-                    </select>
+                    {/* Sized by its wrapper: ui.input is full width. */}
+                    <div className="w-28 shrink-0">
+                      <select
+                        value={draft.unit ?? ''}
+                        onChange={(event) => setDraft(spec.key, { unit: event.target.value as SpecUnit })}
+                        aria-label={`${spec.label} unit`}
+                        className={ui.input}
+                      >
+                        {unitsFor(spec.kind, unitSystem).map((unit) => (
+                          <option key={unit} value={unit}>
+                            {UNITS[unit].label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 )}
               </div>
             );
           })}
-        </fieldset>
+        </FormGroup>
       ))}
 
-      <fieldset className="space-y-2.5">
-        <legend className={`${ui.subTitle} mb-1.5`}>Your own</legend>
+      <FormGroup
+        id="custom"
+        title="Your own"
+        summary={custom.length === 0 ? 'Anything else, like a headlight bulb' : `${custom.length} ${custom.length === 1 ? 'row' : 'rows'}`}
+        open={openGroups.has('custom')}
+        onToggle={() => toggleGroup('custom')}
+      >
         {custom.map((row, index) => (
           <div key={index} className="flex gap-2">
             <input
@@ -299,7 +361,7 @@ function SpecsForm({
             <Plus size={15} aria-hidden="true" /> Add a row
           </button>
         )}
-      </fieldset>
+      </FormGroup>
 
       {error && <p className={ui.errorBox}>{error}</p>}
 
