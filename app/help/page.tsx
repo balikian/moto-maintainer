@@ -287,8 +287,9 @@ export default async function HelpPage() {
               <Ui>Push notifications</Ui>: the same task and odometer reminders as notifications on your phone or
               computer. Turn them on for each device under <Ui>On this device</Ui>, and use <Ui>Test</Ui> to check one
               arrives. On an iPhone or iPad, add SwingArm to your Home Screen first and turn them on from the Home Screen
-              app. In the SwingArm app for Android, turning them on asks the phone&apos;s permission, and tapping a
-              notification opens the app. Signing out turns them off on that device, so the next person to sign in there doesn&apos;t get
+              app. In the SwingArm app for Android, turning them on asks the phone&apos;s permission. Tapping a reminder
+              (or the button in a reminder email) opens the bike it&apos;s about, with the odometer ready to update if
+              that&apos;s what it asks for; one about several bikes opens <Ui>Garage</Ui>. Signing out turns them off on that device, so the next person to sign in there doesn&apos;t get
               your reminders; they come back on when you sign in there again.
             </li>
             <li>

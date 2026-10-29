@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { addBikeAction, deleteBikeAction, updateBikeAction, updateOdometerAction } from '@/lib/actions/bikes';
 import {
@@ -81,15 +81,26 @@ export default function GarageApp() {
   // The bike you last picked, saved to your profile so it follows you across devices and sign-ins.
   // An id that isn't one of your bikes (e.g. just removed) falls back to the first.
   const selectedBikeId = preferences.activeBikeId;
-  const setSelectedBikeId = (bikeId: string | null) => void updatePreferences({ activeBikeId: bikeId });
+  const setSelectedBikeId = (bikeId: string | null) => {
+    setOdometerLinkBikeId(null);
+    void updatePreferences({ activeBikeId: bikeId });
+  };
 
   // Log service on the bottom bar of the pages outside the dashboard (Help, About…) links to /?log=service.
-  const logRequested = useSearchParams().get('log') === 'service';
+  const searchParams = useSearchParams();
+  const logRequested = searchParams.get('log') === 'service';
   const [dialog, setDialog] = useState<OpenDialog>(() => (logRequested ? { type: 'logService', task: null } : null));
+  // A reminder about one bike links to it (/?bike=…, see bikePath in lib/reminders.ts), with its odometer box
+  // open if it's an odometer check-in. Kept until the reading is saved or cancelled, or another bike is picked.
+  const [linkedBikeId] = useState(() => searchParams.get('bike'));
+  const [odometerLinkBikeId, setOdometerLinkBikeId] = useState(() =>
+    searchParams.get('odometer') === 'update' ? searchParams.get('bike') : null
+  );
+  const linkParams = logRequested || searchParams.has('bike');
   useEffect(() => {
     // Opened once: a reload or Back shouldn't open it again.
-    if (logRequested) window.history.replaceState(null, '', viewHref(view));
-  }, [logRequested, view]);
+    if (linkParams) window.history.replaceState(null, '', viewHref(view));
+  }, [linkParams, view]);
 
   const bikesQuery = useSupabaseQuery<Motorcycle[]>(userId, () =>
     supabase.from('motorcycles').select('*').order('created_at', { ascending: true })
@@ -97,6 +108,14 @@ export default function GarageApp() {
   const bikes = bikesQuery.data ?? [];
   const activeBike = bikes.find((bike) => bike.id === selectedBikeId) ?? bikes[0] ?? null;
   const activeBikeId = activeBike?.id ?? null;
+
+  // Switches to the linked bike once the bikes load. One that isn't yours (signed in to another account) is skipped.
+  const linkedBikeHandled = useRef(false);
+  useEffect(() => {
+    if (!linkedBikeId || !bikesQuery.data || linkedBikeHandled.current) return;
+    linkedBikeHandled.current = true;
+    if (bikesQuery.data.some((bike) => bike.id === linkedBikeId)) void updatePreferences({ activeBikeId: linkedBikeId });
+  }, [linkedBikeId, bikesQuery.data, updatePreferences]);
 
   const tasksQuery = useSupabaseQuery<MaintenanceTask[]>(activeBikeId, (bikeId) =>
     supabase.from('maintenance_tasks').select('*').eq('motorcycle_id', bikeId).order('interval_mileage', { ascending: true })
@@ -222,6 +241,7 @@ export default function GarageApp() {
     if (!activeBike) return 'Select a bike first.';
     const result = await updateOdometerAction(activeBike.id, miles);
     if (result.error) return result.error;
+    setOdometerLinkBikeId(null);
     bikesQuery.reload();
     return null;
   };
@@ -398,6 +418,8 @@ export default function GarageApp() {
                 onSelectBike={setSelectedBikeId}
                 onAddBike={() => setDialog({ type: 'addBike' })}
                 onUpdateOdometer={handleUpdateOdometer}
+                editOdometer={odometerLinkBikeId === activeBike.id}
+                onCancelOdometer={() => setOdometerLinkBikeId(null)}
               />
               <BikeList
                 className="hidden lg:block"

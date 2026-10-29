@@ -10,10 +10,15 @@ type OdometerControlProps = {
   unitSystem: UnitSystem;
   /** Receives miles; resolves to an error message, or null on success. */
   onSave: (miles: number) => Promise<string | null>;
+  /** Start with the box open, filled with the current reading. */
+  startEditing?: boolean;
+  onCancel?: () => void;
 };
 
-export default function OdometerControl({ bike, unitSystem, onSave }: OdometerControlProps) {
-  const [draft, setDraft] = useState<string | null>(null);
+export default function OdometerControl({ bike, unitSystem, onSave, startEditing = false, onCancel }: OdometerControlProps) {
+  const [draft, setDraft] = useState<string | null>(() =>
+    startEditing ? (bike.current_mileage === null ? '' : String(toDisplayDistance(bike.current_mileage, unitSystem))) : null
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputId = useId();
@@ -61,6 +66,7 @@ export default function OdometerControl({ bike, unitSystem, onSave }: OdometerCo
             onClick={() => {
               setDraft(null);
               setError(null);
+              onCancel?.();
             }}
             className={ui.secondaryButton}
           >

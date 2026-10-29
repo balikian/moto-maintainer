@@ -15,6 +15,9 @@ type BikePanelProps = {
   onSelectBike: (bikeId: string) => void;
   onAddBike: () => void;
   onUpdateOdometer: (miles: number) => Promise<string | null>;
+  /** Open the odometer box right away: a reminder's link asked for a new reading. */
+  editOdometer?: boolean;
+  onCancelOdometer?: () => void;
 };
 
 const STATUS_TILES: { status: TaskStatus; label: string; color: string }[] = [
@@ -43,6 +46,8 @@ export default function BikePanel(props: BikePanelProps) {
           bike={props.activeBike}
           unitSystem={props.unitSystem}
           onSave={props.onUpdateOdometer}
+          startEditing={props.editOdometer}
+          onCancel={props.onCancelOdometer}
         />
       </div>
       {statusCounts && (

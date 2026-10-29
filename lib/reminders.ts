@@ -167,6 +167,23 @@ function planDaily(
   return tasks.length > 0 || odometer.length > 0 ? { tasks, odometer } : null;
 }
 
+/** A bike's Tasks on the dashboard (GarageApp reads `bike` and `odometer`), with its odometer box open if asked. */
+export function bikePath(bikeId: string, updateOdometer = false): string {
+  return `/?bike=${encodeURIComponent(bikeId)}${updateOdometer ? '&odometer=update' : ''}`;
+}
+
+/**
+ * Where a daily reminder's button or tap goes: the bike, when it's about one
+ * (with its odometer box open if that's all it asks for), else Garage, which
+ * lists every bike with what it needs.
+ */
+export function dailyReminderPath({ tasks, odometer }: DailyReminders): string {
+  const bikeIds = new Set([...tasks, ...odometer].map((entry) => entry.bike.id));
+  if (bikeIds.size !== 1) return '/?view=garage';
+  const [bikeId] = bikeIds;
+  return bikePath(bikeId, tasks.length === 0);
+}
+
 /** The first day of last month and of this month, for `reminder_job_data`'s spending window. */
 export function lastMonthRange(today: Date): { from: string; to: string; month: string } {
   const thisMonth = new Date(today.getFullYear(), today.getMonth(), 1);

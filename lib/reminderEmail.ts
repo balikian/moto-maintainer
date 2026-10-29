@@ -1,5 +1,13 @@
 import { bikeTitle } from './historyExport';
-import type { DailyReminders, MonthlySummary, OdometerReminder, ReminderBike, TaskReminder } from './reminders';
+import {
+  bikePath,
+  dailyReminderPath,
+  type DailyReminders,
+  type MonthlySummary,
+  type OdometerReminder,
+  type ReminderBike,
+  type TaskReminder,
+} from './reminders';
 import { dueLabel } from './taskLabels';
 import type { UnitSystem } from './types';
 import { formatDistance } from './units';
@@ -10,7 +18,7 @@ import { formatDistance } from './units';
 export type Email = { subject: string; html: string; text: string };
 
 export type EmailLinks = {
-  /** Opens the app (Tasks). */
+  /** Opens the app (Tasks); the daily email's links to a bike or Garage are made from it. */
   appUrl: string;
   /** More, where the reminder switches are. */
   settingsUrl: string;
@@ -161,13 +169,24 @@ export function dailyReminderEmail(reminders: DailyReminders, units: UnitSystem,
     text.push('', tip);
   }
 
+  const bikes = byBike([...reminders.tasks, ...reminders.odometer]).map((group) => group.bike);
+  const onlyOdometer = reminders.tasks.length === 0;
+
   if (reminders.odometer.length > 0) {
     rows.push(heading(reminders.odometer.length === 1 ? 'Time to update your odometer' : 'Time to update your odometers'));
     text.push('', 'TIME TO UPDATE YOUR ODOMETER');
     for (const entry of reminders.odometer) {
       const sentence = odometerSentence(entry, units);
-      rows.push(paragraph(escapeHtml(sentence), 'padding-bottom:8px;'));
-      text.push(sentence);
+      // About one bike, the button below opens its odometer; about several, each gets its own link.
+      if (bikes.length > 1) {
+        const href = new URL(bikePath(entry.bike.id, true), links.appUrl).href;
+        const link = `<a href="${escapeHtml(href)}" style="color:${COLORS.brand};font-weight:700;">Update</a>`;
+        rows.push(paragraph(`${escapeHtml(sentence)} ${link}`, 'padding-bottom:8px;'));
+        text.push(`${sentence} Update: ${href}`);
+      } else {
+        rows.push(paragraph(escapeHtml(sentence), 'padding-bottom:8px;'));
+        text.push(sentence);
+      }
     }
     const distance = units === 'metric' ? 'kilometers' : 'miles';
     const why = `Distance-based tasks only count the ${distance} you’ve entered. Still the same? Tap Update and save the same reading, and we’ll check back in 30 days.`;
@@ -175,8 +194,10 @@ export function dailyReminderEmail(reminders: DailyReminders, units: UnitSystem,
     text.push(why);
   }
 
-  rows.push(button(links.appUrl, 'Open SwingArm'));
-  text.push('', `Open SwingArm: ${links.appUrl}`);
+  const target = new URL(dailyReminderPath(reminders), links.appUrl).href;
+  const label = bikes.length > 1 ? 'Open your garage' : onlyOdometer ? 'Update odometer' : `Open your ${bikes[0].model}`;
+  rows.push(button(target, label));
+  text.push('', `${label}: ${target}`);
 
   const foot = footer('You get these because task and odometer reminders are on.', links);
   text.push('', '--', foot.text);

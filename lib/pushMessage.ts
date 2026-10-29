@@ -1,5 +1,5 @@
 import { dailySubject, dueText } from './reminderEmail';
-import type { DailyReminders } from './reminders';
+import { dailyReminderPath, type DailyReminders } from './reminders';
 import type { UnitSystem } from './types';
 import { formatDistance } from './units';
 
@@ -41,7 +41,12 @@ export function dailyPush({ tasks, odometer }: DailyReminders, units: UnitSystem
   const shown = lines.length > MAX_LINES ? lines.slice(0, MAX_LINES - 1) : lines;
   if (shown.length < lines.length) shown.push(`And ${lines.length - shown.length} more`);
 
-  return { title: dailySubject({ tasks, odometer }), body: shown.join('\n'), url: '/', tag: 'daily-reminders' };
+  return {
+    title: dailySubject({ tasks, odometer }),
+    body: shown.join('\n'),
+    url: dailyReminderPath({ tasks, odometer }),
+    tag: 'daily-reminders',
+  };
 }
 
 /** What More's Test button sends. */

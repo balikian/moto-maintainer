@@ -757,6 +757,14 @@ for now.
   for personal mailboxes, no delivery log, and app mail flagged as spam
   would hurt support@ on the same domain. Templates stay in our code and
   `supabase/templates/`, so switching providers is a settings change.
+- ✅ **Reminders open the bike they're about** (owner, 2026-10-29: a push
+  about the F 750 GS opened the last bike used, and the email only said
+  "Open SwingArm"). About one bike: the push and the email's button open
+  `/?bike=<id>` (the button reads "Open your F 750 GS"), and an
+  odometer-only reminder adds `&odometer=update`, which opens the odometer
+  box ("Update odometer"). About several: Garage, and the email gets an
+  Update link on each bike's odometer line. `dailyReminderPath` in
+  `lib/reminders.ts`.
 
 ## 6. Paid tiers 💤
 

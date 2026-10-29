@@ -76,6 +76,21 @@ describe('dailyReminderEmail', () => {
     assert.match(email.text, /- Chain: 1,287 km left/);
     assert.ok(email.html.includes(escapeHtml(links.unsubscribeUrl)));
     assert.match(email.text, /Turn off these emails: https:\/\/swingarm\.app\/unsubscribe/);
+    assert.match(email.text, /Open your garage: https:\/\/swingarm\.app\/\?view=garage/);
+  });
+
+  it('links to the bike when it’s about one', () => {
+    const plan = planDailyReminders(rider([bike('a', 'Norden 901', [task('t1', 'Chain', 2500)])]), today)!;
+    assert.match(dailyReminderEmail(plan, 'imperial', links).text, /Open your Norden 901: https:\/\/swingarm\.app\/\?bike=a$/m);
+  });
+
+  it('links each bike’s odometer when there are several', () => {
+    const stale = { odometer_updated_at: '2026-09-01T00:00:00Z' };
+    const plan = planDailyReminders(rider([bike('a', 'Norden 901', [], stale), bike('b', 'Svartpilen', [], stale)]), today)!;
+    const email = dailyReminderEmail(plan, 'imperial', links);
+    assert.match(email.text, /Update: https:\/\/swingarm\.app\/\?bike=a&odometer=update/);
+    assert.match(email.text, /Update: https:\/\/swingarm\.app\/\?bike=b&odometer=update/);
+    assert.ok(email.html.includes(escapeHtml('https://swingarm.app/?bike=b&odometer=update')));
   });
 
   it('shows the eight most due and counts the rest', () => {
@@ -91,6 +106,7 @@ describe('dailyReminderEmail', () => {
     const email = dailyReminderEmail(plan, 'imperial', links);
     assert.match(email.text, /last updated 45 days ago, at 3,000 mi\./);
     assert.match(email.text, /only count the miles you’ve entered/);
+    assert.match(email.text, /Update odometer: https:\/\/swingarm\.app\/\?bike=a&odometer=update/);
   });
 });
 

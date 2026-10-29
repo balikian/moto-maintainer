@@ -40,7 +40,15 @@ describe('dailyPush', () => {
     const message = dailyPush({ tasks: [due(norden, task('t', 'Replace engine oil', 2500))], odometer: [] }, 'imperial');
     assert.equal(message.title, 'Overdue: Replace engine oil on your Norden 901');
     assert.equal(message.body, 'Replace engine oil, 500 mi overdue');
-    assert.equal(message.url, '/');
+    assert.equal(message.url, '/?bike=a');
+  });
+
+  it('opens Garage when it’s about several bikes', () => {
+    const message = dailyPush(
+      { tasks: [due(norden, task('t', 'Chain', 2500))], odometer: [{ key: 'o', bike: svartpilen, daysSince: 36 }] },
+      'imperial'
+    );
+    assert.equal(message.url, '/?view=garage');
   });
 
   it('names the bike when there are several', () => {
@@ -62,5 +70,6 @@ describe('dailyPush', () => {
     const message = dailyPush({ tasks: [], odometer: [{ key: 'o', bike: norden, daysSince: 36 }] }, 'imperial');
     assert.equal(message.title, 'Time to update your Norden 901’s odometer');
     assert.equal(message.body, 'It’s been 36 days at 3,000 mi. Tap to enter the new reading.');
+    assert.equal(message.url, '/?bike=a&odometer=update');
   });
 });
