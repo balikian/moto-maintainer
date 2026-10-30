@@ -19,6 +19,7 @@ const SECTIONS = [
   { id: 'what-is-due', title: 'How tasks come due' },
   { id: 'log-service', title: 'Log service' },
   { id: 'your-checklist', title: 'Change your checklist' },
+  { id: 'specs', title: 'Your bike’s specs' },
   { id: 'manual-and-schedule', title: 'Manual and manufacturer schedule' },
   { id: 'history', title: 'History, spending and sharing' },
   { id: 'settings', title: 'Settings and your account' },
@@ -222,6 +223,22 @@ export default async function HelpPage() {
             To track something else, tap <Ui>Add task</Ui> at the top of Tasks (or <Ui>Add a custom task</Ui> at the
             bottom). Give it a name, an interval,
             and when it was last done, so it counts from the right place.
+          </p>
+        </Section>
+
+        <Section id="specs">
+          <p>
+            Oil grade and amount, tire pressures, torques: the numbers you look up again and again. In Garage, tap{' '}
+            <Ui>Specs</Ui> on a bike to see them. When we’ve read your model’s owner’s manual, its values are filled in
+            and marked with the manual’s page, like <Ui>Manual p. 142</Ui>.
+          </p>
+          <p>
+            Tap <Ui>Edit</Ui> to fill in the rest or use your own, like a different tire size. Yours show instead of the
+            manual’s; leave a field empty to keep the manual’s value. Torques show in both N·m and lb-ft.
+          </p>
+          <p>
+            Open a task to see the specs that go with it, like the oil and drain plug torque on an oil change.{' '}
+            <Ui>Log service</Ui> shows them for everything you tick.
           </p>
         </Section>
 

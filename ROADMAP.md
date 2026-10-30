@@ -1216,9 +1216,13 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
       admin fix, remove or add specs, and saves them to `model_specs`
       (`saveModelSpecsAction`) for the same years and models as the
       schedule.
-    - ⏳ Show the matching specs on task cards and in Log service.
-    - ⏳ Specs in the account export/import and the shared history; a way
-      to open Specs from Tasks too.
+    - 🔨 On tasks (built 2026-10-29, owner to try): an opened task shows
+      the specs that go with it (`specsForTasks`), with "All specs" to open
+      the Specs dialog, or "No engine oil specs yet. Add them" when empty.
+      Log service shows the specs for the ticked tasks (not for a past
+      service). The dashboard loads the active bike's manual specs once.
+      Help has a "Your bike's specs" section.
+    - ⏳ Specs in the account export/import and the shared history.
 
 ## Smaller items and ideas
 

@@ -394,6 +394,19 @@ export function specGroupsForTask(taskName: string): SpecGroup[] {
   return SPEC_GROUPS.filter((group) => 'tasks' in group && group.tasks.test(taskName));
 }
 
+/**
+ * What to show with some tasks (one task's card, or everything ticked in Log
+ * service): each matching group, in the list's order, with the bike's values.
+ * A group without values is still listed, so the rider can be asked to fill it in.
+ */
+export function specsForTasks(taskNames: string[], specs: ResolvedSpec[]): { group: SpecGroup; specs: ResolvedSpec[] }[] {
+  const matched = new Set(taskNames.flatMap((name) => specGroupsForTask(name).map((group) => group.id)));
+  return SPEC_GROUPS.filter((group) => matched.has(group.id)).map((group) => {
+    const keys = new Set<string>(group.specs.map((spec) => spec.key));
+    return { group, specs: specs.filter((spec) => keys.has(spec.key)) };
+  });
+}
+
 /** The groups with at least one value, each with its values. */
 export function groupResolvedSpecs(specs: ResolvedSpec[]): { group: SpecGroup; specs: ResolvedSpec[] }[] {
   return SPEC_GROUPS.flatMap((group) => {

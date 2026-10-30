@@ -10,6 +10,7 @@ import {
   SPEC_GROUPS,
   specFromDraft,
   specGroupsForTask,
+  specsForTasks,
   specValuesFromRows,
   unitsFor,
   type ExtractedSpecRow,
@@ -195,6 +196,26 @@ describe('specValuesFromRows', () => {
       ]),
       { battery: { text: 'YTZ10S' } }
     );
+  });
+});
+
+describe('specsForTasks', () => {
+  const resolved = resolveSpecs({ oil_grade: { text: '10W-40' }, tire_front: { text: '90/90-21' } }, { values: { chain_slack: { value: 25, max: 35, unit: 'mm' } } });
+  const summary = (names: string[]) => specsForTasks(names, resolved).map(({ group, specs }) => [group.id, specs.map((spec) => spec.key)]);
+
+  it('gives each task’s groups with the bike’s values, once and in the list’s order', () => {
+    assert.deepEqual(summary(['Clean and lube chain', 'Oil change', 'Replace oil filter']), [
+      ['oil', ['oil_grade']],
+      ['chain', ['chain_slack']],
+    ]);
+  });
+
+  it('lists a matching group even without values', () => {
+    assert.deepEqual(summary(['Replace coolant']), [['cooling', []]]);
+  });
+
+  it('gives nothing for tasks without specs', () => {
+    assert.deepEqual(summary(['Wash the bike']), []);
   });
 });
 

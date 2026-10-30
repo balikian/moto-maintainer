@@ -5,10 +5,12 @@ import { Check, Layers, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
 import { categoryLabel, isTaskCategory, TASK_CATEGORIES, taskCategory, type TaskCategory } from '@/lib/taskCategories';
 import type { TaskDueState, TaskStatus } from '@/lib/maintenance';
+import { specsForTasks, type ResolvedSpec } from '@/lib/specs';
 import { dueLabel, intervalLabel } from '@/lib/taskLabels';
 import type { MaintenanceTask, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, formatDistance, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
 import ConfirmPopover from './ConfirmPopover';
+import TaskSpecs from './TaskSpecs';
 import { ui } from './ui';
 
 type TaskCardProps = {
@@ -30,6 +32,9 @@ type TaskCardProps = {
   onSetStart: (start: 'today' | 'new') => void;
   /** The bike's model year, where "never done" counts from. */
   bikeYear: number;
+  /** The bike's specs; the ones that go with this task show when it's opened. */
+  specs: ResolvedSpec[];
+  onOpenSpecs: () => void;
 };
 
 const STATUS_TEXT: Record<TaskStatus, string> = {
@@ -75,6 +80,8 @@ export default function TaskCard({
   onDelete,
   onSetStart,
   bikeYear,
+  specs,
+  onOpenSpecs,
 }: TaskCardProps) {
   const noStart = dueState.status === 'NoStart';
   const [open, setOpen] = useState(false);
@@ -211,6 +218,7 @@ export default function TaskCard({
               </>
             )}
           </dl>
+          <TaskSpecs groups={specsForTasks([task.task_name], specs)} unitSystem={unitSystem} onOpenSpecs={onOpenSpecs} />
           {noStart && (
             <p className="text-sm text-muted">
               When was this last done? Log it if you know. Not sure? Start counting today. Never been done? It counts

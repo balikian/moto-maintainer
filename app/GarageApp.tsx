@@ -14,12 +14,12 @@ import {
 import type { CustomModel } from '@/lib/bikeCatalog';
 import { todayIsoDate } from '@/lib/dates';
 import { countTasksByStatus, findDefaultTask, hasStartPoint, scheduleOverlapsTasks } from '@/lib/maintenance';
-import { fetchModelSchedule } from '@/lib/modelData';
+import { fetchModelSchedule, fetchModelSpecs } from '@/lib/modelData';
 import { trackEvent } from '@/lib/analytics';
 import { shopSuggestions } from '@/lib/serviceVisits';
-import type { BikeSpecs } from '@/lib/specs';
+import { cleanBikeSpecs, cleanSpecValues, resolveSpecs, type BikeSpecs } from '@/lib/specs';
 import { createClient } from '@/lib/supabase/client';
-import type { MaintenanceTask, ModelSchedule, Motorcycle, ServiceLog } from '@/lib/types';
+import type { MaintenanceTask, ModelSchedule, ModelSpecs, Motorcycle, ServiceLog } from '@/lib/types';
 import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
 import AddCustomTaskModal, { type NewTaskValues } from './components/AddCustomTaskModal';
 import AppNav from './components/AppNav';
@@ -190,6 +190,12 @@ export default function GarageApp() {
   const scheduleQuery = useSupabaseQuery<ModelSchedule | null>(scheduleKey, () => fetchModelSchedule(supabase, activeBike!));
   const unappliedSchedule =
     scheduleQuery.data && !tasksQuery.loading && !scheduleOverlapsTasks(scheduleQuery.data, tasks) ? scheduleQuery.data : null;
+
+  // The bike's specs (its own over the manual's), shown on the tasks they go with.
+  const specsQuery = useSupabaseQuery<ModelSpecs | null>(scheduleKey, () => fetchModelSpecs(supabase, activeBike!));
+  const activeSpecs = activeBike
+    ? resolveSpecs(specsQuery.data ? cleanSpecValues(specsQuery.data.specs) : null, cleanBikeSpecs(activeBike.specs))
+    : [];
 
   const loadErrors = [bikesQuery.error, tasksQuery.error, logsQuery.error, allTasksQuery.error]
     .filter((message): message is string => Boolean(message))
@@ -472,6 +478,8 @@ export default function GarageApp() {
                 onResetTask={(task) => void handleResetTask(task)}
                 onDeleteTask={(task) => void handleDeleteTask(task)}
                 onSetStart={(startTasks, start) => void handleSetStart(startTasks, start)}
+                specs={activeSpecs}
+                onOpenSpecs={() => setDialog({ type: 'specs', bikeId: activeBike.id })}
               />
             </div>
           </div>
@@ -579,6 +587,7 @@ export default function GarageApp() {
           defaultOdometer={activeBike.current_mileage}
           initialDate={dialog.past || (dialog.task && !hasStartPoint(dialog.task)) ? lastPastDate : undefined}
           shopChoices={shopSuggestions(shopsQuery.data ?? [])}
+          specs={activeSpecs}
           onClose={() => setDialog(null)}
           onSubmit={handleLogService}
         />
@@ -595,7 +604,11 @@ export default function GarageApp() {
             reloadTasks();
             logsQuery.reload();
           }}
-          onClose={() => setDialog(null)}
+          onClose={() => {
+            setDialog(null);
+            // Specs imported from the manual show on the tasks.
+            specsQuery.reload();
+          }}
         />
       )}
 
