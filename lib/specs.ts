@@ -141,6 +141,9 @@ export type SpecKey = SpecGroup['specs'][number]['key'];
 
 const DEFINITIONS = new Map<string, SpecDefinition>(SPEC_GROUPS.flatMap((group) => group.specs.map((spec) => [spec.key, spec])));
 
+/** Every key, in the list's order. */
+export const SPEC_KEYS = SPEC_GROUPS.flatMap((group) => group.specs.map((spec) => spec.key)) as [SpecKey, ...SpecKey[]];
+
 export function isSpecKey(value: unknown): value is SpecKey {
   return typeof value === 'string' && DEFINITIONS.has(value);
 }
@@ -192,7 +195,7 @@ export const UNITS: Record<SpecUnit, UnitInfo> = {
   in: { kind: 'length', label: 'in', base: 25.4, system: 'imperial', digits: 3 },
 };
 
-export const SPEC_UNITS = Object.keys(UNITS) as SpecUnit[];
+export const SPEC_UNITS = Object.keys(UNITS) as [SpecUnit, ...SpecUnit[]];
 
 /** The units a kind of spec can be entered in, the rider's system's first. */
 export function unitsFor(kind: Exclude<SpecKind, 'text'>, units: UnitSystem): SpecUnit[] {
@@ -266,6 +269,18 @@ export function parseSpecNumber(input: string): { value: number; max?: number } 
   return max === value ? { value } : { value, max };
 }
 
+/** A spec as typed in a form: the text, or a number or range plus its unit. */
+export type SpecDraft = { text: string; unit: SpecUnit | null };
+
+/** A form field's value: null when it's empty, 'invalid' when the number can't be read. */
+export function specFromDraft(kind: SpecKind, draft: SpecDraft): SpecValue | null | 'invalid' {
+  const text = draft.text.trim();
+  if (!text) return null;
+  if (kind === 'text') return { text };
+  const amount = parseSpecNumber(text);
+  return amount && draft.unit ? { ...amount, unit: draft.unit } : 'invalid';
+}
+
 // --- Checking what's saved ------------------------------------------------
 
 export const MAX_SPEC_TEXT = 120;
@@ -309,6 +324,31 @@ export function cleanSpecValues(input: unknown): SpecValues {
     if (!isSpecKey(key)) continue;
     const value = cleanSpecValue(key, raw);
     if (value) values[key] = value;
+  }
+  return values;
+}
+
+/** One spec as Claude reads it from the manual (lib/specExtraction.ts); `page` is the number printed on the page. */
+export type ExtractedSpecRow = {
+  key: SpecKey;
+  text: string | null;
+  value: number | null;
+  max: number | null;
+  unit: SpecUnit | null;
+  page: number | null;
+};
+
+/** The manual's specs from Claude's rows: the first well-formed value for each key. */
+export function specValuesFromRows(rows: ExtractedSpecRow[]): SpecValues {
+  const values: SpecValues = {};
+  for (const row of rows) {
+    if (values[row.key]) continue;
+    const page = row.page ?? undefined;
+    const value =
+      specDefinition(row.key).kind === 'text'
+        ? cleanSpecValue(row.key, { text: row.text?.replace(/\s+/g, ' '), page })
+        : cleanSpecValue(row.key, { value: row.value, max: row.max === null || row.max === row.value ? undefined : row.max, unit: row.unit, page });
+    if (value) values[row.key] = value;
   }
   return values;
 }

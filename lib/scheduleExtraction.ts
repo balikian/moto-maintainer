@@ -4,7 +4,8 @@ import { z } from 'zod';
 import { cleanTasks } from './scheduleImport';
 import { TASK_CATEGORY_IDS } from './taskCategories';
 
-// Reads a maintenance schedule out of owner's-manual pages with Claude.
+// Reads a maintenance schedule out of owner's-manual pages with Claude, and
+// holds the Claude call the specs reader shares (lib/specExtraction.ts).
 // Server-only: it uses ANTHROPIC_API_KEY, which must never reach the browser.
 
 const ExtractedTask = z.object({
@@ -40,24 +41,40 @@ How to read the schedule:
 
 If the pages don't contain a periodic maintenance schedule, set found_schedule to false, return no tasks, and say what the pages contain instead.`;
 
-export class ScheduleExtractionError extends Error {}
+/** A failure to show the admin as is: a missing key, a refusal, Claude being unavailable. */
+export class ManualReadError extends Error {}
 
 let client: Anthropic | null = null;
 
 function getClient(): Anthropic {
   if (!process.env.ANTHROPIC_API_KEY) {
-    throw new ScheduleExtractionError('Schedule import isn’t set up yet: ANTHROPIC_API_KEY is missing on the server.');
+    throw new ManualReadError('Importing from manuals isn’t set up yet: ANTHROPIC_API_KEY is missing on the server.');
   }
   // Reads ANTHROPIC_API_KEY from the environment.
   client ??= new Anthropic();
   return client;
 }
 
-/** `pageImages` are base64 JPEGs of the selected manual pages, in page order. */
-export async function extractScheduleFromPages(
-  pageImages: string[],
-  bike: { year: number; make: string; model: string }
-): Promise<ExtractedSchedule> {
+/**
+ * Sends manual pages to Claude with a system prompt and reads its answer into
+ * `schema`. Shared by the schedule reader here and the specs reader
+ * (lib/specExtraction.ts). `what` names the result in error messages.
+ */
+export async function readManualPages<T extends z.ZodType>({
+  pageImages,
+  system,
+  request,
+  schema,
+  what,
+}: {
+  /** Base64 JPEGs of the selected manual pages, in page order. */
+  pageImages: string[];
+  system: string;
+  /** The text after the images: what to read from them. */
+  request: string;
+  schema: T;
+  what: string;
+}): Promise<z.infer<T>> {
   const anthropic = getClient();
 
   let response;
@@ -70,9 +87,9 @@ export async function extractScheduleFromPages(
       fallbacks: 'default',
       output_config: {
         effort: 'high',
-        format: betaZodOutputFormat(ExtractedScheduleSchema),
+        format: betaZodOutputFormat(schema),
       },
-      system: SYSTEM_PROMPT,
+      system,
       messages: [
         {
           role: 'user',
@@ -81,41 +98,52 @@ export async function extractScheduleFromPages(
               type: 'image' as const,
               source: { type: 'base64' as const, media_type: 'image/jpeg' as const, data },
             })),
-            {
-              type: 'text',
-              text: `These ${pageImages.length} images are selected pages, in order, from the owner's manual for a ${bike.year} ${bike.make} ${bike.model}. Extract its periodic maintenance schedule.`,
-            },
+            { type: 'text', text: request },
           ],
         },
       ],
     });
   } catch (error) {
     if (error instanceof Anthropic.AuthenticationError) {
-      throw new ScheduleExtractionError('The Anthropic API key was rejected. Check ANTHROPIC_API_KEY in .env.local.');
+      throw new ManualReadError('The Anthropic API key was rejected. Check ANTHROPIC_API_KEY in .env.local.');
     }
     if (error instanceof Anthropic.RateLimitError) {
-      throw new ScheduleExtractionError('Too many requests right now. Wait a minute and try again.');
+      throw new ManualReadError('Too many requests right now. Wait a minute and try again.');
     }
     if (error instanceof Anthropic.BadRequestError) {
-      throw new ScheduleExtractionError(`Claude couldn’t read that file: ${error.message}`);
+      throw new ManualReadError(`Claude couldn’t read that file: ${error.message}`);
     }
     if (error instanceof Anthropic.APIError) {
-      throw new ScheduleExtractionError(`Claude is unavailable right now (error ${error.status}). Please try again.`);
+      throw new ManualReadError(`Claude is unavailable right now (error ${error.status}). Please try again.`);
     }
     throw error;
   }
 
   if (response.stop_reason === 'refusal') {
-    throw new ScheduleExtractionError('Claude declined to read these pages. Try selecting only the maintenance schedule pages.');
+    throw new ManualReadError(`Claude declined to read these pages. Try selecting only the ${what} pages.`);
   }
   if (response.stop_reason === 'max_tokens') {
-    throw new ScheduleExtractionError('The schedule was too long to read in one go. Try fewer pages at a time.');
+    throw new ManualReadError(`The ${what} was too long to read in one go. Try fewer pages at a time.`);
   }
 
   const parsed = response.parsed_output;
   if (!parsed) {
-    throw new ScheduleExtractionError('Claude’s answer couldn’t be read. Please try again.');
+    throw new ManualReadError('Claude’s answer couldn’t be read. Please try again.');
   }
+  return parsed;
+}
 
+/** `pageImages` are base64 JPEGs of the selected manual pages, in page order. */
+export async function extractScheduleFromPages(
+  pageImages: string[],
+  bike: { year: number; make: string; model: string }
+): Promise<ExtractedSchedule> {
+  const parsed = await readManualPages({
+    pageImages,
+    system: SYSTEM_PROMPT,
+    request: `These ${pageImages.length} images are selected pages, in order, from the owner's manual for a ${bike.year} ${bike.make} ${bike.model}. Extract its periodic maintenance schedule.`,
+    schema: ExtractedScheduleSchema,
+    what: 'maintenance schedule',
+  });
   return { found_schedule: parsed.found_schedule, tasks: cleanTasks(parsed.tasks), notes: parsed.notes.trim() };
 }

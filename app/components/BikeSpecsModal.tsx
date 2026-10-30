@@ -14,22 +14,22 @@ import {
   MAX_CUSTOM_LABEL,
   MAX_CUSTOM_SPECS,
   MAX_SPEC_TEXT,
-  parseSpecNumber,
   resolveSpecs,
   SPEC_GROUPS,
+  specFromDraft,
   specNumberText,
   unitsFor,
-  UNITS,
   type BikeSpecs,
   type CustomSpec,
+  type SpecDraft,
   type SpecKey,
   type SpecKind,
-  type SpecUnit,
   type SpecValue,
   type SpecValues,
 } from '@/lib/specs';
 import type { ModelSpecs, Motorcycle, UnitSystem } from '@/lib/types';
 import Modal from './Modal';
+import SpecField from './SpecField';
 import { ui } from './ui';
 
 type BikeSpecsModalProps = {
@@ -136,10 +136,8 @@ export default function BikeSpecsModal({ supabase, bike, unitSystem, onClose, on
   );
 }
 
-type Draft = { text: string; unit: SpecUnit | null };
-
 /** A field's starting text and unit: the bike's own value, else empty in the manual's unit (or the rider's). */
-function startDraft(key: SpecKey, kind: SpecKind, own: SpecValues, manual: SpecValues | null, units: UnitSystem): Draft {
+function startDraft(key: SpecKey, kind: SpecKind, own: SpecValues, manual: SpecValues | null, units: UnitSystem): SpecDraft {
   const value = own[key];
   if (kind === 'text') return { text: value && !isMeasured(value) ? value.text : '', unit: null };
   if (value && isMeasured(value)) return { text: specNumberText(value), unit: value.unit };
@@ -196,7 +194,7 @@ function SpecsForm({
   onCancel: () => void;
   onSave: (specs: BikeSpecs) => Promise<string | null>;
 }) {
-  const [drafts, setDrafts] = useState<Record<string, Draft>>(() =>
+  const [drafts, setDrafts] = useState<Record<string, SpecDraft>>(() =>
     Object.fromEntries(
       SPEC_GROUPS.flatMap((group) => group.specs.map((spec) => [spec.key, startDraft(spec.key, spec.kind, own.values ?? {}, manual, unitSystem)]))
     )
@@ -215,27 +213,20 @@ function SpecsForm({
     });
   const openGroup = (id: string) => setOpenGroups((previous) => new Set(previous).add(id));
 
-  const setDraft = (key: string, change: Partial<Draft>) => setDrafts((previous) => ({ ...previous, [key]: { ...previous[key], ...change } }));
+  const setDraft = (key: string, change: Partial<SpecDraft>) => setDrafts((previous) => ({ ...previous, [key]: { ...previous[key], ...change } }));
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
     const values: SpecValues = {};
     for (const group of SPEC_GROUPS) {
       for (const spec of group.specs) {
-        const draft = drafts[spec.key];
-        const text = draft.text.trim();
-        if (!text) continue;
-        if (spec.kind === 'text') {
-          values[spec.key] = { text };
-          continue;
-        }
-        const amount = parseSpecNumber(text);
-        if (!amount || !draft.unit) {
+        const value = specFromDraft(spec.kind, drafts[spec.key]);
+        if (value === 'invalid') {
           openGroup(group.id);
           setError(`${spec.label}: enter a number, or a range like 25–35.`);
           return;
         }
-        values[spec.key] = { ...amount, unit: draft.unit };
+        if (value) values[spec.key] = value;
       }
     }
     const rows = custom.map((row) => ({ label: row.label.trim(), text: row.text.trim() })).filter((row) => row.label || row.text);
@@ -270,52 +261,18 @@ function SpecsForm({
           onToggle={() => toggleGroup(group.id)}
         >
           {group.specs.map((spec) => {
-            const draft = drafts[spec.key];
             const fromManual = manual?.[spec.key];
-            const placeholder = fromManual ? formatSpec(fromManual, unitSystem) : 'example' in spec ? spec.example : '';
-            const id = `spec-${spec.key}`;
             return (
-              <div key={spec.key} className="grid grid-cols-1 gap-1 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:items-center sm:gap-3">
-                <label htmlFor={id} className="text-sm font-semibold text-muted">
-                  {spec.label}
-                </label>
-                {spec.kind === 'text' ? (
-                  <input
-                    id={id}
-                    value={draft.text}
-                    onChange={(event) => setDraft(spec.key, { text: event.target.value })}
-                    placeholder={placeholder}
-                    maxLength={MAX_SPEC_TEXT}
-                    className={ui.input}
-                  />
-                ) : (
-                  <div className="flex gap-2">
-                    <input
-                      id={id}
-                      value={draft.text}
-                      onChange={(event) => setDraft(spec.key, { text: event.target.value })}
-                      placeholder={placeholder}
-                      inputMode="decimal"
-                      className={`${ui.input} min-w-0 flex-1`}
-                    />
-                    {/* Sized by its wrapper: ui.input is full width. */}
-                    <div className="w-28 shrink-0">
-                      <select
-                        value={draft.unit ?? ''}
-                        onChange={(event) => setDraft(spec.key, { unit: event.target.value as SpecUnit })}
-                        aria-label={`${spec.label} unit`}
-                        className={ui.input}
-                      >
-                        {unitsFor(spec.kind, unitSystem).map((unit) => (
-                          <option key={unit} value={unit}>
-                            {UNITS[unit].label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
+              <SpecField
+                key={spec.key}
+                id={`spec-${spec.key}`}
+                label={spec.label}
+                kind={spec.kind}
+                draft={drafts[spec.key]}
+                placeholder={fromManual ? formatSpec(fromManual, unitSystem) : 'example' in spec ? spec.example : ''}
+                unitSystem={unitSystem}
+                onChange={(change) => setDraft(spec.key, change)}
+              />
             );
           })}
         </FormGroup>

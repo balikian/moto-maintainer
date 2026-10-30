@@ -2,27 +2,55 @@
 
 import { getDefaultTasks } from '../maintenance';
 import { fetchModelSchedule, literalPattern } from '../modelData';
-import { extractScheduleFromPages, ScheduleExtractionError, type ExtractedSchedule, type ExtractedTask } from '../scheduleExtraction';
-import { nameKey, planScheduleApply, validatePageImages } from '../scheduleImport';
+import { extractScheduleFromPages, ManualReadError, type ExtractedSchedule, type ExtractedTask } from '../scheduleExtraction';
+import { modelsToSave, nameKey, planScheduleApply, validatePageImages } from '../scheduleImport';
+import { extractSpecsFromPages, type ExtractedSpecs } from '../specExtraction';
 import { taskCategory } from '../taskCategories';
 import { getSignedInClient } from '../supabase/server';
 import type { Motorcycle, ReviewStatus } from '../types';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
 
+/** One half of a manual read: what Claude found, or why it couldn't read it. */
+type ManualPart<T> = { data: T } | { error: string };
+
+/** Reads one page set's images from the form; null if none were sent. */
+async function pageImages(formData: FormData, field: string): Promise<{ images: string[] } | { error: string } | null> {
+  const pages = formData.getAll(field).filter((entry): entry is File => entry instanceof File);
+  if (pages.length === 0) return null;
+  // The request body is already capped at 10 MB, so reading every page is safe.
+  const pageBytes = await Promise.all(pages.map(async (page) => new Uint8Array(await page.arrayBuffer())));
+  const invalid = validatePageImages(pageBytes);
+  if (invalid) return { error: invalid };
+  return { images: pageBytes.map((bytes) => Buffer.from(bytes).toString('base64')) };
+}
+
+async function readPart<T>(images: string[], read: (images: string[]) => Promise<T>): Promise<ManualPart<T>> {
+  try {
+    return { data: await read(images) };
+  } catch (error) {
+    if (error instanceof ManualReadError) return { error: error.message };
+    throw error;
+  }
+}
+
 /**
- * Reads the maintenance schedule from a few owner's-manual pages. The browser
- * renders only the pages the rider picked as JPEG images (see lib/pdfPages.ts),
- * so this stays small and cheap, and works for locked PDFs.
- * Admin-only for now, since every call is billed to the app's Anthropic key.
+ * Reads the maintenance schedule (`page` images) and the specifications
+ * (`specPage` images) from owner's-manual pages; either set may be left out.
+ * The two are read by separate Claude calls at the same time, and one failing
+ * doesn't lose the other. The browser renders only the pages picked as JPEG
+ * images (see lib/pdfPages.ts), so this stays small and cheap, and works for
+ * locked PDFs. Admin-only for now, since every call is billed to the app's
+ * Anthropic key.
  */
-export async function extractScheduleAction(formData: FormData): Promise<ActionResult<ExtractedSchedule>> {
+export async function readManualAction(
+  formData: FormData
+): Promise<ActionResult<{ schedule: ManualPart<ExtractedSchedule> | null; specs: ManualPart<ExtractedSpecs> | null }>> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
 
   const { data: isAdmin } = await supabase.rpc('is_app_admin');
-  if (!isAdmin) return { error: 'Importing schedules from manuals is limited to admins for now.' };
+  if (!isAdmin) return { error: 'Importing from manuals is limited to admins for now.' };
 
-  const pages = formData.getAll('page').filter((entry): entry is File => entry instanceof File);
   const bike = {
     year: Number(formData.get('year')),
     make: String(formData.get('make') ?? '').trim(),
@@ -30,19 +58,15 @@ export async function extractScheduleAction(formData: FormData): Promise<ActionR
   };
   if (!bike.make || !bike.model || !bike.year) return { error: 'This bike is missing its make, model, or year.' };
 
-  // The request body is already capped at 10 MB, so reading every page is safe.
-  const pageBytes = await Promise.all(pages.map(async (page) => new Uint8Array(await page.arrayBuffer())));
-  const invalid = validatePageImages(pageBytes);
-  if (invalid) return { error: invalid };
-  const images = pageBytes.map((bytes) => Buffer.from(bytes).toString('base64'));
+  const [schedulePages, specPages] = await Promise.all([pageImages(formData, 'page'), pageImages(formData, 'specPage')]);
+  if (!schedulePages && !specPages) return { error: 'No pages were uploaded.' };
+  for (const pages of [schedulePages, specPages]) if (pages && 'error' in pages) return { error: pages.error };
 
-  try {
-    const schedule = await extractScheduleFromPages(images, bike);
-    return { data: schedule };
-  } catch (error) {
-    if (error instanceof ScheduleExtractionError) return { error: error.message };
-    throw error;
-  }
+  const [schedule, specs] = await Promise.all([
+    schedulePages && 'images' in schedulePages ? readPart(schedulePages.images, (images) => extractScheduleFromPages(images, bike)) : null,
+    specPages && 'images' in specPages ? readPart(specPages.images, (images) => extractSpecsFromPages(images, bike)) : null,
+  ]);
+  return { data: { schedule, specs } };
 }
 
 type SaveScheduleInput = {
@@ -58,9 +82,6 @@ type SaveScheduleInput = {
    */
   alsoModels?: string[];
 };
-
-/** At most this many extra models per save. */
-const MAX_ALSO_MODELS = 20;
 
 /**
  * Saves a reviewed schedule as the shared schedule for this model, and for any
@@ -98,12 +119,7 @@ export async function saveModelScheduleAction(
   const status: ReviewStatus = isAdmin ? 'approved' : 'pending';
   const source = input.source.trim().slice(0, 300) || null;
 
-  // The model itself first, then the others (admins only), each name once.
-  const models: string[] = [];
-  for (const name of [model, ...(isAdmin ? (input.alsoModels ?? []).slice(0, MAX_ALSO_MODELS) : [])]) {
-    const clean = name.trim().slice(0, 80);
-    if (clean && !models.some((other) => other.toLowerCase() === clean.toLowerCase())) models.push(clean);
-  }
+  const models = modelsToSave(model, input.alsoModels, Boolean(isAdmin));
 
   let firstId: string | null = null;
   for (const [index, current] of models.entries()) {

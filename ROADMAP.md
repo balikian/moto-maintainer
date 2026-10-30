@@ -1202,10 +1202,20 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
     - ✅ Specs dialog from each bike in Garage: a quick read-only list
       ("Manual p. 142" or "Yours" under each value), and Edit, where the
       manual's values are gray placeholders and an empty field keeps them.
-    - ⏳ Import: a second page field in the schedule import ("Pages with
-      specifications"), read by its own Claude call alongside the
-      schedule's; either field can be left empty, so specs can be imported
-      for bikes that already have a schedule. Reviewed with the schedule.
+    - 🔨 Import (built 2026-10-29, owner to try): the import dialog ("Import
+      from the manual") has a second page field, "Pages with
+      specifications". One server action (`readManualAction`) runs the
+      schedule's and the specs' Claude calls at the same time (Next.js runs
+      a page's server actions one at a time, so two actions would take
+      twice as long); one failing keeps the other. `lib/specExtraction.ts`
+      shares the call with the schedule reader (`readManualPages`); its
+      prompt lists the specs from `lib/specs.ts`. Either field can be
+      empty, so a bike with a schedule gets specs by opening "Import from
+      manual" and filling in only the specs pages. The review shows each
+      spec with its printed page (riders see "Manual p. 142"), lets the
+      admin fix, remove or add specs, and saves them to `model_specs`
+      (`saveModelSpecsAction`) for the same years and models as the
+      schedule.
     - ⏳ Show the matching specs on task cards and in Log service.
     - ⏳ Specs in the account export/import and the shared history; a way
       to open Specs from Tasks too.

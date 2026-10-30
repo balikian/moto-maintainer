@@ -15,6 +15,22 @@ function isJpeg(bytes: Uint8Array): boolean {
   return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
 }
 
+/** At most this many extra models per save. */
+const MAX_ALSO_MODELS = 20;
+
+/**
+ * The models an import is saved for: the model itself first, then (admins
+ * only) other models the same manual covers, each name once, ignoring case.
+ */
+export function modelsToSave(model: string, alsoModels: string[] | undefined, isAdmin: boolean): string[] {
+  const models: string[] = [];
+  for (const name of [model, ...(isAdmin ? (alsoModels ?? []).slice(0, MAX_ALSO_MODELS) : [])]) {
+    const clean = name.trim().slice(0, 80);
+    if (clean && !models.some((other) => other.toLowerCase() === clean.toLowerCase())) models.push(clean);
+  }
+  return models;
+}
+
 /** Checks the uploaded page images. Returns an error message, or null if they're fine. */
 export function validatePageImages(pages: Uint8Array[]): string | null {
   if (pages.length === 0) return 'No pages were uploaded.';

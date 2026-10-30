@@ -8,8 +8,11 @@ import {
   parseSpecNumber,
   resolveSpecs,
   SPEC_GROUPS,
+  specFromDraft,
   specGroupsForTask,
+  specValuesFromRows,
   unitsFor,
+  type ExtractedSpecRow,
 } from './specs';
 
 describe('SPEC_GROUPS', () => {
@@ -136,6 +139,61 @@ describe('resolveSpecs', () => {
     assert.deepEqual(
       groupResolvedSpecs(resolved).map(({ group }) => group.id),
       ['oil', 'tires']
+    );
+  });
+});
+
+describe('specFromDraft', () => {
+  it('reads text, numbers and ranges', () => {
+    assert.deepEqual(specFromDraft('text', { text: ' DOT 4 ', unit: null }), { text: 'DOT 4' });
+    assert.deepEqual(specFromDraft('volume', { text: '3,2', unit: 'L' }), { value: 3.2, unit: 'L' });
+    assert.deepEqual(specFromDraft('length', { text: '25-35', unit: 'mm' }), { value: 25, max: 35, unit: 'mm' });
+  });
+
+  it('tells empty from unreadable', () => {
+    assert.equal(specFromDraft('volume', { text: '  ', unit: 'L' }), null);
+    assert.equal(specFromDraft('volume', { text: 'lots', unit: 'L' }), 'invalid');
+    assert.equal(specFromDraft('volume', { text: '3', unit: null }), 'invalid');
+  });
+});
+
+describe('specValuesFromRows', () => {
+  const row = (fields: Partial<ExtractedSpecRow> & Pick<ExtractedSpecRow, 'key'>): ExtractedSpecRow => ({
+    text: null,
+    value: null,
+    max: null,
+    unit: null,
+    page: null,
+    ...fields,
+  });
+
+  it('turns Claude’s rows into values, with their pages', () => {
+    assert.deepEqual(
+      specValuesFromRows([
+        row({ key: 'oil_grade', text: 'SAE  10W-40,\nJASO MA2', page: 140 }),
+        row({ key: 'oil_with_filter', value: 3.2, unit: 'L', page: 140 }),
+        row({ key: 'chain_slack', value: 25, max: 35, unit: 'mm' }),
+        row({ key: 'spark_plug_gap', value: 0.8, max: 0.8, unit: 'mm' }),
+      ]),
+      {
+        oil_grade: { text: 'SAE 10W-40, JASO MA2', page: 140 },
+        oil_with_filter: { value: 3.2, unit: 'L', page: 140 },
+        chain_slack: { value: 25, max: 35, unit: 'mm' },
+        spark_plug_gap: { value: 0.8, unit: 'mm' },
+      }
+    );
+  });
+
+  it('keeps the first value for a key and drops ones that don’t fit', () => {
+    assert.deepEqual(
+      specValuesFromRows([
+        row({ key: 'battery', text: 'YTZ10S' }),
+        row({ key: 'battery', text: 'YTX9-BS' }),
+        row({ key: 'fuel_tank', text: '18 L' }),
+        row({ key: 'pressure_front', value: 36, unit: 'L' }),
+        row({ key: 'oil_grade', value: 10, unit: 'L' }),
+      ]),
+      { battery: { text: 'YTZ10S' } }
     );
   });
 });
