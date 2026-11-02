@@ -1,15 +1,16 @@
 'use client';
 
 import { useId, useRef, useState } from 'react';
-import { ClipboardList, Ellipsis, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ClipboardList, Ellipsis, Pencil, Plus, Store, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
 import { countTasksByStatus, type TaskStatus } from '@/lib/maintenance';
 import type { FavoriteSpecRow } from '@/lib/specs';
-import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
+import type { MaintenanceTask, Motorcycle, Shop, UnitSystem } from '@/lib/types';
 import { formatDistance, formatOdometer } from '@/lib/units';
 import { useDismiss } from '../hooks/useDismiss';
 import ConfirmPopover from './ConfirmPopover';
 import FavoriteSpecs from './FavoriteSpecs';
+import ShopLinks from './ShopLinks';
 import { ui } from './ui';
 
 type GarageViewProps = {
@@ -19,6 +20,8 @@ type GarageViewProps = {
   allTasks: MaintenanceTask[] | null;
   /** Each bike's starred specs, by bike id. */
   favoriteSpecs: Record<string, FavoriteSpecRow[]>;
+  /** The rider's shops, for each bike's preferred one and the Shops list. */
+  shops: Shop[];
   unitSystem: UnitSystem;
   /** Shows the bike's tasks. */
   onOpen: (bikeId: string) => void;
@@ -26,6 +29,9 @@ type GarageViewProps = {
   onEdit: (bike: Motorcycle) => void;
   onSpecs: (bike: Motorcycle) => void;
   onRemove: (bike: Motorcycle) => void;
+  onAddShop: () => void;
+  onEditShop: (shop: Shop) => void;
+  onRemoveShop: (shop: Shop) => void;
 };
 
 const SUMMARY: { status: TaskStatus; label: string; color: string }[] = [
@@ -101,18 +107,63 @@ function BikeMenu({ name, onSpecs, onEdit, onRemove }: { name: string; onSpecs: 
   );
 }
 
-/** Every bike, with what each needs; tap one to see its tasks. Bikes are added, edited and removed here, and their specs kept. */
+/** One of the rider's shops: its details and links, with Edit and Remove. */
+function ShopCard({ shop, bikeNames, onEdit, onRemove }: { shop: Shop; bikeNames: string[]; onEdit: () => void; onRemove: () => void }) {
+  return (
+    <li className={`${ui.card} p-4`}>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate text-lg font-extrabold leading-tight">{shop.name}</h3>
+          {(shop.phone || shop.address) && (
+            <p className="mt-0.5 text-sm font-semibold text-muted">{[shop.phone, shop.address].filter(Boolean).join(' · ')}</p>
+          )}
+          {bikeNames.length > 0 && <p className="mt-0.5 text-sm font-semibold text-muted">For the {bikeNames.join(', ')}</p>}
+        </div>
+        <button type="button" onClick={onEdit} className={`${ui.iconButton} -mr-2 -mt-1.5 border-0 bg-transparent text-muted hover:text-fg`} aria-label={`Edit ${shop.name}`}>
+          <Pencil size={17} aria-hidden="true" />
+        </button>
+        <ConfirmPopover
+          message={`Remove ${shop.name}?${bikeNames.length > 0 ? ' Bikes that use it will have no shop.' : ''} Your service history keeps its name.`}
+          confirmLabel="Remove shop"
+          onConfirm={onRemove}
+        >
+          {(open, popoverProps) => (
+            <button
+              type="button"
+              onClick={open}
+              {...popoverProps}
+              className={`${ui.iconButton} -mr-2 -mt-1.5 border-0 bg-transparent text-muted hover:text-danger`}
+              aria-label={`Remove ${shop.name}`}
+            >
+              <Trash2 size={17} aria-hidden="true" />
+            </button>
+          )}
+        </ConfirmPopover>
+      </div>
+      {shop.notes && <p className="mt-2 whitespace-pre-line text-sm">{shop.notes}</p>}
+      <div className="mt-3 empty:hidden">
+        <ShopLinks shop={shop} />
+      </div>
+    </li>
+  );
+}
+
+/** Every bike, with what each needs; tap one to see its tasks. Bikes are added, edited and removed here, and their specs kept; then the rider's shops. */
 export default function GarageView({
   bikes,
   activeBikeId,
   allTasks,
   favoriteSpecs,
+  shops,
   unitSystem,
   onOpen,
   onAdd,
   onEdit,
   onSpecs,
   onRemove,
+  onAddShop,
+  onEditShop,
+  onRemoveShop,
 }: GarageViewProps) {
   return (
     <div className="space-y-3">
@@ -124,6 +175,7 @@ export default function GarageView({
             const name = `${bike.year} ${bike.make} ${bike.model}`;
             const isActive = bike.id === activeBikeId;
             const specs = favoriteSpecs[bike.id] ?? [];
+            const shop = shops.find((candidate) => candidate.id === bike.shop_id) ?? null;
             return (
               <li key={bike.id} className={`${ui.card} p-4 ${isActive ? 'border-accent/60' : ''}`}>
                 <div className="flex items-start gap-2">
@@ -155,6 +207,16 @@ export default function GarageView({
                     <FavoriteSpecs specs={specs} chips />
                   </button>
                 )}
+                {shop && (
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-line pt-3">
+                    <span className="flex min-w-0 items-center gap-2 text-sm font-bold">
+                      <Store size={16} className="shrink-0 text-muted" aria-hidden="true" />
+                      <span className="sr-only">Shop: </span>
+                      <span className="truncate">{shop.name}</span>
+                    </span>
+                    <ShopLinks shop={shop} compact />
+                  </div>
+                )}
               </li>
             );
           })}
@@ -164,6 +226,33 @@ export default function GarageView({
       <button type="button" onClick={onAdd} className={`w-full ${ui.secondaryButton} min-h-12`}>
         <Plus size={15} aria-hidden="true" /> Add bike
       </button>
+
+      <section aria-labelledby="garage-shops" className="space-y-3 pt-5">
+        <div>
+          <h2 id="garage-shops" className={ui.sectionTitle}>Shops</h2>
+          <p className="mt-0.5 text-sm text-muted">
+            {shops.length === 0
+              ? 'Add the shop or mechanic you take your bikes to, then pick it for each bike in Edit bike.'
+              : 'Pick a bike’s shop in Edit bike (⋯ on its card).'}
+          </p>
+        </div>
+        {shops.length > 0 && (
+          <ul className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
+            {shops.map((shop) => (
+              <ShopCard
+                key={shop.id}
+                shop={shop}
+                bikeNames={bikes.filter((bike) => bike.shop_id === shop.id).map((bike) => `${bike.make} ${bike.model}`)}
+                onEdit={() => onEditShop(shop)}
+                onRemove={() => onRemoveShop(shop)}
+              />
+            ))}
+          </ul>
+        )}
+        <button type="button" onClick={onAddShop} className={`w-full ${ui.secondaryButton} min-h-12`}>
+          <Plus size={15} aria-hidden="true" /> Add a shop
+        </button>
+      </section>
     </div>
   );
 }

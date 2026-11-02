@@ -76,7 +76,7 @@ export default function ImportDataModal({ garage, onClose, onImported }: ImportD
   return (
     <Modal
       title="Import a backup"
-      description="Adds bikes from a SwingArm data file, with their tasks and service history. Bikes already in your garage aren’t changed."
+      description="Adds bikes from a SwingArm data file, with their tasks, service history and shops. Bikes already in your garage aren’t changed."
       onClose={importing ? () => {} : onClose}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,6 +114,7 @@ export default function ImportDataModal({ garage, onClose, onImported }: ImportD
                   </span>
                   <span className={`block ${ui.muted}`}>
                     {count(bike.tasks.length, 'task', 'tasks')} · {count(bike.logs.length, 'service record', 'service records')}
+                    {bike.shop && <> · {bike.shop.name}</>}
                   </span>
                   {loaded.duplicates[index] && (
                     <span className="block font-semibold text-warn">Already in your garage. Tick it to add a second copy.</span>

@@ -50,6 +50,8 @@ add a line when a feature ships. Main code paths are in brackets.
 - Remove a bike with a confirm; its tasks, records and share links go; if it was active, the first bike becomes active. [`deleteBikeAction`, `GarageApp`]
 - Switch the active bike (Garage, the bike name with 2+ bikes, desktop list); saved to the profile. [`BikeSwitcher`, `updatePreferencesAction`]
 - Each bike shows its odometer and "1 overdue · 2 soon · N to set up". [`GarageView`, `BikeStatusLine`]
+- Shops: add, edit and remove in Garage (name required; phone needs 3+ digits, email and website checked, website made https); removing one leaves its bikes with none and history unchanged. [`ShopFormModal`, `cleanShop`, `lib/actions/shops.ts`]
+- A bike's shop: picked in Add and Edit bike (or Add a shop… there, which picks the new one); the card shows it with Call and Directions; Log service offers it right after Home. A bike can only point at its owner's shops. [`BikeFormModal`, `ShopLinks`, `shopSuggestions`, `motorcycles_shop_fkey`]
 
 ## More
 
@@ -58,7 +60,7 @@ add a line when a feature ships. Main code paths are in brackets.
 - Theme Auto/Light/Dark, cached so the first paint matches. [`usePreferences`, `THEME_BOOT_SCRIPT`]
 - Reminder email switches (tasks, odometer, monthly summary). [`updatePreferencesAction`]
 - Push: turn on for this device, send a test, the two type switches; iPhone Safari asks for Add to Home Screen first. [`usePush`, `lib/actions/push.ts`]
-- Download my data (JSON); Import a backup adds bikes as new, all or nothing, duplicates unticked. [`buildAccountExport`, `importAccountDataAction`, `parseAccountImport`]
+- Download my data (JSON, with shops); Import a backup adds bikes as new, all or nothing, duplicates unticked; a bike's shop reuses one with the same name or is added. [`buildAccountExport`, `importAccountDataAction`, `parseAccountImport`]
 - Install SwingArm row where the browser offers it. [`useInstallPrompt`]
 - `?view=` with a junk value falls back to Tasks. [`useView`]
 

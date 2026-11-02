@@ -75,4 +75,8 @@ describe('shopSuggestions', () => {
     );
     assert.deepEqual(shopSuggestions([{ shop: 'A' }, { shop: 'B' }, { shop: 'C' }, { shop: 'D' }]), ['Home', 'A', 'B', 'C']);
   });
+
+  it('puts the preferred shop right after Home', () => {
+    assert.deepEqual(shopSuggestions([{ shop: 'A' }, { shop: 'moto works' }, { shop: 'B' }], ['Moto Works', null]), ['Home', 'Moto Works', 'A', 'B']);
+  });
 });

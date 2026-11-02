@@ -1,7 +1,7 @@
 import { serviceType } from './historyExport';
 import { cleanBikeSpecs } from './specs';
 import { categoryLabel, taskCategory } from './taskCategories';
-import type { MaintenanceTask, Motorcycle, ServiceLog } from './types';
+import type { MaintenanceTask, Motorcycle, ServiceLog, Shop } from './types';
 
 // "Download all my data": everything a rider has in SwingArm as one JSON file,
 // laid out for a person to read (each bike holds its tasks and history).
@@ -14,6 +14,7 @@ export type AccountExportInput = {
   bikes: Motorcycle[];
   tasks: MaintenanceTask[];
   logs: ServiceLog[];
+  shops: Shop[];
   /** "YYYY-MM-DD" */
   exportedOn: string;
 };
@@ -28,7 +29,7 @@ function cost(value: number | string | null): number | null {
   return Number.isFinite(amount) ? amount : null;
 }
 
-export function buildAccountExport({ email, profile, bikes, tasks, logs, exportedOn }: AccountExportInput) {
+export function buildAccountExport({ email, profile, bikes, tasks, logs, shops, exportedOn }: AccountExportInput) {
   const saved = profile ?? {};
   return {
     app: 'SwingArm',
@@ -50,6 +51,14 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, exporte
         odometer_check_in: flag(saved.push_odometer_reminders, true),
       },
     },
+    shops: shops.map((shop) => ({
+      name: shop.name,
+      phone: shop.phone,
+      email: shop.email,
+      address: shop.address,
+      website: shop.website,
+      notes: shop.notes,
+    })),
     bikes: bikes.map((bike) => ({
       year: bike.year,
       make: bike.make,
@@ -57,6 +66,8 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, exporte
       odometer_miles: bike.current_mileage,
       bought_on: bike.purchased_on ?? null,
       odometer_when_bought_miles: bike.purchase_mileage ?? null,
+      // The name of one of the shops above.
+      shop: shops.find((shop) => shop.id === bike.shop_id)?.name ?? null,
       added_on: bike.created_at?.slice(0, 10) ?? null,
       // The rider's own specs, as saved (lib/specs.ts); the manual's are shared, not the rider's data.
       specs: cleanBikeSpecs(bike.specs),

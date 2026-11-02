@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { accountExportFileName, buildAccountExport } from './accountExport';
-import type { MaintenanceTask, Motorcycle, ServiceLog } from './types';
+import type { MaintenanceTask, Motorcycle, ServiceLog, Shop } from './types';
 
 const bike = (id: string, model: string): Motorcycle => ({
   id,
@@ -37,17 +37,29 @@ const log = (id: string, motorcycle_id: string, performed_at: string, cost: numb
   notes: null,
 });
 
+const shop: Shop = {
+  id: 's1',
+  user_id: 'rider',
+  name: 'Moto Works',
+  phone: '(555) 123-4567',
+  email: null,
+  address: '12 Main St',
+  website: null,
+  notes: 'Ask for Sam',
+};
+
 describe('buildAccountExport', () => {
   const data = buildAccountExport({
     email: 'rider@example.com',
     profile: { unit_system: 'metric', theme: 'system', email_task_reminders: false },
-    bikes: [bike('a', 'Norden 901'), bike('b', 'Svartpilen 401')],
+    bikes: [{ ...bike('a', 'Norden 901'), shop_id: 's1' }, bike('b', 'Svartpilen 401')],
     tasks: [task('t1', 'a', 'Engine oil'), task('t2', 'b', 'Chain', 'drivetrain')],
     logs: [
       log('l1', 'a', '2025-05-01', 60, 't1'),
       log('l2', 'a', '2026-02-10', null, null),
       log('l3', 'b', '2025-07-04', 25, null),
     ],
+    shops: [shop],
     exportedOn: '2026-10-16',
   });
 
@@ -80,6 +92,13 @@ describe('buildAccountExport', () => {
     assert.equal(earlier.type, 'Routine');
     assert.equal(earlier.cost, 60);
     assert.equal(data.bikes[0].added_on, '2024-04-02');
+  });
+
+  it('lists the shops, and names each bike’s', () => {
+    assert.deepEqual(data.shops, [
+      { name: 'Moto Works', phone: '(555) 123-4567', email: null, address: '12 Main St', website: null, notes: 'Ask for Sam' },
+    ]);
+    assert.deepEqual(data.bikes.map((entry) => entry.shop), ['Moto Works', null]);
   });
 
   it('names the file by date', () => {

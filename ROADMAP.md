@@ -316,6 +316,7 @@ released 2026-10-23, migration on production first; from
   bigger title, C status tag and thin line, D grouped rows). **On hold**
   (owner, 2026-10-23); today's cards stay.
 - 🔨 A purchase date on the bike (John): built 2026-11-02, below.
+- 🔨 Preferred shop, one per bike: built 2026-11-02, below.
 
 Discussed (2026-10-21), nothing decided: other sign-in options. Passkeys
 are the most secure and quickest but Supabase's support is limited (check
@@ -1049,6 +1050,20 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   per bike. Also record the shop on each service log, so the shared history
   shows who did the work (useful at resale). Typed in by hand first; looking
   shops up (Google Places) costs money per search.
+  **Decided (owner, 2026-11-02):** one shop per bike, no garage-wide
+  default. 🔨 Built (2026-11-02, on `develop`; owner to try on test): a
+  **Shops** section in Garage under the bikes (add, edit, remove; name
+  required, phone, email, address, website and notes optional, checked by
+  `cleanShop`). Each bike picks one in Add and Edit bike, where "Add a
+  shop…" adds one and picks it. The bike's card shows it with Call
+  (`tel:`) and Directions (a Google Maps search); Log service offers it
+  under Where right after Home. Service records still keep the place as
+  text, so removing a shop changes no history. In the data export (a
+  `shops` list, each bike's shop by name) and import (reuses a shop with
+  the same name, else adds it). Help and privacy updated. Migration
+  `20261102180000_shops.sql` (`shops`, `motorcycles.shop_id` with a
+  two-column foreign key so a bike can only use its owner's shops), on test
+  only. Next: scheduling (below), whose "Contact the shop" builds on this.
 - **Scheduling service.** Options, cheapest first:
   1. A planned date on a task ("booked for Oct 20"), shown on the card and
      used by reminders.

@@ -27,6 +27,7 @@ const exportFile = () =>
         current_mileage: 5200,
         purchased_on: '2024-03-10',
         purchase_mileage: 1200,
+        shop_id: 's1',
         specs: { values: { oil_with_filter: { value: 1.7, unit: 'L', page: 140 } }, custom: [{ label: 'Headlight bulb', text: 'H4' }] },
       } as Motorcycle,
     ],
@@ -49,6 +50,10 @@ const exportFile = () =>
       { id: 'l1', motorcycle_id: 'b1', task_id: 't1', task_name: 'Front tire', performed_at: '2025-06-01T00:00:00Z', odometer_at_service: 3000, cost: 189.5, notes: null },
       { id: 'l2', motorcycle_id: 'b1', task_id: null, task_name: 'New grips', performed_at: '2025-07-04', odometer_at_service: 3400, cost: null, notes: 'Heated', shop: 'Home' },
     ] as ServiceLog[],
+    shops: [
+      { id: 's1', user_id: 'someone-else', name: 'Moto Works', phone: '555-1234', email: null, address: null, website: 'https://motoworks.com/', notes: null },
+      { id: 's2', user_id: 'someone-else', name: 'moto works', phone: null, email: null, address: null, website: null, notes: 'A second one' },
+    ],
     exportedOn: '2026-10-16',
   });
 
@@ -68,6 +73,7 @@ describe('parseAccountImport', () => {
         odometerMiles: 5200,
         purchase: { purchasedOn: '2024-03-10', purchaseMileage: 1200 },
         specs: { values: { oil_with_filter: { value: 1.7, unit: 'L', page: 140 } }, custom: [{ label: 'Headlight bulb', text: 'H4' }] },
+        shop: { name: 'Moto Works', phone: '555-1234', email: null, address: null, website: 'https://motoworks.com/', notes: null },
         tasks: [
           {
             taskName: 'Front tire',
@@ -100,6 +106,21 @@ describe('parseAccountImport', () => {
     const older = parse(file);
     assert.ok('data' in older);
     assert.deepEqual(older.data.bikes[0].purchase, { purchasedOn: null, purchaseMileage: null });
+  });
+
+  it('drops a shop that doesn’t make sense, and reads files without shops', () => {
+    const file = exportFile() as { shops: Record<string, unknown>[]; bikes: Record<string, unknown>[] };
+    file.shops[0].website = 'javascript:alert(1)';
+    file.shops.splice(1, 1);
+    const bad = parse(file);
+    assert.ok('data' in bad);
+    assert.equal(bad.data.bikes[0].shop, null);
+
+    delete (file as Record<string, unknown>).shops;
+    delete file.bikes[0].shop;
+    const older = parse(file);
+    assert.ok('data' in older);
+    assert.equal(older.data.bikes[0].shop, null);
   });
 
   it('never carries ids, owners or emails from the file', () => {

@@ -7,8 +7,29 @@ import { SIGNED_OUT_ERROR, type ActionResult } from './result';
 
 type SignedInClient = Awaited<ReturnType<typeof getSignedInClient>>['supabase'];
 
+/**
+ * The rider's shop with this name, made from the file's if they don't have one.
+ * New shops' ids go in `added`, so a failed import can remove them.
+ */
+async function shopIdFor(
+  supabase: SignedInClient,
+  userId: string,
+  shop: NonNullable<ImportBike['shop']>,
+  known: Map<string, string>,
+  added: string[]
+): Promise<{ id?: string; error?: string }> {
+  const key = shop.name.toLowerCase();
+  const existing = known.get(key);
+  if (existing) return { id: existing };
+  const { data, error } = await supabase.from('shops').insert({ user_id: userId, ...shop }).select('id').single();
+  if (error || !data) return { error: error?.message ?? 'Couldn’t save a shop.' };
+  known.set(key, data.id);
+  added.push(data.id);
+  return { id: data.id };
+}
+
 /** Saves one bike with its tasks and service history. Returns the new bike's id, or an error after saving the bike. */
-async function saveBike(supabase: SignedInClient, userId: string, bike: ImportBike): Promise<{ id?: string; error?: string }> {
+async function saveBike(supabase: SignedInClient, userId: string, bike: ImportBike, shopId: string | null): Promise<{ id?: string; error?: string }> {
   const { data: saved, error } = await supabase
     .from('motorcycles')
     .insert({
@@ -20,6 +41,7 @@ async function saveBike(supabase: SignedInClient, userId: string, bike: ImportBi
       purchased_on: bike.purchase.purchasedOn,
       purchase_mileage: bike.purchase.purchaseMileage,
       specs: bike.specs,
+      shop_id: shopId,
     })
     .select('id')
     .single();
@@ -70,10 +92,11 @@ async function saveBike(supabase: SignedInClient, userId: string, bike: ImportBi
 
 /**
  * Adds the chosen bikes from a "Download my data" file to the signed-in
- * rider's garage, as new bikes with their tasks and service history. The file
- * is checked again here (never trust the browser's check), and nothing in it
- * decides who owns the rows. All or nothing: if any bike fails, the bikes
- * already added by this import are removed (their tasks and history cascade).
+ * rider's garage, as new bikes with their tasks, service history and shop (one
+ * of the rider's with the same name, or a new one). The file is checked again
+ * here (never trust the browser's check), and nothing in it decides who owns
+ * the rows. All or nothing: if any bike fails, the bikes and shops already
+ * added by this import are removed (the bikes' tasks and history cascade).
  */
 export async function importAccountDataAction(
   fileText: string,
@@ -92,13 +115,20 @@ export async function importAccountDataAction(
     .sort((a, b) => a - b);
   if (chosen.length === 0) return { error: 'Choose at least one bike to import.' };
 
+  const { data: ownShops, error: shopsError } = await supabase.from('shops').select('id,name');
+  if (shopsError) return { error: shopsError.message };
+  const knownShops = new Map((ownShops ?? []).map((shop) => [String(shop.name).toLowerCase(), String(shop.id)]));
+
   const added: string[] = [];
+  const addedShops: string[] = [];
   for (const index of chosen) {
-    const result = await saveBike(supabase, user.id, bikes[index]);
+    const bike = bikes[index];
+    const shop: { id?: string; error?: string } = bike.shop ? await shopIdFor(supabase, user.id, bike.shop, knownShops, addedShops) : {};
+    const result = shop.error ? shop : await saveBike(supabase, user.id, bike, shop.id ?? null);
     if (result.id) added.push(result.id);
     if (result.error) {
       if (added.length > 0) await supabase.from('motorcycles').delete().in('id', added);
-      const bike = bikes[index];
+      if (addedShops.length > 0) await supabase.from('shops').delete().in('id', addedShops);
       return { error: `Couldn’t import the ${bike.year} ${bike.make} ${bike.model}, so nothing was added: ${result.error}` };
     }
   }

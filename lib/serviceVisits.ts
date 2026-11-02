@@ -60,15 +60,18 @@ export function groupServiceVisits<L extends VisitLog>(logs: L[]): ServiceVisit<
   return [...visits.values()];
 }
 
-/** Places to offer when logging: "Home" and the ones used before, most recent first. */
-export function shopSuggestions(logs: Pick<ServiceLog, 'shop'>[], limit = 4): string[] {
+/**
+ * Places to offer when logging: "Home", then `pinned` (the bike's preferred shop),
+ * then the ones used before, most recent first.
+ */
+export function shopSuggestions(logs: Pick<ServiceLog, 'shop'>[], pinned: (string | null)[] = [], limit = 4): string[] {
   const seen = new Set<string>();
   const suggestions: string[] = [];
-  for (const shop of ['Home', ...logs.map((log) => normalizeShop(log.shop))]) {
+  for (const shop of ['Home', ...pinned.map(normalizeShop), ...logs.map((log) => normalizeShop(log.shop))]) {
     if (!shop || seen.has(shop.toLowerCase())) continue;
     seen.add(shop.toLowerCase());
     suggestions.push(shop);
   }
-  // "Home" stays first; the rest are the most recent places, already newest first.
+  // "Home" stays first, then the pinned places; the rest are the most recent, already newest first.
   return suggestions.slice(0, limit);
 }

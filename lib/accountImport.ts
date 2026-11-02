@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { isIsoDate } from './dates';
 import { checkPurchase, type BikePurchase } from './maintenance';
 import { normalizeShop, SHOP_MAX_LENGTH } from './serviceVisits';
+import { cleanShop, type ShopFields } from './shops';
 import { cleanBikeSpecs, type BikeSpecs } from './specs';
 import { guessCategory, TASK_CATEGORIES, type TaskCategory } from './taskCategories';
 
@@ -17,6 +18,7 @@ export const IMPORT_LIMITS = {
   bikes: 50,
   tasksPerBike: 200,
   logsPerBike: 2_000,
+  shops: 100,
 };
 
 const SUPPORTED_FORMAT_VERSION = 1;
@@ -66,6 +68,8 @@ const bikeSchema = (maxYear: number) =>
     // Older files have neither.
     bought_on: isoDate.nullish(),
     odometer_when_bought_miles: miles.nullish(),
+    // The name of one of the file's shops; older files have none.
+    shop: z.string().nullish(),
     // Checked by cleanBikeSpecs, which drops anything it doesn't know; older files have none.
     specs: z.unknown().optional(),
     maintenance_tasks: z.array(taskSchema).max(IMPORT_LIMITS.tasksPerBike, `has more than ${IMPORT_LIMITS.tasksPerBike} tasks`).default([]),
@@ -75,6 +79,8 @@ const bikeSchema = (maxYear: number) =>
 const fileSchema = (maxYear: number) =>
   z.object({
     exported_on: isoDate.nullish(),
+    // Each checked by cleanShop, which drops one that doesn't make sense; older files have none.
+    shops: z.array(z.record(z.string(), z.unknown())).max(IMPORT_LIMITS.shops, `has more than ${IMPORT_LIMITS.shops} shops`).default([]),
     bikes: z.array(bikeSchema(maxYear)).min(1, 'has no bikes').max(IMPORT_LIMITS.bikes, `has more than ${IMPORT_LIMITS.bikes} bikes`),
   });
 
@@ -111,6 +117,8 @@ export type ImportBike = {
   /** When the rider bought it; both null if the file doesn't say, or says something that doesn't fit the bike. */
   purchase: BikePurchase;
   specs: BikeSpecs;
+  /** The bike's shop, from the file's list of shops; null if it has none or it isn't in the list. */
+  shop: ShopFields | null;
   tasks: ImportTask[];
   logs: ImportLog[];
 };
@@ -178,6 +186,13 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
     return { error: `This file has a problem${where ? ` (${where})` : ''}: ${issue.message}.` };
   }
 
+  // By name, the first one winning if two share it.
+  const shops = new Map<string, ShopFields>();
+  for (const raw of parsed.data.shops) {
+    const cleaned = cleanShop(raw);
+    if ('shop' in cleaned && !shops.has(cleaned.shop.name.toLowerCase())) shops.set(cleaned.shop.name.toLowerCase(), cleaned.shop);
+  }
+
   return {
     data: {
       exportedOn: parsed.data.exported_on ?? null,
@@ -188,6 +203,7 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
         odometerMiles: bike.odometer_miles ?? null,
         purchase: purchaseFromFile(bike, today),
         specs: cleanBikeSpecs(bike.specs),
+        shop: shops.get(normalizeShop(bike.shop)?.toLowerCase() ?? '') ?? null,
         tasks: bike.maintenance_tasks.map((task) => ({
           taskName: task.name,
           category: categoryFromFile(task.category, task.name),

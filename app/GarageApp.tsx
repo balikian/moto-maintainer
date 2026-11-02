@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { addBikeAction, deleteBikeAction, updateBikeAction, updateBikeSpecsAction, updateOdometerAction } from '@/lib/actions/bikes';
+import { createShopAction, deleteShopAction, updateShopAction } from '@/lib/actions/shops';
 import {
   createMaintenanceTaskAction,
   deleteServiceLogAction,
@@ -17,9 +18,10 @@ import { countTasksByStatus, findDefaultTask, hasStartPoint, scheduleOverlapsTas
 import { fetchModelSchedule, fetchModelSpecs } from '@/lib/modelData';
 import { trackEvent } from '@/lib/analytics';
 import { shopSuggestions } from '@/lib/serviceVisits';
+import type { ShopInput } from '@/lib/shops';
 import { cleanBikeSpecs, cleanSpecValues, favoriteSpecRows, resolveSpecs, type BikeSpecs, type SpecValues } from '@/lib/specs';
 import { createClient } from '@/lib/supabase/client';
-import type { MaintenanceTask, ModelSchedule, ModelSpecs, Motorcycle, ServiceLog } from '@/lib/types';
+import type { MaintenanceTask, ModelSchedule, ModelSpecs, Motorcycle, ServiceLog, Shop } from '@/lib/types';
 import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
 import AddCustomTaskModal, { type NewTaskValues } from './components/AddCustomTaskModal';
 import AppNav from './components/AppNav';
@@ -38,6 +40,7 @@ import MaintenanceChecklist from './components/MaintenanceChecklist';
 import MoreView from './components/MoreView';
 import ServiceHistoryView from './components/ServiceHistoryView';
 import ShareHistoryModal from './components/ShareHistoryModal';
+import ShopFormModal from './components/ShopFormModal';
 import TopBar from './components/TopBar';
 import { ui } from './components/ui';
 import { useAuthUser } from './hooks/useAuthUser';
@@ -68,6 +71,8 @@ type OpenDialog =
   | { type: 'logService'; task: MaintenanceTask | null; past?: boolean }
   | { type: 'share' }
   | { type: 'manual' }
+  | { type: 'addShop' }
+  | { type: 'editShop'; shop: Shop }
   | null;
 
 export default function GarageApp() {
@@ -138,7 +143,7 @@ export default function GarageApp() {
   const loggedTaskIds = new Set((logsQuery.data ?? []).flatMap((log) => (log.task_id ? [log.task_id] : [])));
 
   // Places used on any bike, newest first, offered as choices when logging service.
-  const shopsQuery = useSupabaseQuery<Pick<ServiceLog, 'shop'>[]>(userId, () =>
+  const placesQuery = useSupabaseQuery<Pick<ServiceLog, 'shop'>[]>(userId, () =>
     supabase
       .from('service_logs')
       .select('shop')
@@ -146,6 +151,11 @@ export default function GarageApp() {
       .order('performed_at', { ascending: false })
       .limit(100)
   );
+  // The rider's shops and mechanics; each bike can have one (Garage).
+  const shopsQuery = useSupabaseQuery<Shop[]>(userId, () => supabase.from('shops').select('*').order('name'));
+  const shops = shopsQuery.data ?? [];
+  const activeShop = shops.find((shop) => shop.id === activeBike?.shop_id) ?? null;
+
   // The date of the last past service entered, so the next one starts there (most were done together).
   const [lastPastDate, setLastPastDate] = useState<string | undefined>(undefined);
 
@@ -214,7 +224,7 @@ export default function GarageApp() {
     })
   );
 
-  const loadErrors = [bikesQuery.error, tasksQuery.error, logsQuery.error, allTasksQuery.error]
+  const loadErrors = [bikesQuery.error, tasksQuery.error, logsQuery.error, allTasksQuery.error, shopsQuery.error]
     .filter((message): message is string => Boolean(message))
     .map((message) => `Couldn't load your garage: ${message}`);
 
@@ -237,12 +247,48 @@ export default function GarageApp() {
   };
 
   const handleEditBike = async (bike: Motorcycle, values: BikeFormValues) => {
-    const result = await updateBikeAction(bike.id, { year: values.year, make: values.make, model: values.model, purchase: values.purchase });
+    const result = await updateBikeAction(bike.id, {
+      year: values.year,
+      make: values.make,
+      model: values.model,
+      purchase: values.purchase,
+      shopId: values.shopId,
+    });
     if (result.error) return result.error;
     setDialog(null);
     bikesQuery.reload();
     customModelsQuery.reload();
     return null;
+  };
+
+  // --- Shops ---------------------------------------------------------------
+
+  /** From Add a shop in Garage, or the bike form's picker (which then picks it). */
+  const handleAddShop = async (input: ShopInput): Promise<Shop | string> => {
+    const result = await createShopAction(input);
+    if (!result.data) return result.error ?? 'Unable to save this shop right now.';
+    trackEvent('Shop added');
+    shopsQuery.reload();
+    return result.data;
+  };
+
+  const handleEditShop = async (shop: Shop, input: ShopInput) => {
+    const result = await updateShopAction(shop.id, input);
+    if (result.error) return result.error;
+    setDialog(null);
+    shopsQuery.reload();
+    return null;
+  };
+
+  const handleRemoveShop = async (shop: Shop) => {
+    const result = await deleteShopAction(shop.id);
+    if (result.error) {
+      reportError(`Unable to remove ${shop.name}: ${result.error}`);
+      return;
+    }
+    shopsQuery.reload();
+    // Its bikes now have no shop.
+    bikesQuery.reload();
   };
 
   const handleSaveSpecs = async (bike: Motorcycle, specs: BikeSpecs) => {
@@ -367,7 +413,7 @@ export default function GarageApp() {
     bikesQuery.reload();
     reloadTasks();
     logsQuery.reload();
-    shopsQuery.reload();
+    placesQuery.reload();
     return null;
   };
 
@@ -523,6 +569,7 @@ export default function GarageApp() {
             activeBikeId={activeBikeId}
             allTasks={allTasksQuery.data}
             favoriteSpecs={garageFavoriteSpecs}
+            shops={shops}
             unitSystem={unitSystem}
             onOpen={(bikeId) => {
               setSelectedBikeId(bikeId);
@@ -532,6 +579,9 @@ export default function GarageApp() {
             onEdit={(bike) => setDialog({ type: 'editBike', bike })}
             onSpecs={(bike) => setDialog({ type: 'specs', bikeId: bike.id })}
             onRemove={(bike) => void handleRemoveBike(bike)}
+            onAddShop={() => setDialog({ type: 'addShop' })}
+            onEditShop={(shop) => setDialog({ type: 'editShop', shop })}
+            onRemoveShop={(shop) => void handleRemoveShop(shop)}
           />
         )}
 
@@ -566,7 +616,14 @@ export default function GarageApp() {
       />
 
       {dialog?.type === 'addBike' && (
-        <BikeFormModal customModels={customModels} unitSystem={unitSystem} onClose={() => setDialog(null)} onSubmit={handleAddBike} />
+        <BikeFormModal
+          customModels={customModels}
+          shops={shops}
+          onAddShop={handleAddShop}
+          unitSystem={unitSystem}
+          onClose={() => setDialog(null)}
+          onSubmit={handleAddBike}
+        />
       )}
 
       {dialog?.type === 'specs' && specsBike && (
@@ -583,6 +640,8 @@ export default function GarageApp() {
         <BikeFormModal
           bike={dialog.bike}
           customModels={customModels}
+          shops={shops}
+          onAddShop={handleAddShop}
           unitSystem={unitSystem}
           onClose={() => setDialog(null)}
           onSubmit={(values) => handleEditBike(dialog.bike, values)}
@@ -606,7 +665,7 @@ export default function GarageApp() {
           unitSystem={unitSystem}
           defaultOdometer={activeBike.current_mileage}
           initialDate={dialog.past || (dialog.task && !hasStartPoint(dialog.task)) ? lastPastDate : undefined}
-          shopChoices={shopSuggestions(shopsQuery.data ?? [])}
+          shopChoices={shopSuggestions(placesQuery.data ?? [], [activeShop?.name ?? null])}
           specs={activeSpecs}
           onClose={() => setDialog(null)}
           onSubmit={handleLogService}
@@ -631,6 +690,22 @@ export default function GarageApp() {
             garageSpecsQuery.reload();
           }}
         />
+      )}
+
+      {dialog?.type === 'addShop' && (
+        <ShopFormModal
+          onClose={() => setDialog(null)}
+          onSubmit={async (input) => {
+            const result = await handleAddShop(input);
+            if (typeof result === 'string') return result;
+            setDialog(null);
+            return null;
+          }}
+        />
+      )}
+
+      {dialog?.type === 'editShop' && (
+        <ShopFormModal shop={dialog.shop} onClose={() => setDialog(null)} onSubmit={(input) => handleEditShop(dialog.shop, input)} />
       )}
 
       {dialog?.type === 'share' && activeBike && (

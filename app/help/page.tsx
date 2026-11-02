@@ -20,6 +20,7 @@ const SECTIONS = [
   { id: 'log-service', title: 'Log service' },
   { id: 'your-checklist', title: 'Change your checklist' },
   { id: 'specs', title: 'Your bike’s specs' },
+  { id: 'shops', title: 'Your shop' },
   { id: 'manual-and-schedule', title: 'Manual and manufacturer schedule' },
   { id: 'history', title: 'History, spending and sharing' },
   { id: 'settings', title: 'Settings and your account' },
@@ -199,7 +200,7 @@ export default async function HelpPage() {
             </li>
             <li>
               <Ui>Where</Ui>, cost and notes (oil type, parts) are optional. Where is <Ui>Home</Ui> or the shop’s name;
-              places you’ve used before show up as choices. The cost is for the whole visit.
+              the bike’s shop and places you’ve used before show up as choices. The cost is for the whole visit.
             </li>
             <li>
               Tap <Ui>Save service</Ui>.
@@ -252,6 +253,23 @@ export default async function HelpPage() {
           <p>
             Open a task to see the specs that go with it, like the oil and drain plug torque on an oil change.{' '}
             <Ui>Log service</Ui> shows them for everything you tick.
+          </p>
+        </Section>
+
+        <Section id="shops">
+          <p>
+            Keep the shop or mechanic you take your bike to, so their number and address are a tap away. In Garage, tap{' '}
+            <Ui>Add a shop</Ui> under your bikes: only the name is needed, and phone, email, address, website and notes
+            are up to you.
+          </p>
+          <p>
+            Then pick it for each bike in <Ui>Edit bike</Ui> (the bike’s <Ui>⋯</Ui> menu in Garage), or choose{' '}
+            <Ui>Add a shop…</Ui> right there. The bike’s card shows the shop with <Ui>Call</Ui> and{' '}
+            <Ui>Directions</Ui>, and <Ui>Log service</Ui> offers it under Where.
+          </p>
+          <p>
+            Edit or remove a shop from its card in Garage. Removing one leaves its bikes without a shop; your service
+            history keeps the name it was logged with.
           </p>
         </Section>
 

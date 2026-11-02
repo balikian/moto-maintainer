@@ -42,6 +42,13 @@ function cleanPurchase(input: BikePurchase | undefined, bike: { year: number; cu
   return error ? { error } : purchase;
 }
 
+/** A shop id as sent, or null. The database checks it's one of the rider's own shops. */
+const cleanShopId = (shopId: string | null | undefined) => (typeof shopId === 'string' && shopId ? shopId : null);
+
+/** The database's message, or a plain one when the shop is gone (removed in another tab) or isn't the rider's. */
+const bikeSaveError = (error: { code?: string; message: string }) =>
+  error.code === '23503' && error.message.includes('shop') ? 'That shop isn’t in your list anymore. Pick another one.' : error.message;
+
 type AddBikeInput = {
   year: number;
   make: string;
@@ -50,6 +57,8 @@ type AddBikeInput = {
   currentMileage: number | null;
   /** Optional: when the rider bought it, so tasks can count from then. */
   purchase?: BikePurchase;
+  /** Optional: the rider's preferred shop for it, one of their own `shops`. */
+  shopId?: string | null;
   /** Picks the generic starter tasks when there's no manufacturer schedule. */
   setup?: BikeSetup;
 };
@@ -87,12 +96,13 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
       current_mileage: currentMileage,
       purchased_on: purchase.purchasedOn,
       purchase_mileage: purchase.purchaseMileage,
+      shop_id: cleanShopId(input.shopId),
     })
     .select()
     .single();
 
   if (error || !bike) {
-    return { error: error?.message ?? 'Unable to add this motorcycle right now.' };
+    return { error: error ? bikeSaveError(error) : 'Unable to add this motorcycle right now.' };
   }
 
   // The manufacturer's schedule if we have one for this model, else generic tasks.
@@ -121,10 +131,10 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
   return { data: bike as Motorcycle };
 }
 
-/** Changes a bike's year, make, model, or when it was bought. Its tasks and service history are left as they are. */
+/** Changes a bike's year, make, model, when it was bought, or its shop. Its tasks and service history are left as they are. */
 export async function updateBikeAction(
   bikeId: string,
-  input: { year: number; make: string; model: string; purchase: BikePurchase }
+  input: { year: number; make: string; model: string; purchase: BikePurchase; shopId: string | null }
 ): Promise<ActionResult> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
@@ -144,11 +154,18 @@ export async function updateBikeAction(
 
   const { data, error } = await supabase
     .from('motorcycles')
-    .update({ year, make, model, purchased_on: purchase.purchasedOn, purchase_mileage: purchase.purchaseMileage })
+    .update({
+      year,
+      make,
+      model,
+      purchased_on: purchase.purchasedOn,
+      purchase_mileage: purchase.purchaseMileage,
+      shop_id: cleanShopId(input.shopId),
+    })
     .eq('id', bikeId)
     .select('id');
 
-  if (error) return { error: error.message };
+  if (error) return { error: bikeSaveError(error) };
   if (!data?.length) return { error: 'Motorcycle not found.' };
   await suggestCustomModel(supabase, make, model);
   return {};

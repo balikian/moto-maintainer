@@ -31,10 +31,25 @@ export interface Motorcycle {
   /** When the rider bought the bike, with the odometer then (miles); both null if not given. */
   purchased_on?: string | null;
   purchase_mileage?: number | null;
+  /** The rider's preferred shop for this bike (`shops`); null if none. */
+  shop_id?: string | null;
   /** The rider's own spec values, over the manual's (lib/specs.ts). Read through cleanBikeSpecs. */
   specs?: unknown;
   created_at?: string;
   updated_at?: string;
+}
+
+/** A shop or mechanic the rider typed in (lib/shops.ts). Blank fields are null. */
+export interface Shop {
+  id: string;
+  user_id: string;
+  name: string;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  website: string | null;
+  notes: string | null;
+  created_at?: string;
 }
 
 export interface MaintenanceTask {
