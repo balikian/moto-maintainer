@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { addBikeAction, deleteBikeAction, updateBikeAction, updateOdometerAction } from '@/lib/actions/bikes';
+import { addBikeAction, deleteBikeAction, updateBikeAction, updateBikeSpecsAction, updateOdometerAction } from '@/lib/actions/bikes';
 import {
   createMaintenanceTaskAction,
   deleteServiceLogAction,
@@ -14,17 +14,19 @@ import {
 import type { CustomModel } from '@/lib/bikeCatalog';
 import { todayIsoDate } from '@/lib/dates';
 import { countTasksByStatus, findDefaultTask, hasStartPoint, scheduleOverlapsTasks } from '@/lib/maintenance';
-import { fetchModelSchedule } from '@/lib/modelData';
+import { fetchModelSchedule, fetchModelSpecs } from '@/lib/modelData';
 import { trackEvent } from '@/lib/analytics';
 import { shopSuggestions } from '@/lib/serviceVisits';
+import { cleanBikeSpecs, cleanSpecValues, resolveSpecs, type BikeSpecs } from '@/lib/specs';
 import { createClient } from '@/lib/supabase/client';
-import type { MaintenanceTask, ModelSchedule, Motorcycle, ServiceLog } from '@/lib/types';
+import type { MaintenanceTask, ModelSchedule, ModelSpecs, Motorcycle, ServiceLog } from '@/lib/types';
 import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
 import AddCustomTaskModal, { type NewTaskValues } from './components/AddCustomTaskModal';
 import AppNav from './components/AppNav';
 import BikeManualPanel from './components/BikeManualPanel';
 import BikeList from './components/BikeList';
 import BikePanel from './components/BikePanel';
+import BikeSpecsModal from './components/BikeSpecsModal';
 import DesktopHeader from './components/DesktopHeader';
 import ErrorList from './components/ErrorList';
 import GarageView from './components/GarageView';
@@ -60,6 +62,8 @@ const DESKTOP_WIDTH: Record<View, string> = {
 type OpenDialog =
   | { type: 'addBike' }
   | { type: 'editBike'; bike: Motorcycle }
+  // By id, so saved specs show as soon as the bikes reload.
+  | { type: 'specs'; bikeId: string }
   | { type: 'addTask' }
   | { type: 'logService'; task: MaintenanceTask | null; past?: boolean }
   | { type: 'share' }
@@ -108,6 +112,7 @@ export default function GarageApp() {
   const bikes = bikesQuery.data ?? [];
   const activeBike = bikes.find((bike) => bike.id === selectedBikeId) ?? bikes[0] ?? null;
   const activeBikeId = activeBike?.id ?? null;
+  const specsBike = dialog?.type === 'specs' ? (bikes.find((bike) => bike.id === dialog.bikeId) ?? null) : null;
 
   // Switches to the linked bike once the bikes load. One that isn't yours (signed in to another account) is skipped.
   const linkedBikeHandled = useRef(false);
@@ -186,6 +191,12 @@ export default function GarageApp() {
   const unappliedSchedule =
     scheduleQuery.data && !tasksQuery.loading && !scheduleOverlapsTasks(scheduleQuery.data, tasks) ? scheduleQuery.data : null;
 
+  // The bike's specs (its own over the manual's), shown on the tasks they go with.
+  const specsQuery = useSupabaseQuery<ModelSpecs | null>(scheduleKey, () => fetchModelSpecs(supabase, activeBike!));
+  const activeSpecs = activeBike
+    ? resolveSpecs(specsQuery.data ? cleanSpecValues(specsQuery.data.specs) : null, cleanBikeSpecs(activeBike.specs))
+    : [];
+
   const loadErrors = [bikesQuery.error, tasksQuery.error, logsQuery.error, allTasksQuery.error]
     .filter((message): message is string => Boolean(message))
     .map((message) => `Couldn't load your garage: ${message}`);
@@ -214,6 +225,13 @@ export default function GarageApp() {
     setDialog(null);
     bikesQuery.reload();
     customModelsQuery.reload();
+    return null;
+  };
+
+  const handleSaveSpecs = async (bike: Motorcycle, specs: BikeSpecs) => {
+    const result = await updateBikeSpecsAction(bike.id, specs);
+    if (result.error) return result.error;
+    bikesQuery.reload();
     return null;
   };
 
@@ -420,6 +438,7 @@ export default function GarageApp() {
                 onUpdateOdometer={handleUpdateOdometer}
                 editOdometer={odometerLinkBikeId === activeBike.id}
                 onCancelOdometer={() => setOdometerLinkBikeId(null)}
+                onOpenSpecs={() => setDialog({ type: 'specs', bikeId: activeBike.id })}
               />
               <BikeList
                 className="hidden lg:block"
@@ -460,6 +479,8 @@ export default function GarageApp() {
                 onResetTask={(task) => void handleResetTask(task)}
                 onDeleteTask={(task) => void handleDeleteTask(task)}
                 onSetStart={(startTasks, start) => void handleSetStart(startTasks, start)}
+                specs={activeSpecs}
+                onOpenSpecs={() => setDialog({ type: 'specs', bikeId: activeBike.id })}
               />
             </div>
           </div>
@@ -490,6 +511,7 @@ export default function GarageApp() {
             }}
             onAdd={() => setDialog({ type: 'addBike' })}
             onEdit={(bike) => setDialog({ type: 'editBike', bike })}
+            onSpecs={(bike) => setDialog({ type: 'specs', bikeId: bike.id })}
             onRemove={(bike) => void handleRemoveBike(bike)}
           />
         )}
@@ -528,6 +550,16 @@ export default function GarageApp() {
         <BikeFormModal customModels={customModels} unitSystem={unitSystem} onClose={() => setDialog(null)} onSubmit={handleAddBike} />
       )}
 
+      {dialog?.type === 'specs' && specsBike && (
+        <BikeSpecsModal
+          supabase={supabase}
+          bike={specsBike}
+          unitSystem={unitSystem}
+          onClose={() => setDialog(null)}
+          onSave={(specs) => handleSaveSpecs(specsBike, specs)}
+        />
+      )}
+
       {dialog?.type === 'editBike' && (
         <BikeFormModal
           bike={dialog.bike}
@@ -556,6 +588,7 @@ export default function GarageApp() {
           defaultOdometer={activeBike.current_mileage}
           initialDate={dialog.past || (dialog.task && !hasStartPoint(dialog.task)) ? lastPastDate : undefined}
           shopChoices={shopSuggestions(shopsQuery.data ?? [])}
+          specs={activeSpecs}
           onClose={() => setDialog(null)}
           onSubmit={handleLogService}
         />
@@ -572,7 +605,11 @@ export default function GarageApp() {
             reloadTasks();
             logsQuery.reload();
           }}
-          onClose={() => setDialog(null)}
+          onClose={() => {
+            setDialog(null);
+            // Specs imported from the manual show on the tasks.
+            specsQuery.reload();
+          }}
         />
       )}
 

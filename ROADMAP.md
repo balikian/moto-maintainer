@@ -1189,6 +1189,51 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   - Torque values are tempting but safety-critical: only from the manual,
     with the source shown.
   - Open: Free or Pro.
+  - 🔨 **Building (2026-10-29, branch `feature/specs`).** Decided with the
+    owner: the list in `lib/specs.ts` (fuel, engine oil, air filter, tires
+    and wheels, chain drive, shaft drive, cooling, brakes and clutch,
+    suspension, valve clearances, electrical, plus the rider's own rows).
+    Values keep the unit they were entered in and convert for display;
+    torques always show both systems. Each group has task-name patterns
+    (`specGroupsForTask`) for showing specs on tasks.
+    - ✅ Data: `motorcycles.specs` (the bike's own values, over the
+      manual's) and `model_specs` (shared, pending/approved like
+      schedules), migration `20261029120000_bike_specs.sql`, on test only.
+    - ✅ Specs dialog from each bike in Garage: a quick read-only list
+      ("Manual p. 142" or "Yours" under each value), and Edit, where the
+      manual's values are gray placeholders and an empty field keeps them.
+    - 🔨 Import (built 2026-10-29, owner to try): the import dialog ("Import
+      from the manual") has a second page field, "Pages with
+      specifications". One server action (`readManualAction`) runs the
+      schedule's and the specs' Claude calls at the same time (Next.js runs
+      a page's server actions one at a time, so two actions would take
+      twice as long); one failing keeps the other. `lib/specExtraction.ts`
+      shares the call with the schedule reader (`readManualPages`); its
+      prompt lists the specs from `lib/specs.ts`. Either field can be
+      empty, so a bike with a schedule gets specs by opening "Import from
+      manual" and filling in only the specs pages. The review shows each
+      spec with its printed page (riders see "Manual p. 142"), lets the
+      admin fix, remove or add specs, and saves them to `model_specs`
+      (`saveModelSpecsAction`) for the same years and models as the
+      schedule.
+    - ✅ On tasks (2026-10-29): an opened task shows
+      the specs that go with it (`specsForTasks`), with "All specs" to open
+      the Specs dialog, or "No engine oil specs yet. Add them" when empty.
+      Log service shows the specs for the ticked tasks (not for a past
+      service). The dashboard loads the active bike's manual specs once.
+      Help has a "Your bike's specs" section.
+    - 🔨 Export and history (built 2026-10-30, owner to try): Download my
+      data and Import a backup carry each bike's own specs (`specs`, as
+      saved; the format stays version 1, since older files just have
+      none). The printable and shared history end with a Specs section
+      (listed specs only, never the rider's own rows, which can hold
+      anything). `get_shared_history` returns the bike's values and the
+      manual's approved ones (migration
+      `20261030120000_shared_history_specs.sql`, on test only). Privacy
+      and help updated.
+    - ✅ Merged into `develop` (2026-11-01) so the owner can try it all on
+      the test site. Before releasing to `main`: push both specs
+      migrations to production (owner's go-ahead).
 
 ## Smaller items and ideas
 

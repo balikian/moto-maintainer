@@ -3,13 +3,23 @@ import { describe, it } from 'node:test';
 import { getDefaultTasks } from './maintenance';
 import { MAX_IMPORT_PAGES } from './pageRanges';
 import type { ExtractedTask } from './scheduleExtraction';
-import { applySummary, cleanTasks, MAX_EXTRACTED_TASKS, MAX_UPLOAD_BYTES, planScheduleApply, validatePageImages } from './scheduleImport';
+import { applySummary, cleanTasks, MAX_EXTRACTED_TASKS, MAX_UPLOAD_BYTES, modelsToSave, planScheduleApply, validatePageImages } from './scheduleImport';
 
 const jpeg = (size = 1000) => {
   const bytes = new Uint8Array(size);
   bytes.set([0xff, 0xd8, 0xff, 0xe0]);
   return bytes;
 };
+
+describe('modelsToSave', () => {
+  it('lists the model, then an admin’s other models, each once', () => {
+    assert.deepEqual(modelsToSave(' Norden 901 ', ['Norden 901 Expedition', 'norden 901', ' '], true), ['Norden 901', 'Norden 901 Expedition']);
+  });
+
+  it('ignores other models for riders', () => {
+    assert.deepEqual(modelsToSave('Norden 901', ['Norden 901 Expedition'], false), ['Norden 901']);
+  });
+});
 
 describe('validatePageImages', () => {
   it('accepts a few JPEG pages', () => {

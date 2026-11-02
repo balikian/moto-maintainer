@@ -2,6 +2,7 @@
 
 import { BookOpen, CheckCircle, ChevronDown, History, Plus } from 'lucide-react';
 import { groupTasksByUrgency, type TaskDueState } from '@/lib/maintenance';
+import type { ResolvedSpec } from '@/lib/specs';
 import { batchCandidates, type TaskCategory } from '@/lib/taskCategories';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel } from '@/lib/units';
@@ -27,6 +28,9 @@ type MaintenanceChecklistProps = {
   onDeleteTask: (task: MaintenanceTask) => void;
   /** Gives tasks without a start point one: today, or from when the bike was new. */
   onSetStart: (tasks: MaintenanceTask[], start: 'today' | 'new') => void;
+  /** The bike's specs, shown on the tasks they go with. */
+  specs: ResolvedSpec[];
+  onOpenSpecs: () => void;
 };
 
 /**
@@ -48,6 +52,8 @@ export default function MaintenanceChecklist({
   onResetTask,
   onDeleteTask,
   onSetStart,
+  specs,
+  onOpenSpecs,
 }: MaintenanceChecklistProps) {
   const [healthyCollapsed, toggleHealthy] = useStoredToggle('moto-maintain:healthy-tasks-collapsed', true);
   const { needsAttention, healthy, noStart } = groupTasksByUrgency(tasks, bike.current_mileage, new Date());
@@ -71,6 +77,8 @@ export default function MaintenanceChecklist({
       onDelete={() => onDeleteTask(task)}
       onSetStart={(start) => onSetStart([task], start)}
       bikeYear={bike.year}
+      specs={specs}
+      onOpenSpecs={onOpenSpecs}
     />
   );
 

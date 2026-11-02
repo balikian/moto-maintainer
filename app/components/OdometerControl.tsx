@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, type SubmitEvent } from 'react';
+import { useId, useState, type ReactNode, type SubmitEvent } from 'react';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
 import { ui } from './ui';
@@ -13,9 +13,11 @@ type OdometerControlProps = {
   /** Start with the box open, filled with the current reading. */
   startEditing?: boolean;
   onCancel?: () => void;
+  /** Buttons shown before Update (the bike's Specs), hidden while editing. */
+  actions?: ReactNode;
 };
 
-export default function OdometerControl({ bike, unitSystem, onSave, startEditing = false, onCancel }: OdometerControlProps) {
+export default function OdometerControl({ bike, unitSystem, onSave, startEditing = false, onCancel, actions }: OdometerControlProps) {
   const [draft, setDraft] = useState<string | null>(() =>
     startEditing ? (bike.current_mileage === null ? '' : String(toDisplayDistance(bike.current_mileage, unitSystem))) : null
   );
@@ -86,16 +88,19 @@ export default function OdometerControl({ bike, unitSystem, onSave, startEditing
           <span className="block text-sm font-semibold text-muted">Odometer</span>
           <span className="block text-sm">No reading yet. Tasks count by time until you add one.</span>
         </div>
-        <button type="button" onClick={() => setDraft('')} className={`shrink-0 ${ui.primaryButton}`}>
-          Add reading
-        </button>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+          <button type="button" onClick={() => setDraft('')} className={ui.primaryButton}>
+            Add reading
+          </button>
+          {actions}
+        </div>
       </div>
     );
   }
   const displayMileage = toDisplayDistance(bike.current_mileage, unitSystem);
 
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <div>
         <span className="block text-sm font-semibold text-muted">Odometer</span>
         <span className="flex items-baseline gap-1.5">
@@ -103,9 +108,12 @@ export default function OdometerControl({ bike, unitSystem, onSave, startEditing
           <span className="text-base font-bold text-muted">{unitLabel}</span>
         </span>
       </div>
-      <button type="button" onClick={() => setDraft(String(displayMileage))} className={ui.secondaryButton}>
-        Update
-      </button>
+      <div className="flex shrink-0 gap-2">
+        {actions}
+        <button type="button" onClick={() => setDraft(String(displayMileage))} className={`${ui.secondaryButton} px-3.5`}>
+          Update
+        </button>
+      </div>
     </div>
   );
 }

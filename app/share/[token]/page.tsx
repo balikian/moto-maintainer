@@ -3,6 +3,7 @@ import { cache } from 'react';
 import { todayIsoDate } from '@/lib/dates';
 import { bikeTitle, type ReportBike, type ReportLog } from '@/lib/historyExport';
 import { OPEN_GRAPH } from '@/lib/site';
+import { cleanSpecValues, resolveSpecs } from '@/lib/specs';
 import { createClient } from '@/lib/supabase/server';
 import HistoryReport from '../../components/HistoryReport';
 import NoticeCard from '../../components/NoticeCard';
@@ -11,6 +12,9 @@ import PrintButton from '../../components/PrintButton';
 type SharedHistory = {
   bike: ReportBike;
   unit_system: string;
+  /** The bike's own spec values, and the manual's (approved) for its model. */
+  specs?: unknown;
+  manual_specs?: unknown;
   logs: ReportLog[];
 };
 
@@ -66,6 +70,7 @@ export default async function SharedHistoryPage({ params }: Props) {
           logs={shared.logs}
           unitSystem={shared.unit_system === 'metric' ? 'metric' : 'imperial'}
           generatedOn={todayIsoDate()}
+          specs={resolveSpecs(cleanSpecValues(shared.manual_specs), { values: cleanSpecValues(shared.specs) })}
         />
       </div>
     </div>

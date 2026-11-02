@@ -105,7 +105,7 @@ export default function AddScheduleForm({ catalog }: { catalog: BikeCatalog }) {
         <div className="flex justify-end">
           <button type="submit" disabled={busy} className={ui.primaryButton}>
             <Sparkles size={16} />
-            {busy ? 'Saving…' : 'Next: pick the schedule pages'}
+            {busy ? 'Saving…' : 'Next: pick the pages'}
           </button>
         </div>
       </form>

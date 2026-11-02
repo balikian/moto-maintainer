@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { todayIsoDate } from '@/lib/dates';
+import { fetchModelSpecs } from '@/lib/modelData';
+import { cleanBikeSpecs, cleanSpecValues, resolveSpecs } from '@/lib/specs';
 import { getSignedInClient } from '@/lib/supabase/server';
 import type { Motorcycle, ServiceLog } from '@/lib/types';
 import HistoryReport from '../../components/HistoryReport';
@@ -63,6 +65,9 @@ export default async function PrintHistoryPage({ params }: { params: Promise<{ b
   if (!bikeResult.data) return <PrivatePageNotice signedIn />;
 
   const bike = bikeResult.data as Motorcycle;
+  // Without the manual's specs (e.g. they didn't load), the bike's own still show.
+  const manualSpecs = await fetchModelSpecs(supabase, bike);
+  const specs = resolveSpecs(cleanSpecValues(manualSpecs.data?.specs), cleanBikeSpecs(bike.specs));
 
   return (
     <div className="theme-light min-h-screen w-full bg-page text-fg print:min-h-0 print:bg-white">
@@ -86,6 +91,7 @@ export default async function PrintHistoryPage({ params }: { params: Promise<{ b
           logs={(logsResult.data ?? []) as ServiceLog[]}
           unitSystem={profileResult.data?.unit_system === 'metric' ? 'metric' : 'imperial'}
           generatedOn={todayIsoDate()}
+          specs={specs}
         />
       </div>
     </div>

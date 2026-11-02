@@ -1,4 +1,5 @@
 import { serviceType } from './historyExport';
+import { cleanBikeSpecs } from './specs';
 import { categoryLabel, taskCategory } from './taskCategories';
 import type { MaintenanceTask, Motorcycle, ServiceLog } from './types';
 
@@ -34,7 +35,7 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, exporte
     // Bump when the layout changes, so a future import can read older files.
     format_version: 1,
     exported_on: exportedOn,
-    note: 'Distances are in miles. Dates are calendar days (YYYY-MM-DD).',
+    note: 'Distances are in miles. Dates are calendar days (YYYY-MM-DD). Specs keep the unit they were entered in.',
     account: {
       email,
       distance_units: saved.unit_system === 'metric' ? 'kilometers' : 'miles',
@@ -55,6 +56,8 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, exporte
       model: bike.model,
       odometer_miles: bike.current_mileage,
       added_on: bike.created_at?.slice(0, 10) ?? null,
+      // The rider's own specs, as saved (lib/specs.ts); the manual's are shared, not the rider's data.
+      specs: cleanBikeSpecs(bike.specs),
       maintenance_tasks: tasks
         .filter((task) => task.motorcycle_id === bike.id)
         .map((task) => ({

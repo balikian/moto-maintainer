@@ -1,6 +1,7 @@
 import { formatDisplayDate } from '@/lib/dates';
 import { bikeTitle, serviceType, totalCost, type ReportBike, type ReportLog } from '@/lib/historyExport';
 import { groupServiceVisits } from '@/lib/serviceVisits';
+import { formatSpec, groupResolvedSpecs, type ResolvedSpec } from '@/lib/specs';
 import type { UnitSystem } from '@/lib/types';
 import { formatDistance, formatOdometer } from '@/lib/units';
 import BrandLogo from './BrandLogo';
@@ -13,12 +14,15 @@ type HistoryReportProps = {
   logs: ReportLog[];
   unitSystem: UnitSystem;
   generatedOn: string;
+  /** The bike's specs (its own over the manual's), listed after the history. */
+  specs: ResolvedSpec[];
 };
 
 const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-export default function HistoryReport({ bike, logs, unitSystem, generatedOn }: HistoryReportProps) {
+export default function HistoryReport({ bike, logs, unitSystem, generatedOn, specs }: HistoryReportProps) {
   const spend = totalCost(logs);
+  const specGroups = groupResolvedSpecs(specs);
 
   return (
     <article className="theme-light mx-auto w-full max-w-3xl bg-white p-6 text-fg sm:p-10 print:max-w-none print:p-0">
@@ -83,6 +87,28 @@ export default function HistoryReport({ bike, logs, unitSystem, generatedOn }: H
             </li>
           ))}
         </ol>
+      )}
+
+      {specGroups.length > 0 && (
+        <section className="mt-6 border-t-2 border-brand pt-4">
+          <h2 className="text-lg font-extrabold tracking-tight">Specs</h2>
+          <div className="mt-3 grid gap-x-8 gap-y-4 sm:grid-cols-2 print:grid-cols-2">
+            {specGroups.map(({ group, specs: groupSpecs }) => (
+              <div key={group.id} className="[break-inside:avoid]">
+                <h3 className="text-sm font-bold">{group.label}</h3>
+                <dl className="divide-y divide-line text-sm">
+                  {groupSpecs.map((spec) => (
+                    <div key={spec.key} className="flex flex-wrap items-baseline justify-between gap-x-3 py-1">
+                      <dt className="text-muted">{spec.label}</dt>
+                      <dd className="ml-auto text-right font-bold">{formatSpec(spec.value, unitSystem)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted">From the owner’s manual, or entered by the owner.</p>
+        </section>
       )}
     </article>
   );

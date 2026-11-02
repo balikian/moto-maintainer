@@ -1,5 +1,6 @@
 'use client';
 
+import { ClipboardList } from 'lucide-react';
 import type { TaskStatus } from '@/lib/maintenance';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
 import BikeSwitcher from './BikeSwitcher';
@@ -18,6 +19,7 @@ type BikePanelProps = {
   /** Open the odometer box right away: a reminder's link asked for a new reading. */
   editOdometer?: boolean;
   onCancelOdometer?: () => void;
+  onOpenSpecs: () => void;
 };
 
 const STATUS_TILES: { status: TaskStatus; label: string; color: string }[] = [
@@ -27,7 +29,7 @@ const STATUS_TILES: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'Healthy', label: 'All good', color: 'text-muted' },
 ];
 
-/** The top of Tasks: the bike's name (tap to switch), its odometer, and its tasks by status. */
+/** The top of Tasks: the bike's name (tap to switch), its odometer and specs, and its tasks by status. */
 export default function BikePanel(props: BikePanelProps) {
   const { statusCounts } = props;
 
@@ -48,6 +50,11 @@ export default function BikePanel(props: BikePanelProps) {
           onSave={props.onUpdateOdometer}
           startEditing={props.editOdometer}
           onCancel={props.onCancelOdometer}
+          actions={
+            <button type="button" onClick={props.onOpenSpecs} className={`${ui.secondaryButton} px-3.5`}>
+              <ClipboardList size={15} aria-hidden="true" /> Specs
+            </button>
+          }
         />
       </div>
       {statusCounts && (

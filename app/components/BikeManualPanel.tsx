@@ -242,7 +242,7 @@ export default function BikeManualPanel({ supabase, bike, currentUserId, isAdmin
             </ConfirmPopover>
             {isAdmin && (
               <button type="button" onClick={() => setImportOpen(true)} className={`text-xs font-semibold ${ui.muted} hover:text-fg`}>
-                Re-import
+                Import from manual
               </button>
             )}
           </div>

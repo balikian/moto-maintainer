@@ -1,6 +1,6 @@
 'use client';
 
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
 import { countTasksByStatus, type TaskStatus } from '@/lib/maintenance';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
 import { formatOdometer } from '@/lib/units';
@@ -17,6 +17,7 @@ type GarageViewProps = {
   onOpen: (bikeId: string) => void;
   onAdd: () => void;
   onEdit: (bike: Motorcycle) => void;
+  onSpecs: (bike: Motorcycle) => void;
   onRemove: (bike: Motorcycle) => void;
 };
 
@@ -48,8 +49,8 @@ export function BikeStatusLine({ tasks, mileage }: { tasks: MaintenanceTask[]; m
 const smallButton =
   'inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-bold text-muted transition-colors';
 
-/** Every bike, with what each needs; tap one to see its tasks. Bikes are added, edited and removed here. */
-export default function GarageView({ bikes, activeBikeId, allTasks, unitSystem, onOpen, onAdd, onEdit, onRemove }: GarageViewProps) {
+/** Every bike, with what each needs; tap one to see its tasks. Bikes are added, edited and removed here, and their specs kept. */
+export default function GarageView({ bikes, activeBikeId, allTasks, unitSystem, onOpen, onAdd, onEdit, onSpecs, onRemove }: GarageViewProps) {
   return (
     <div className="space-y-3">
       {bikes.length === 0 ? (
@@ -77,6 +78,9 @@ export default function GarageView({ bikes, activeBikeId, allTasks, unitSystem, 
                   </span>
                 </button>
                 <div className="mt-3 flex justify-end gap-2 border-t border-line pt-3">
+                  <button type="button" onClick={() => onSpecs(bike)} className={`${smallButton} mr-auto hover:text-fg`}>
+                    <ClipboardList size={13} aria-hidden="true" /> Specs
+                  </button>
                   <button type="button" onClick={() => onEdit(bike)} className={`${smallButton} hover:text-fg`}>
                     <Pencil size={13} aria-hidden="true" /> Edit
                   </button>

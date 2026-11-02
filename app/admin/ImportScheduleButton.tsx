@@ -26,7 +26,7 @@ export default function ImportScheduleButton({ make, model, yearFrom, yearTo, ma
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className={`${ui.primaryButton} px-3 py-1.5 text-xs`}>
-        <Sparkles size={14} /> Import schedule
+        <Sparkles size={14} /> Import from manual
       </button>
       {summary && <p className="text-sm text-good">{summary}</p>}
       {open && (

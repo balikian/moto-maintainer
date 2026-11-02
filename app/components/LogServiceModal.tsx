@@ -5,11 +5,13 @@ import { Check } from 'lucide-react';
 import { todayIsoDate } from '@/lib/dates';
 import { groupTasksByUrgency, hasStartPoint, type TaskDueState } from '@/lib/maintenance';
 import { SHOP_MAX_LENGTH } from '@/lib/serviceVisits';
+import { specsForTasks, type ResolvedSpec } from '@/lib/specs';
 import { batchCandidates } from '@/lib/taskCategories';
 import { dueLabel } from '@/lib/taskLabels';
 import type { MaintenanceTask, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
 import Modal from './Modal';
+import TaskSpecs from './TaskSpecs';
 import { ui } from './ui';
 
 export type LogServiceValues = {
@@ -38,6 +40,8 @@ type LogServiceModalProps = {
   initialDate?: string;
   /** Places to offer as one-tap choices for "Where". */
   shopChoices: string[];
+  /** The bike's specs; the ones for the ticked tasks are shown. */
+  specs: ResolvedSpec[];
   onClose: () => void;
   /** Receives the odometer in miles; resolves to an error message, or null on success. */
   onSubmit: (values: LogServiceValues) => Promise<string | null>;
@@ -61,6 +65,7 @@ export default function LogServiceModal({
   defaultOdometer,
   initialDate,
   shopChoices,
+  specs,
   onClose,
   onSubmit,
 }: LogServiceModalProps) {
@@ -108,6 +113,10 @@ export default function LogServiceModal({
   const everythingShown = showAll || featured.length === 0;
   const visible = everythingShown ? [...featured, ...others] : [...featured, ...others.filter((entry) => selectedIds.includes(entry.task.id))];
   const hiddenCount = entries.length - visible.length;
+
+  // Not for a past service: the work is already done.
+  const tickedNames = tasks.filter((candidate) => selectedIds.includes(candidate.id)).map((candidate) => candidate.task_name);
+  const specGroups = pastService ? [] : specsForTasks(tickedNames, specs);
 
   const itemCount = selectedIds.length + (oneOffChecked && oneOffName.trim() ? 1 : 0);
 
@@ -229,6 +238,8 @@ export default function LogServiceModal({
             </div>
           </div>
         </fieldset>
+
+        <TaskSpecs groups={specGroups} unitSystem={unitSystem} title="Specs for this service" />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>

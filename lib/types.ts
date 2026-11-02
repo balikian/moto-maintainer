@@ -28,6 +28,8 @@ export interface Motorcycle {
   year: number;
   /** Null until the rider enters a reading. */
   current_mileage: number | null;
+  /** The rider's own spec values, over the manual's (lib/specs.ts). Read through cleanBikeSpecs. */
+  specs?: unknown;
   created_at?: string;
   updated_at?: string;
 }
@@ -83,6 +85,12 @@ export interface ScheduleTask {
 export interface ModelSchedule extends ModelEntry {
   source: string | null;
   model_schedule_tasks: ScheduleTask[];
+}
+
+export interface ModelSpecs extends ModelEntry {
+  /** Read through cleanSpecValues in lib/specs.ts. */
+  specs: unknown;
+  source: string | null;
 }
 
 export interface ServiceLog {
