@@ -227,15 +227,24 @@ function displayUnit(kind: UnitInfo['kind'], baseAmount: number, units: UnitSyst
 
 const number = (value: number, digits: number) => value.toLocaleString('en-US', { maximumFractionDigits: digits });
 
-function formatIn(spec: MeasuredSpec, unit: SpecUnit): string {
+/** The number or range in `unit`, without the unit: "3.2", "25–35". */
+function amountIn(spec: MeasuredSpec, unit: SpecUnit): string {
   const from = UNITS[spec.unit];
   const to = UNITS[unit];
   const convert = (value: number) => (unit === spec.unit ? value : (value * from.base) / to.base);
   // As entered when not converted, so 0.15 mm stays 0.15.
   const digits = unit === spec.unit ? 3 : to.digits;
-  const amount =
-    spec.max === undefined ? number(convert(spec.value), digits) : `${number(convert(spec.value), digits)}–${number(convert(spec.max), digits)}`;
-  return `${amount} ${to.label}`;
+  return spec.max === undefined ? number(convert(spec.value), digits) : `${number(convert(spec.value), digits)}–${number(convert(spec.max), digits)}`;
+}
+
+function formatIn(spec: MeasuredSpec, unit: SpecUnit): string {
+  return `${amountIn(spec, unit)} ${UNITS[unit].label}`;
+}
+
+/** The unit a measured value is shown in: as entered if it's in the rider's system, else the rider's own. */
+function shownUnit(spec: MeasuredSpec, units: UnitSystem): SpecUnit {
+  const info = UNITS[spec.unit];
+  return info.system === units ? spec.unit : displayUnit(info.kind, spec.value * info.base, units);
 }
 
 /**
@@ -246,7 +255,7 @@ function formatIn(spec: MeasuredSpec, unit: SpecUnit): string {
 export function formatSpec(spec: SpecValue, units: UnitSystem): string {
   if (!isMeasured(spec)) return spec.text;
   const info = UNITS[spec.unit];
-  const shown = info.system === units ? spec.unit : displayUnit(info.kind, spec.value * info.base, units);
+  const shown = shownUnit(spec, units);
   if (shown !== spec.unit) return `${formatIn(spec, shown)} (${formatIn(spec, spec.unit)})`;
   if (info.kind !== 'torque') return formatIn(spec, spec.unit);
   const other = displayUnit(info.kind, spec.value * info.base, units === 'metric' ? 'imperial' : 'metric');
@@ -405,15 +414,68 @@ export function toggleCustomFavorite(custom: CustomSpec[], index: number): Custo
   return custom.map((row, i) => (i === index ? { label: row.label, text: row.text, ...(!row.favorite && { favorite: true }) } : row));
 }
 
-export type FavoriteSpecRow = { id: string; label: string; value: string };
+/** The icon a starred spec's chip shows, by its group. */
+export type SpecChipIcon = 'fuel' | 'oil' | 'tire';
+
+const CHIP_ICONS: Partial<Record<SpecGroup['id'], SpecChipIcon>> = { fuel: 'fuel', oil: 'oil', tires: 'tire' };
+
+const iconFor = (key: SpecKey) => CHIP_ICONS[SPEC_GROUPS.find((group) => group.specs.some((spec) => spec.key === key))!.id];
+
+/**
+ * One chip on the bike's card in Garage and at the top of Tasks. `valueOnly`
+ * chips leave out the label, which the icon stands for ("91 octane" by a fuel
+ * pump); screen readers still read it.
+ */
+export type FavoriteSpecRow = { id: string; label: string; value: string; icon?: SpecChipIcon; valueOnly?: boolean };
+
+/** A spec in the rider's units only, without the original in parentheses: chips have little room. */
+function formatShort(spec: SpecValue, units: UnitSystem): string {
+  return isMeasured(spec) ? formatIn(spec, shownUnit(spec, units)) : spec.text;
+}
+
+/** Fuel and oil grades without what goes without saying: "Unleaded, 91 octane" → "91 octane", "SAE 10W-40" → "10W-40". */
+export function shortGrade(key: SpecKey, text: string): string {
+  const pattern = key === 'fuel_grade' ? /\bunleaded\b/gi : key === 'oil_grade' ? /\bSAE\s+/gi : null;
+  if (!pattern) return text;
+  const short = text
+    .replace(pattern, '')
+    .replace(/\(\s*\)/g, '')
+    .replace(/\s*([,;])(\s*[,;])+/g, '$1')
+    .replace(/^[\s,;:–-]+|[\s,;:–-]+$/g, '')
+    .replace(/\s{2,}/g, ' ');
+  return short || text;
+}
+
+/** "36 / 42 psi", or each with its own unit if they differ. */
+function pressurePair(front: SpecValue, rear: SpecValue, units: UnitSystem): string {
+  if (isMeasured(front) && isMeasured(rear)) {
+    const unit = shownUnit(front, units);
+    if (shownUnit(rear, units) === unit) return `${amountIn(front, unit)} / ${amountIn(rear, unit)} ${UNITS[unit].label}`;
+  }
+  return `${formatShort(front, units)} / ${formatShort(rear, units)}`;
+}
 
 /**
  * What the bike's card in Garage and the top of Tasks show: the starred
  * listed specs with a value, in the rider's units, then the starred rows of the rider's own.
+ * Front and rear pressure share one chip: "36 / 42 psi".
  */
 export function favoriteSpecRows(specs: ResolvedSpec[], bike: BikeSpecs, units: UnitSystem): FavoriteSpecRow[] {
+  const starred = pickFavoriteSpecs(specs, bike.favorites);
+  const front = starred.find((spec) => spec.key === 'pressure_front');
+  const rear = starred.find((spec) => spec.key === 'pressure_rear');
+  const listed = starred.flatMap((spec): FavoriteSpecRow[] => {
+    if (front && rear && spec === rear) return [];
+    if (front && rear && spec === front) {
+      return [{ id: 'pressures', label: 'Tire pressure, front and rear', value: pressurePair(front.value, rear.value, units), icon: 'tire', valueOnly: true }];
+    }
+    const grade = spec.key === 'fuel_grade' || spec.key === 'oil_grade';
+    const text = formatShort(spec.value, units);
+    const icon = iconFor(spec.key);
+    return [{ id: spec.key, label: spec.label, value: grade ? shortGrade(spec.key, text) : text, ...(icon && { icon }), ...(grade && { valueOnly: true }) }];
+  });
   return [
-    ...pickFavoriteSpecs(specs, bike.favorites).map((spec) => ({ id: spec.key, label: spec.label, value: formatSpec(spec.value, units) })),
+    ...listed,
     ...(bike.custom ?? []).flatMap((row, index) => (row.favorite ? [{ id: `custom-${index}`, label: row.label, value: row.text }] : [])),
   ];
 }

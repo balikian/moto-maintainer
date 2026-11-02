@@ -11,6 +11,7 @@ import {
   parseSpecNumber,
   pickFavoriteSpecs,
   resolveSpecs,
+  shortGrade,
   SPEC_GROUPS,
   specFromDraft,
   specGroupsForTask,
@@ -162,8 +163,31 @@ describe('favorites', () => {
 
     const specs = resolveSpecs({ oil_grade: { text: '10W-40' } }, null);
     assert.deepEqual(favoriteSpecRows(specs, { custom }, 'imperial'), [
-      { id: 'oil_grade', label: 'Oil grade', value: '10W-40' },
+      { id: 'oil_grade', label: 'Oil grade', value: '10W-40', icon: 'oil', valueOnly: true },
       { id: 'custom-0', label: 'Headlight bulb', value: 'H7' },
+    ]);
+  });
+
+  it('shortens fuel and oil grades', () => {
+    assert.equal(shortGrade('fuel_grade', 'Unleaded, 91 octane (95 RON)'), '91 octane (95 RON)');
+    assert.equal(shortGrade('fuel_grade', 'Premium unleaded'), 'Premium');
+    assert.equal(shortGrade('fuel_grade', '91 octane (unleaded)'), '91 octane');
+    assert.equal(shortGrade('fuel_grade', 'Unleaded'), 'Unleaded');
+    assert.equal(shortGrade('oil_grade', 'SAE 10W-40, JASO MA2'), '10W-40, JASO MA2');
+    assert.equal(shortGrade('coolant', 'Unleaded'), 'Unleaded');
+  });
+
+  it('puts front and rear pressure on one chip, in the rider’s units only', () => {
+    const specs = resolveSpecs(
+      { fuel_grade: { text: 'Unleaded, 91 octane' }, pressure_front: { value: 250, unit: 'kPa' }, pressure_rear: { value: 290, unit: 'kPa' } },
+      null
+    );
+    assert.deepEqual(favoriteSpecRows(specs, {}, 'imperial'), [
+      { id: 'fuel_grade', label: 'Fuel grade', value: '91 octane', icon: 'fuel', valueOnly: true },
+      { id: 'pressures', label: 'Tire pressure, front and rear', value: '36 / 42 psi', icon: 'tire', valueOnly: true },
+    ]);
+    assert.deepEqual(favoriteSpecRows(specs, { favorites: ['pressure_rear', 'battery'] }, 'metric'), [
+      { id: 'pressure_rear', label: 'Rear pressure', value: '290 kPa', icon: 'tire' },
     ]);
   });
 });

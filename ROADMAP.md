@@ -1239,10 +1239,17 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
       (no migration; absent means the defaults); the rider's own rows can
       be starred too (`favorite` on the row). Garage loads every bike's
       manual specs, only while it's open.
-      ⏳ Owner (2026-11-01): the bike card feels too busy. Options on the
-      canvas https://claude.ai/artifact/4VDXpxsfVmixi4iLVmykx1 (A today,
-      B tidy specs box, C icon chips, D no specs on the card; Tasks today
-      vs one-line specs). Owner to pick.
+      The card felt too busy, so after mockups
+      (https://claude.ai/artifact/4VDXpxsfVmixi4iLVmykx1) the owner picked
+      icon chips (2026-11-01): Garage's cards show the starred specs as
+      chips (fuel, oil and tire icons with the value alone; other specs
+      and own rows with their label) that open Specs, and Specs, Edit and
+      Remove moved into a ⋯ menu. Tasks shows the chips in one strip that
+      opens Specs, replacing the Specs button. Chips show the rider's
+      units only, front and rear pressure share one ("36 / 42 psi"), and
+      grades drop "unleaded" and "SAE" (`shortGrade`).
+      ⏳ Owner's idea (2026-11-01): show the pump grade instead (regular,
+      mid grade, premium). Not decided.
     - ✅ Merged into `develop` (2026-11-01) so the owner can try it all on
       the test site. Before releasing to `main`: push both specs
       migrations to production (owner's go-ahead).

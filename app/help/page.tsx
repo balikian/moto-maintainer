@@ -118,7 +118,8 @@ export default async function HelpPage() {
           </p>
           <p>
             With more than one bike, tap the bike’s name on Tasks (where it says how many bikes you have) to switch
-            between them, or pick one in Garage. Garage is also where you add, edit or remove a bike.
+            between them, or pick one in Garage. Garage is also where you add a bike, and edit or remove one from its{' '}
+            <Ui>⋯</Ui> menu.
           </p>
         </Section>
 
@@ -228,8 +229,8 @@ export default async function HelpPage() {
 
         <Section id="specs">
           <p>
-            Oil grade and amount, tire pressures, torques: the numbers you look up again and again. Tap <Ui>Specs</Ui> next to
-            the odometer on Tasks, or on a bike in Garage, to see them. When we’ve read your model’s owner’s manual, its values are filled in
+            Oil grade and amount, tire pressures, torques: the numbers you look up again and again. Tap <Ui>Specs</Ui> under
+            the odometer on Tasks, or a bike’s specs (or <Ui>Specs</Ui> in its <Ui>⋯</Ui> menu) in Garage, to see them. When we’ve read your model’s owner’s manual, its values are filled in
             and marked with the manual’s page, like <Ui>Manual p. 142</Ui>.
           </p>
           <p>

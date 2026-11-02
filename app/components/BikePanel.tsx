@@ -1,6 +1,6 @@
 'use client';
 
-import { ClipboardList } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import type { TaskStatus } from '@/lib/maintenance';
 import type { FavoriteSpecRow } from '@/lib/specs';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
@@ -33,7 +33,7 @@ const STATUS_TILES: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'Healthy', label: 'All good', color: 'text-muted' },
 ];
 
-/** The top of Tasks: the bike's name (tap to switch), its odometer, specs and starred specs, and its tasks by status. */
+/** The top of Tasks: the bike's name (tap to switch), its odometer, its starred specs (tap for all), and its tasks by status. */
 export default function BikePanel(props: BikePanelProps) {
   const { statusCounts } = props;
 
@@ -54,16 +54,22 @@ export default function BikePanel(props: BikePanelProps) {
           onSave={props.onUpdateOdometer}
           startEditing={props.editOdometer}
           onCancel={props.onCancelOdometer}
-          actions={
-            <button type="button" onClick={props.onOpenSpecs} className={`${ui.secondaryButton} px-3.5`}>
-              <ClipboardList size={15} aria-hidden="true" /> Specs
-            </button>
-          }
         />
       </div>
-      {props.favoriteSpecs.length > 0 && (
-        <FavoriteSpecs specs={props.favoriteSpecs} className="border-t border-line pt-3.5" />
-      )}
+      <button
+        type="button"
+        onClick={props.onOpenSpecs}
+        className="flex min-h-11 w-full items-center gap-2 rounded-xl bg-raised py-2 pl-3 pr-2 text-left transition-colors hover:bg-line/60"
+      >
+        {props.favoriteSpecs.length > 0 ? (
+          <FavoriteSpecs specs={props.favoriteSpecs} className="min-w-0 flex-1" />
+        ) : (
+          <span className="min-w-0 flex-1 text-sm font-semibold text-muted">Oil, tires, torques and more</span>
+        )}
+        <span className="inline-flex shrink-0 items-center gap-0.5 text-sm font-bold text-accent">
+          Specs <ChevronRight size={16} aria-hidden="true" />
+        </span>
+      </button>
       {statusCounts && (
         <ul aria-label="Tasks by status" className="grid grid-cols-4 gap-1.5">
           {STATUS_TILES.map(({ status, label, color }) => (
