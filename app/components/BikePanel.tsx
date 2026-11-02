@@ -2,7 +2,7 @@
 
 import { ClipboardList } from 'lucide-react';
 import type { TaskStatus } from '@/lib/maintenance';
-import type { ResolvedSpec } from '@/lib/specs';
+import type { FavoriteSpecRow } from '@/lib/specs';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
 import BikeSwitcher from './BikeSwitcher';
 import FavoriteSpecs from './FavoriteSpecs';
@@ -22,8 +22,8 @@ type BikePanelProps = {
   editOdometer?: boolean;
   onCancelOdometer?: () => void;
   onOpenSpecs: () => void;
-  /** The bike's starred specs that have a value. */
-  favoriteSpecs: ResolvedSpec[];
+  /** The bike's starred specs. */
+  favoriteSpecs: FavoriteSpecRow[];
 };
 
 const STATUS_TILES: { status: TaskStatus; label: string; color: string }[] = [
@@ -62,7 +62,7 @@ export default function BikePanel(props: BikePanelProps) {
         />
       </div>
       {props.favoriteSpecs.length > 0 && (
-        <FavoriteSpecs specs={props.favoriteSpecs} unitSystem={props.unitSystem} className="border-t border-line pt-3.5" />
+        <FavoriteSpecs specs={props.favoriteSpecs} className="border-t border-line pt-3.5" />
       )}
       {statusCounts && (
         <ul aria-label="Tasks by status" className="grid grid-cols-4 gap-1.5">

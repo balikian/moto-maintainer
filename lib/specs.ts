@@ -163,8 +163,8 @@ export type MeasuredSpec = { value: number; max?: number; unit: SpecUnit; page?:
 export type SpecValue = TextSpec | MeasuredSpec;
 export type SpecValues = Partial<Record<SpecKey, SpecValue>>;
 
-/** A spec the list doesn't have, added by the rider. */
-export type CustomSpec = { label: string; text: string };
+/** A spec the list doesn't have, added by the rider; `favorite` when starred. */
+export type CustomSpec = { label: string; text: string; favorite?: boolean };
 
 /**
  * What `motorcycles.specs` holds: the rider's own values, over the manual's,
@@ -365,9 +365,10 @@ export function cleanBikeSpecs(input: unknown): BikeSpecs {
   const custom = (Array.isArray(raw.custom) ? raw.custom : [])
     .flatMap((row: unknown) => {
       if (typeof row !== 'object' || row === null) return [];
-      const label = cleanText((row as Record<string, unknown>).label, MAX_CUSTOM_LABEL);
-      const text = cleanText((row as Record<string, unknown>).text, MAX_SPEC_TEXT);
-      return label && text ? [{ label, text }] : [];
+      const fields = row as Record<string, unknown>;
+      const label = cleanText(fields.label, MAX_CUSTOM_LABEL);
+      const text = cleanText(fields.text, MAX_SPEC_TEXT);
+      return label && text ? [{ label, text, ...(fields.favorite === true && { favorite: true }) }] : [];
     })
     .slice(0, MAX_CUSTOM_SPECS);
   return {
@@ -393,10 +394,28 @@ export function toggleFavoriteSpec(favorites: readonly SpecKey[] | undefined, ke
   return cleanFavorites(current.includes(key) ? current.filter((k) => k !== key) : [...current, key]);
 }
 
-/** The starred specs that have a value, for the bike's card in Garage and the top of Tasks. */
+/** The starred specs that have a value. */
 export function pickFavoriteSpecs(specs: ResolvedSpec[], favorites: readonly SpecKey[] | undefined): ResolvedSpec[] {
   const starred = favoriteSpecKeys(favorites);
   return specs.filter((spec) => starred.includes(spec.key));
+}
+
+/** Stars or unstars one of the rider's own rows. */
+export function toggleCustomFavorite(custom: CustomSpec[], index: number): CustomSpec[] {
+  return custom.map((row, i) => (i === index ? { label: row.label, text: row.text, ...(!row.favorite && { favorite: true }) } : row));
+}
+
+export type FavoriteSpecRow = { id: string; label: string; value: string };
+
+/**
+ * What the bike's card in Garage and the top of Tasks show: the starred
+ * listed specs with a value, in the rider's units, then the starred rows of the rider's own.
+ */
+export function favoriteSpecRows(specs: ResolvedSpec[], bike: BikeSpecs, units: UnitSystem): FavoriteSpecRow[] {
+  return [
+    ...pickFavoriteSpecs(specs, bike.favorites).map((spec) => ({ id: spec.key, label: spec.label, value: formatSpec(spec.value, units) })),
+    ...(bike.custom ?? []).flatMap((row, index) => (row.favorite ? [{ id: `custom-${index}`, label: row.label, value: row.text }] : [])),
+  ];
 }
 
 // --- The specs a bike shows -------------------------------------------------

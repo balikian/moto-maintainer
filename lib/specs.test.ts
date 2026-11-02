@@ -5,6 +5,7 @@ import {
   cleanSpecValue,
   DEFAULT_FAVORITE_SPECS,
   favoriteSpecKeys,
+  favoriteSpecRows,
   formatSpec,
   groupResolvedSpecs,
   parseSpecNumber,
@@ -15,6 +16,7 @@ import {
   specGroupsForTask,
   specsForTasks,
   specValuesFromRows,
+  toggleCustomFavorite,
   toggleFavoriteSpec,
   unitsFor,
   type ExtractedSpecRow,
@@ -150,6 +152,19 @@ describe('favorites', () => {
     const specs = resolveSpecs({ oil_grade: { text: '10W-40' }, battery: { text: 'YTZ10S' } }, { values: { pressure_front: { value: 36, unit: 'psi' } } });
     assert.deepEqual(pickFavoriteSpecs(specs, undefined).map(({ key }) => key), ['oil_grade', 'pressure_front']);
     assert.deepEqual(pickFavoriteSpecs(specs, ['battery']).map(({ key }) => key), ['battery']);
+  });
+
+  it('stars the rider’s own rows and shows them after the listed specs', () => {
+    const custom = toggleCustomFavorite([{ label: 'Headlight bulb', text: 'H7' }, { label: 'Key', text: '1234' }], 0);
+    assert.deepEqual(custom, [{ label: 'Headlight bulb', text: 'H7', favorite: true }, { label: 'Key', text: '1234' }]);
+    assert.deepEqual(toggleCustomFavorite(custom, 0)[0], { label: 'Headlight bulb', text: 'H7' });
+    assert.deepEqual(cleanBikeSpecs({ custom: [...custom, { label: 'X', text: 'y', favorite: 'yes' }] }).custom, [...custom, { label: 'X', text: 'y' }]);
+
+    const specs = resolveSpecs({ oil_grade: { text: '10W-40' } }, null);
+    assert.deepEqual(favoriteSpecRows(specs, { custom }, 'imperial'), [
+      { id: 'oil_grade', label: 'Oil grade', value: '10W-40' },
+      { id: 'custom-0', label: 'Headlight bulb', value: 'H7' },
+    ]);
   });
 });
 

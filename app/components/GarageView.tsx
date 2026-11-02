@@ -2,7 +2,7 @@
 
 import { ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
 import { countTasksByStatus, type TaskStatus } from '@/lib/maintenance';
-import type { ResolvedSpec } from '@/lib/specs';
+import type { FavoriteSpecRow } from '@/lib/specs';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
 import { formatOdometer } from '@/lib/units';
 import ConfirmPopover from './ConfirmPopover';
@@ -14,8 +14,8 @@ type GarageViewProps = {
   activeBikeId: string | null;
   /** Every bike's tasks, for the status line; null while they load. */
   allTasks: MaintenanceTask[] | null;
-  /** Each bike's starred specs that have a value, by bike id. */
-  favoriteSpecs: Record<string, ResolvedSpec[]>;
+  /** Each bike's starred specs, by bike id. */
+  favoriteSpecs: Record<string, FavoriteSpecRow[]>;
   unitSystem: UnitSystem;
   /** Shows the bike's tasks. */
   onOpen: (bikeId: string) => void;
@@ -92,7 +92,7 @@ export default function GarageView({
                     )}
                   </span>
                 </button>
-                <FavoriteSpecs specs={favoriteSpecs[bike.id] ?? []} unitSystem={unitSystem} className="mt-3 border-t border-line pt-3" />
+                <FavoriteSpecs specs={favoriteSpecs[bike.id] ?? []} className="mt-3 border-t border-line pt-3" />
                 <div className="mt-3 flex justify-end gap-2 border-t border-line pt-3">
                   <button type="button" onClick={() => onSpecs(bike)} className={`${smallButton} mr-auto hover:text-fg`}>
                     <ClipboardList size={13} aria-hidden="true" /> Specs

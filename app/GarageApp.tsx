@@ -17,7 +17,7 @@ import { countTasksByStatus, findDefaultTask, hasStartPoint, scheduleOverlapsTas
 import { fetchModelSchedule, fetchModelSpecs } from '@/lib/modelData';
 import { trackEvent } from '@/lib/analytics';
 import { shopSuggestions } from '@/lib/serviceVisits';
-import { cleanBikeSpecs, cleanSpecValues, pickFavoriteSpecs, resolveSpecs, type BikeSpecs, type SpecValues } from '@/lib/specs';
+import { cleanBikeSpecs, cleanSpecValues, favoriteSpecRows, resolveSpecs, type BikeSpecs, type SpecValues } from '@/lib/specs';
 import { createClient } from '@/lib/supabase/client';
 import type { MaintenanceTask, ModelSchedule, ModelSpecs, Motorcycle, ServiceLog } from '@/lib/types';
 import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
@@ -196,7 +196,7 @@ export default function GarageApp() {
   const activeSpecs = activeBike
     ? resolveSpecs(specsQuery.data ? cleanSpecValues(specsQuery.data.specs) : null, cleanBikeSpecs(activeBike.specs))
     : [];
-  const activeFavoriteSpecs = activeBike ? pickFavoriteSpecs(activeSpecs, cleanBikeSpecs(activeBike.specs).favorites) : [];
+  const activeFavoriteSpecs = activeBike ? favoriteSpecRows(activeSpecs, cleanBikeSpecs(activeBike.specs), unitSystem) : [];
 
   // Every bike's manual specs, for the starred specs on Garage's cards; loaded only on Garage.
   const garageSpecsKey =
@@ -210,7 +210,7 @@ export default function GarageApp() {
   const garageFavoriteSpecs = Object.fromEntries(
     bikes.map((bike) => {
       const own = cleanBikeSpecs(bike.specs);
-      return [bike.id, pickFavoriteSpecs(resolveSpecs(garageSpecsQuery.data?.[bike.id], own), own.favorites)];
+      return [bike.id, favoriteSpecRows(resolveSpecs(garageSpecsQuery.data?.[bike.id], own), own, unitSystem)];
     })
   );
 

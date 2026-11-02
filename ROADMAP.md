@@ -1236,9 +1236,13 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
       bike's card in Garage and at the top of Tasks. Until the rider stars
       or unstars one, fuel grade, oil grade and front and rear pressure
       are starred. Saved per bike as `favorites` in `motorcycles.specs`
-      (no migration; absent means the defaults). Listed specs only, not
-      the rider's own rows. Garage loads every bike's manual specs, only
-      while it's open.
+      (no migration; absent means the defaults); the rider's own rows can
+      be starred too (`favorite` on the row). Garage loads every bike's
+      manual specs, only while it's open.
+      ⏳ Owner (2026-11-01): the bike card feels too busy. Options on the
+      canvas https://claude.ai/artifact/4VDXpxsfVmixi4iLVmykx1 (A today,
+      B tidy specs box, C icon chips, D no specs on the card; Tasks today
+      vs one-line specs). Owner to pick.
     - ✅ Merged into `develop` (2026-11-01) so the owner can try it all on
       the test site. Before releasing to `main`: push both specs
       migrations to production (owner's go-ahead).

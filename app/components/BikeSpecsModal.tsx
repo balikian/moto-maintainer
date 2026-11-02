@@ -19,6 +19,7 @@ import {
   SPEC_GROUPS,
   specFromDraft,
   specNumberText,
+  toggleCustomFavorite,
   toggleFavoriteSpec,
   unitsFor,
   type BikeSpecs,
@@ -60,19 +61,21 @@ export default function BikeSpecsModal({ supabase, bike, unitSystem, onClose, on
   const [editing, setEditing] = useState(false);
   // Kept here so a star fills as soon as it's tapped, before the bikes reload.
   const [favorites, setFavorites] = useState(own.favorites);
-  const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const [custom, setCustom] = useState(own.custom ?? []);
+  const [starError, setStarError] = useState<string | null>(null);
+  const current: BikeSpecs = { ...own, custom, ...(favorites && { favorites }) };
   const starred = favoriteSpecKeys(favorites);
-  const withFavorites = (specs: BikeSpecs): BikeSpecs => ({ ...specs, ...(favorites && { favorites }) });
 
-  const toggleFavorite = async (key: SpecKey) => {
-    const previous = favorites;
-    const next = toggleFavoriteSpec(favorites, key);
-    setFavorites(next);
-    setFavoriteError(null);
-    const error = await onSave({ ...own, favorites: next });
+  const saveStars = async (next: { favorites?: SpecKey[]; custom?: CustomSpec[] }) => {
+    const previous = { favorites, custom };
+    if (next.favorites) setFavorites(next.favorites);
+    if (next.custom) setCustom(next.custom);
+    setStarError(null);
+    const error = await onSave({ ...current, ...next });
     if (error) {
-      setFavorites(previous);
-      setFavoriteError(`Couldn’t save your star: ${error}`);
+      setFavorites(previous.favorites);
+      setCustom(previous.custom);
+      setStarError(`Couldn’t save your star: ${error}`);
     }
   };
 
@@ -80,13 +83,16 @@ export default function BikeSpecsModal({ supabase, bike, unitSystem, onClose, on
     return (
       <Modal title="Edit specs" description={name} size="lg" onClose={onClose}>
         <SpecsForm
-          own={own}
+          own={current}
           manual={manual}
           unitSystem={unitSystem}
           onCancel={() => setEditing(false)}
           onSave={async (specs) => {
-            const error = await onSave(withFavorites(specs));
-            if (!error) setEditing(false);
+            const error = await onSave({ ...specs, ...(favorites && { favorites }) });
+            if (!error) {
+              setCustom(specs.custom ?? []);
+              setEditing(false);
+            }
             return error;
           }}
         />
@@ -95,7 +101,6 @@ export default function BikeSpecsModal({ supabase, bike, unitSystem, onClose, on
   }
 
   const groups = groupResolvedSpecs(resolveSpecs(manual, own));
-  const custom = own.custom ?? [];
 
   return (
     <Modal title="Specs" description={name} size="lg" closeOnOutsideClick onClose={onClose}>
@@ -107,37 +112,28 @@ export default function BikeSpecsModal({ supabase, bike, unitSystem, onClose, on
         </div>
       ) : (
         <div className="space-y-5">
-          {groups.length > 0 && (
-            <p className={`text-sm ${ui.muted}`}>Starred specs show on the bike’s card in Garage and at the top of Tasks.</p>
-          )}
-          {favoriteError && <p className={ui.errorBox}>{favoriteError}</p>}
+          <p className={`text-sm ${ui.muted}`}>Starred specs show on the bike’s card in Garage and at the top of Tasks.</p>
+          {starError && <p className={ui.errorBox}>{starError}</p>}
           {groups.map(({ group, specs }) => (
             <section key={group.id}>
               <h3 className={`${ui.subTitle} mb-1.5`}>{group.label}</h3>
               <dl className="divide-y divide-line rounded-xl border border-line">
-                {specs.map((spec) => {
-                  const isStarred = starred.includes(spec.key);
-                  return (
-                    <div key={spec.key} className="flex items-center justify-between gap-3 py-1 pr-1 pl-3">
-                      <dt className="text-sm text-muted">{spec.label}</dt>
-                      <dd className="flex items-center gap-1 text-right">
-                        <span>
-                          <span className="block text-sm font-bold">{formatSpec(spec.value, unitSystem)}</span>
-                          <span className="block text-xs text-muted">{sourceLabel(spec.value, spec.from)}</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => void toggleFavorite(spec.key)}
-                          aria-pressed={isStarred}
-                          aria-label={`Star ${spec.label}`}
-                          className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors hover:bg-raised ${isStarred ? 'text-accent' : 'text-muted'}`}
-                        >
-                          <Star size={18} fill={isStarred ? 'currentColor' : 'none'} aria-hidden="true" />
-                        </button>
-                      </dd>
-                    </div>
-                  );
-                })}
+                {specs.map((spec) => (
+                  <div key={spec.key} className="flex items-center justify-between gap-3 py-1 pr-1 pl-3">
+                    <dt className="text-sm text-muted">{spec.label}</dt>
+                    <dd className="flex items-center gap-1 text-right">
+                      <span>
+                        <span className="block text-sm font-bold">{formatSpec(spec.value, unitSystem)}</span>
+                        <span className="block text-xs text-muted">{sourceLabel(spec.value, spec.from)}</span>
+                      </span>
+                      <StarButton
+                        label={spec.label}
+                        starred={starred.includes(spec.key)}
+                        onToggle={() => void saveStars({ favorites: toggleFavoriteSpec(favorites, spec.key) })}
+                      />
+                    </dd>
+                  </div>
+                ))}
               </dl>
             </section>
           ))}
@@ -146,9 +142,16 @@ export default function BikeSpecsModal({ supabase, bike, unitSystem, onClose, on
               <h3 className={`${ui.subTitle} mb-1.5`}>Your own</h3>
               <dl className="divide-y divide-line rounded-xl border border-line">
                 {custom.map((row, index) => (
-                  <div key={index} className="flex items-baseline justify-between gap-3 px-3 py-2">
+                  <div key={index} className="flex items-center justify-between gap-3 py-1 pr-1 pl-3">
                     <dt className="text-sm text-muted">{row.label}</dt>
-                    <dd className="text-right text-sm font-bold">{row.text}</dd>
+                    <dd className="flex items-center gap-1 text-right">
+                      <span className="text-sm font-bold">{row.text}</span>
+                      <StarButton
+                        label={row.label}
+                        starred={Boolean(row.favorite)}
+                        onToggle={() => void saveStars({ custom: toggleCustomFavorite(custom, index) })}
+                      />
+                    </dd>
                   </div>
                 ))}
               </dl>
@@ -170,6 +173,21 @@ export default function BikeSpecsModal({ supabase, bike, unitSystem, onClose, on
         </button>
       </div>
     </Modal>
+  );
+}
+
+/** Stars a spec to show it on the bike's card in Garage and the top of Tasks. */
+function StarButton({ label, starred, onToggle }: { label: string; starred: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-pressed={starred}
+      aria-label={`Star ${label}`}
+      className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors hover:bg-raised ${starred ? 'text-accent' : 'text-muted'}`}
+    >
+      <Star size={18} fill={starred ? 'currentColor' : 'none'} aria-hidden="true" />
+    </button>
   );
 }
 
@@ -266,7 +284,8 @@ function SpecsForm({
         if (value) values[spec.key] = value;
       }
     }
-    const rows = custom.map((row) => ({ label: row.label.trim(), text: row.text.trim() })).filter((row) => row.label || row.text);
+    // Spread first so a starred row stays starred.
+    const rows = custom.map((row) => ({ ...row, label: row.label.trim(), text: row.text.trim() })).filter((row) => row.label || row.text);
     if (rows.some((row) => !row.label || !row.text)) {
       openGroup('custom');
       setError('Give each of your own rows a name and a value.');
