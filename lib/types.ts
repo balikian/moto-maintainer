@@ -49,6 +49,8 @@ export interface Shop {
   address: string | null;
   website: string | null;
   notes: string | null;
+  /** A Google or Apple Maps link the rider pasted, which Directions opens. */
+  map_url: string | null;
   created_at?: string;
 }
 

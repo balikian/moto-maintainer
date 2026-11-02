@@ -263,6 +263,12 @@ export default async function HelpPage() {
             are up to you.
           </p>
           <p>
+            Copying from Google? On a phone, Google shows the phone, address and website as buttons, so long-press one
+            and copy the link, then paste it in. SwingArm reads the number out of a Call link and the real website out
+            of Google’s, and a Google Maps link pasted as the address is kept, so <Ui>Directions</Ui> opens that exact
+            place.
+          </p>
+          <p>
             Then pick it for each bike in <Ui>Edit bike</Ui> (the bike’s <Ui>⋯</Ui> menu in Garage), or choose{' '}
             <Ui>Add a shop…</Ui> right there. The bike’s card shows the shop with <Ui>Call</Ui> and{' '}
             <Ui>Directions</Ui>, and <Ui>Log service</Ui> offers it under Where.

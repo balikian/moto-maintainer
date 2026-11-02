@@ -58,6 +58,7 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, shops, 
       address: shop.address,
       website: shop.website,
       notes: shop.notes,
+      map_link: shop.map_url,
     })),
     bikes: bikes.map((bike) => ({
       year: bike.year,

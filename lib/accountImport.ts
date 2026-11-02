@@ -189,7 +189,7 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
   // By name, the first one winning if two share it.
   const shops = new Map<string, ShopFields>();
   for (const raw of parsed.data.shops) {
-    const cleaned = cleanShop(raw);
+    const cleaned = cleanShop({ ...raw, map_url: raw.map_link });
     if ('shop' in cleaned && !shops.has(cleaned.shop.name.toLowerCase())) shops.set(cleaned.shop.name.toLowerCase(), cleaned.shop);
   }
 

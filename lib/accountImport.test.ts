@@ -51,8 +51,8 @@ const exportFile = () =>
       { id: 'l2', motorcycle_id: 'b1', task_id: null, task_name: 'New grips', performed_at: '2025-07-04', odometer_at_service: 3400, cost: null, notes: 'Heated', shop: 'Home' },
     ] as ServiceLog[],
     shops: [
-      { id: 's1', user_id: 'someone-else', name: 'Moto Works', phone: '555-1234', email: null, address: null, website: 'https://motoworks.com/', notes: null },
-      { id: 's2', user_id: 'someone-else', name: 'moto works', phone: null, email: null, address: null, website: null, notes: 'A second one' },
+      { id: 's1', user_id: 'someone-else', name: 'Moto Works', phone: '555-1234', email: null, address: null, website: 'https://motoworks.com/', notes: null, map_url: 'https://maps.app.goo.gl/AbC123' },
+      { id: 's2', user_id: 'someone-else', name: 'moto works', phone: null, email: null, address: null, website: null, notes: 'A second one', map_url: null },
     ],
     exportedOn: '2026-10-16',
   });
@@ -73,7 +73,7 @@ describe('parseAccountImport', () => {
         odometerMiles: 5200,
         purchase: { purchasedOn: '2024-03-10', purchaseMileage: 1200 },
         specs: { values: { oil_with_filter: { value: 1.7, unit: 'L', page: 140 } }, custom: [{ label: 'Headlight bulb', text: 'H4' }] },
-        shop: { name: 'Moto Works', phone: '555-1234', email: null, address: null, website: 'https://motoworks.com/', notes: null },
+        shop: { name: 'Moto Works', phone: '555-1234', email: null, address: null, website: 'https://motoworks.com/', notes: null, map_url: 'https://maps.app.goo.gl/AbC123' },
         tasks: [
           {
             taskName: 'Front tire',

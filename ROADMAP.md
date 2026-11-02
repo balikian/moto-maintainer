@@ -1064,6 +1064,18 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   `20261102180000_shops.sql` (`shops`, `motorcycles.shop_id` with a
   two-column foreign key so a bike can only use its owner's shops), on test
   only. Next: scheduling (below), whose "Contact the shop" builds on this.
+  **Shop search (owner asked, 2026-11-02): not possible with Google.**
+  Google's Maps Platform Terms forbid an app to "copy and save business
+  names, addresses, or user reviews"; only the place ID may be kept.
+  Foursquare, HERE and Apple also allow only short caching. Instead the
+  shop fields take what a long-press copies from Google (owner picked
+  this, 2026-11-02): a `tel:` link becomes the number, Google's redirect the
+  real website, and a Google or Apple Maps link pasted as the address is
+  kept in `shops.map_url` for Directions (migration
+  `20261102200000_shop_map_link.sql`, test only). Later options: pick from
+  the phone's contacts (Contact Picker on Android, a Capacitor plugin in
+  the apps) and an OpenStreetMap search (its data may be saved, credited;
+  often no phone for small shops).
 - **Scheduling service.** Options, cheapest first:
   1. A planned date on a task ("booked for Oct 20"), shown on the card and
      used by reminders.

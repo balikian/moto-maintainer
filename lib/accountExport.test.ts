@@ -46,6 +46,7 @@ const shop: Shop = {
   address: '12 Main St',
   website: null,
   notes: 'Ask for Sam',
+  map_url: null,
 };
 
 describe('buildAccountExport', () => {
@@ -96,7 +97,7 @@ describe('buildAccountExport', () => {
 
   it('lists the shops, and names each bike’s', () => {
     assert.deepEqual(data.shops, [
-      { name: 'Moto Works', phone: '(555) 123-4567', email: null, address: '12 Main St', website: null, notes: 'Ask for Sam' },
+      { name: 'Moto Works', phone: '(555) 123-4567', email: null, address: '12 Main St', website: null, notes: 'Ask for Sam', map_link: null },
     ]);
     assert.deepEqual(data.bikes.map((entry) => entry.shop), ['Moto Works', null]);
   });

@@ -1,6 +1,18 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { cleanShop, mapsHref, normalizeWebsite, phoneHref, shopInput, websiteLabel } from './shops';
+import {
+  cleanShop,
+  directionsHref,
+  mapsHref,
+  normalizeWebsite,
+  phoneHref,
+  readAddress,
+  readEmail,
+  readPhone,
+  readWebsite,
+  shopInput,
+  websiteLabel,
+} from './shops';
 
 const blank = shopInput();
 
@@ -16,6 +28,7 @@ describe('cleanShop', () => {
           address: null,
           website: 'https://motoworks.com/',
           notes: 'Ask for Sam',
+          map_url: null,
         },
       }
     );
@@ -34,7 +47,7 @@ describe('cleanShop', () => {
 
   it('ignores fields that aren’t text', () => {
     assert.deepEqual(cleanShop({ name: 'A', phone: 5551234, notes: {} }), {
-      shop: { name: 'A', phone: null, email: null, address: null, website: null, notes: null },
+      shop: { name: 'A', phone: null, email: null, address: null, website: null, notes: null, map_url: null },
     });
   });
 });
@@ -55,5 +68,53 @@ describe('shop links', () => {
 
   it('searches the address on the map', () => {
     assert.equal(mapsHref('12 Main St, Bend, OR'), 'https://www.google.com/maps/search/?api=1&query=12%20Main%20St%2C%20Bend%2C%20OR');
+  });
+});
+
+describe('what Google copies', () => {
+  it('reads a Call button’s tel: link as the number', () => {
+    assert.equal(readPhone('tel:+15415551234'), '(541) 555-1234');
+    assert.equal(readPhone('tel:541-555-1234'), '(541) 555-1234');
+    assert.equal(readPhone('tel:+44%2020%207946%200958'), '+442079460958');
+    assert.equal(readPhone('Phone: (541) 555-1234'), '(541) 555-1234');
+    assert.equal(readPhone('541.555.1234'), '541.555.1234');
+  });
+
+  it('reads a mailto: link as the address', () => {
+    assert.equal(readEmail('mailto:service@motoworks.com?subject=Hi'), 'service@motoworks.com');
+  });
+
+  it('unwraps Google’s redirect and drops utm_ tracking', () => {
+    assert.equal(
+      readWebsite('https://www.google.com/url?q=https://motoworks.com/service%3Futm_source%3Dgmb&sa=U&ved=2ah'),
+      'https://motoworks.com/service'
+    );
+    assert.equal(readWebsite('https://motoworks.com/?utm_source=google&utm_medium=organic&page=2'), 'https://motoworks.com/?page=2');
+    assert.equal(readWebsite('motoworks.com'), 'motoworks.com');
+  });
+
+  it('keeps a map link for Directions, with the address from it when it has one', () => {
+    assert.deepEqual(
+      readAddress('https://www.google.com/maps/place/Moto+Works,+12+Main+St,+Bend,+OR+97701/@44.05,-121.31,17z', 'Moto Works'),
+      { address: '12 Main St, Bend, OR 97701', mapUrl: 'https://www.google.com/maps/place/Moto+Works,+12+Main+St,+Bend,+OR+97701/@44.05,-121.31,17z' }
+    );
+    assert.deepEqual(readAddress('https://maps.app.goo.gl/AbC123'), { address: '', mapUrl: 'https://maps.app.goo.gl/AbC123' });
+    assert.deepEqual(readAddress('https://share.google/xyz'), { address: '', mapUrl: 'https://share.google/xyz' });
+    assert.deepEqual(readAddress('https://maps.google.com/?q=44.05,-121.31'), { address: '', mapUrl: 'https://maps.google.com/?q=44.05,-121.31' });
+  });
+
+  it('joins a pasted address’s lines, and leaves other links alone', () => {
+    assert.deepEqual(readAddress('Address: 12 Main St\nBend, OR 97701\n'), { address: '12 Main St, Bend, OR 97701', mapUrl: null });
+    assert.equal(readAddress('https://example.com/maps').mapUrl, null);
+  });
+
+  it('saves the cleaned values, and Directions prefers the map link', () => {
+    const result = cleanShop({ ...blank, name: 'Moto Works', phone: 'tel:+15415551234', address: 'https://maps.app.goo.gl/AbC123' });
+    assert.ok('shop' in result);
+    assert.equal(result.shop.phone, '(541) 555-1234');
+    assert.equal(result.shop.address, null);
+    assert.equal(directionsHref(result.shop), 'https://maps.app.goo.gl/AbC123');
+    assert.equal(directionsHref({ address: '12 Main St', map_url: null }), mapsHref('12 Main St'));
+    assert.equal(directionsHref({ address: null, map_url: 'https://evil.example/' }), null);
   });
 });

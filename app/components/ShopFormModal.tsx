@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, type SubmitEvent } from 'react';
-import { cleanShop, SHOP_FIELD_LIMITS, shopInput, type ShopInput } from '@/lib/shops';
+import { MapPin, X } from 'lucide-react';
+import { cleanShop, readAddress, readEmail, readPhone, readWebsite, SHOP_FIELD_LIMITS, shopInput, type ShopInput } from '@/lib/shops';
 import type { Shop } from '@/lib/types';
 import Modal from './Modal';
 import { ui } from './ui';
@@ -14,19 +15,27 @@ type ShopFormModalProps = {
   onSubmit: (input: ShopInput) => Promise<string | null>;
 };
 
-const FIELDS: { key: Exclude<keyof ShopInput, 'name' | 'notes'>; label: string; type: string; inputMode?: 'tel' | 'email' | 'url'; autoComplete: string; placeholder: string }[] = [
-  { key: 'phone', label: 'Phone', type: 'tel', inputMode: 'tel', autoComplete: 'tel', placeholder: '(555) 123-4567' },
-  { key: 'email', label: 'Email', type: 'email', inputMode: 'email', autoComplete: 'email', placeholder: 'service@example.com' },
-  { key: 'address', label: 'Address', type: 'text', autoComplete: 'street-address', placeholder: '12 Main St, Bend, OR' },
-  { key: 'website', label: 'Website', type: 'text', inputMode: 'url', autoComplete: 'url', placeholder: 'example.com' },
+// Text fields, so a pasted link (tel:, mailto:, Google's) isn't refused before it's read.
+const FIELDS: { key: 'phone' | 'email' | 'website'; label: string; autoComplete: string; placeholder: string; read: (text: string) => string }[] = [
+  { key: 'phone', label: 'Phone', autoComplete: 'tel', placeholder: '(555) 123-4567', read: readPhone },
+  { key: 'email', label: 'Email', autoComplete: 'email', placeholder: 'service@example.com', read: readEmail },
+  { key: 'website', label: 'Website', autoComplete: 'url', placeholder: 'example.com', read: readWebsite },
 ];
 
-/** Add or edit a shop or mechanic: a name, and any of phone, email, address, website and notes. */
+/**
+ * Add or edit a shop or mechanic: a name, and any of phone, email, address, website and notes.
+ * Each field also takes what a long-press copies from Google (see lib/shops.ts), read when the rider leaves it.
+ */
 export default function ShopFormModal({ shop, onClose, onSubmit }: ShopFormModalProps) {
   const [values, setValues] = useState<ShopInput>(() => shopInput(shop));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const set = (key: keyof ShopInput) => (value: string) => setValues((previous) => ({ ...previous, [key]: value }));
+  const readAddressField = () =>
+    setValues((previous) => {
+      const { address, mapUrl } = readAddress(previous.address, previous.name);
+      return { ...previous, address, map_url: mapUrl ?? previous.map_url };
+    });
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
@@ -70,17 +79,50 @@ export default function ShopFormModal({ shop, onClose, onSubmit }: ShopFormModal
             </label>
             <input
               id={`shop-${field.key}`}
-              type={field.type}
-              inputMode={field.inputMode}
               autoComplete={field.autoComplete}
               value={values[field.key]}
               onChange={(event) => set(field.key)(event.target.value)}
-              maxLength={SHOP_FIELD_LIMITS[field.key]}
+              onBlur={() => set(field.key)(field.read(values[field.key]))}
+              maxLength={SHOP_FIELD_LIMITS.mapUrl}
               placeholder={field.placeholder}
               className={ui.input}
             />
           </div>
         ))}
+
+        <div>
+          <label htmlFor="shop-address" className={ui.label}>
+            Address <span className="font-normal text-muted">optional</span>
+          </label>
+          <textarea
+            id="shop-address"
+            rows={2}
+            autoComplete="street-address"
+            value={values.address}
+            onChange={(event) => set('address')(event.target.value)}
+            onBlur={readAddressField}
+            maxLength={SHOP_FIELD_LIMITS.mapUrl}
+            placeholder="12 Main St, Bend, OR, or a Google Maps link"
+            className={ui.input}
+          />
+          {values.map_url && (
+            <p className="mt-1.5 flex items-center gap-2 text-sm text-muted">
+              <MapPin size={15} className="shrink-0 text-good" aria-hidden="true" />
+              <span className="min-w-0 flex-1">Map link saved: Directions opens it.</span>
+              <button
+                type="button"
+                onClick={() => set('map_url')('')}
+                className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-xl px-2 font-bold text-fg hover:bg-raised"
+              >
+                <X size={14} aria-hidden="true" /> Remove
+              </button>
+            </p>
+          )}
+        </div>
+
+        <p className={`text-xs ${ui.muted}`}>
+          Copying from Google? Long-press the shop’s phone, address or website and copy the link; SwingArm reads it.
+        </p>
 
         <div>
           <label htmlFor="shop-notes" className={ui.label}>
