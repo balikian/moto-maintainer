@@ -4,7 +4,7 @@ import { useId, useState } from 'react';
 import { Check, Layers, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
 import { categoryLabel, isTaskCategory, TASK_CATEGORIES, taskCategory, type TaskCategory } from '@/lib/taskCategories';
-import type { TaskDueState, TaskStatus } from '@/lib/maintenance';
+import type { TaskDueState, TaskStart, TaskStatus } from '@/lib/maintenance';
 import { specsForTasks, type ResolvedSpec } from '@/lib/specs';
 import { dueLabel, intervalLabel } from '@/lib/taskLabels';
 import type { MaintenanceTask, UnitSystem } from '@/lib/types';
@@ -28,10 +28,12 @@ type TaskCardProps = {
   alsoComingUp: MaintenanceTask[];
   onReset: () => void;
   onDelete: () => void;
-  /** For a task without a start point: count from today, or "never done" (from when the bike was new). */
-  onSetStart: (start: 'today' | 'new') => void;
+  /** For a task without a start point: count from today, "never done" (from when the bike was new), or since the rider bought it. */
+  onSetStart: (start: TaskStart) => void;
   /** The bike's model year, where "never done" counts from. */
   bikeYear: number;
+  /** When the rider bought the bike ("May 3, 2025 at 8,120 mi"), if they said; null hides "Since I bought it". */
+  boughtLabel: string | null;
   /** The bike's specs; the ones that go with this task show when it's opened. */
   specs: ResolvedSpec[];
   onOpenSpecs: () => void;
@@ -80,6 +82,7 @@ export default function TaskCard({
   onDelete,
   onSetStart,
   bikeYear,
+  boughtLabel,
   specs,
   onOpenSpecs,
 }: TaskCardProps) {
@@ -221,8 +224,9 @@ export default function TaskCard({
           <TaskSpecs groups={specsForTasks([task.task_name], specs)} unitSystem={unitSystem} onOpenSpecs={onOpenSpecs} />
           {noStart && (
             <p className="text-sm text-muted">
-              When was this last done? Log it if you know. Not sure? Start counting today. Never been done? It counts
-              from when the bike was new (0 {unitLabel}, January {bikeYear}).
+              When was this last done? Log it if you know.{' '}
+              {boughtLabel ? <>Not sure? Count from when you bought the bike ({boughtLabel}), or from today.</> : <>Not sure? Start counting today.</>}{' '}
+              Never been done? It counts from when the bike was new (0 {unitLabel}, January {bikeYear}).
             </p>
           )}
           <div className="flex gap-2">
@@ -255,11 +259,16 @@ export default function TaskCard({
             </ConfirmPopover>
           </div>
           {noStart && (
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => onSetStart('today')} className={ui.secondaryButton}>
+            <div className="flex flex-wrap gap-2">
+              {boughtLabel && (
+                <button type="button" onClick={() => onSetStart('bought')} className={`flex-1 whitespace-nowrap ${ui.secondaryButton}`}>
+                  Since I bought it
+                </button>
+              )}
+              <button type="button" onClick={() => onSetStart('today')} className={`flex-1 whitespace-nowrap ${ui.secondaryButton}`}>
                 Start today
               </button>
-              <button type="button" onClick={() => onSetStart('new')} className={ui.secondaryButton}>
+              <button type="button" onClick={() => onSetStart('new')} className={`flex-1 whitespace-nowrap ${ui.secondaryButton}`}>
                 Never done
               </button>
             </div>

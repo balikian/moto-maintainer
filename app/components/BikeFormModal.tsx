@@ -2,15 +2,23 @@
 
 import { useMemo, useState, type SubmitEvent } from 'react';
 import { BASE_CATALOG, mergeCatalog, type CustomModel } from '@/lib/bikeCatalog';
-import { DEFAULT_BIKE_SETUP, type BikeSetup } from '@/lib/maintenance';
+import { todayIsoDate } from '@/lib/dates';
+import { checkPurchase, DEFAULT_BIKE_SETUP, type BikePurchase, type BikeSetup } from '@/lib/maintenance';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
-import { distanceUnitLabel, fromDisplayDistance } from '@/lib/units';
+import { distanceUnitLabel, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
 import MakeModelFields, { modelYears, useMakeModel } from './MakeModelFields';
 import Modal from './Modal';
 import { ui } from './ui';
 
-/** currentMileage is null when the rider leaves the odometer for later. */
-export type BikeFormValues = { year: number; make: string; model: string; currentMileage: number | null; setup: BikeSetup };
+/** currentMileage is null when the rider leaves the odometer for later; the purchase is optional too. */
+export type BikeFormValues = {
+  year: number;
+  make: string;
+  model: string;
+  currentMileage: number | null;
+  purchase: BikePurchase;
+  setup: BikeSetup;
+};
 
 /** A row of segmented buttons, for short either/or choices. */
 function ChoiceRow<T extends string>({
@@ -67,6 +75,10 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
   const picker = useMakeModel(catalog, bike);
   const [year, setYear] = useState(bike?.year ?? currentYear);
   const [odometer, setOdometer] = useState('');
+  const [boughtOn, setBoughtOn] = useState(bike?.purchased_on?.slice(0, 10) ?? '');
+  const [boughtOdometer, setBoughtOdometer] = useState(
+    bike?.purchase_mileage === null || bike?.purchase_mileage === undefined ? '' : String(toDisplayDistance(bike.purchase_mileage, unitSystem))
+  );
   const [setup, setSetup] = useState<BikeSetup>(DEFAULT_BIKE_SETUP);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -89,10 +101,21 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
       setError('Please enter a valid odometer reading.');
       return;
     }
+    const boughtMiles = boughtOdometer.trim() === '' ? null : fromDisplayDistance(boughtOdometer, unitSystem);
+    if (boughtMiles !== null && (Number.isNaN(boughtMiles) || boughtMiles < 0)) {
+      setError('Please enter a valid odometer reading for when you bought it.');
+      return;
+    }
+    const purchase: BikePurchase = { purchasedOn: boughtOn || null, purchaseMileage: boughtMiles === null ? null : Math.round(boughtMiles) };
+    const purchaseError = checkPurchase(purchase, { year, currentMileage: miles }, (date) => date > todayIsoDate());
+    if (purchaseError) {
+      setError(purchaseError);
+      return;
+    }
 
     setSaving(true);
     setError(null);
-    const submitError = await onSubmit({ year, make: resolvedMake, model: resolvedModel, currentMileage: miles, setup });
+    const submitError = await onSubmit({ year, make: resolvedMake, model: resolvedModel, currentMileage: miles, purchase, setup });
     setSaving(false);
     if (submitError) setError(submitError);
   };
@@ -141,6 +164,42 @@ export default function BikeFormModal({ bike, customModels, unitSystem, onClose,
             <p className={`mt-1 text-xs ${ui.muted}`}>Not with the bike? Add it later. Until then, tasks count by time only.</p>
           </div>
         )}
+
+        <fieldset>
+          <legend className={ui.label}>
+            When you bought it <span className="font-normal text-muted">optional</span>
+          </legend>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="bike-bought-on" className="mb-1 block text-xs font-semibold text-muted">Date</label>
+              <input
+                id="bike-bought-on"
+                type="date"
+                value={boughtOn}
+                max={todayIsoDate()}
+                onChange={(event) => setBoughtOn(event.target.value)}
+                className={ui.input}
+              />
+            </div>
+            <div>
+              <label htmlFor="bike-bought-odometer" className="mb-1 block text-xs font-semibold text-muted">
+                Odometer then ({distanceUnitLabel(unitSystem)})
+              </label>
+              <input
+                id="bike-bought-odometer"
+                type="number"
+                min="0"
+                inputMode="numeric"
+                value={boughtOdometer}
+                onChange={(event) => setBoughtOdometer(event.target.value)}
+                className={ui.input}
+              />
+            </div>
+          </div>
+          <p className={`mt-1 text-xs ${ui.muted}`}>
+            Bought it used? Tasks you haven&apos;t logged a service for can count from here.
+          </p>
+        </fieldset>
 
         {!isEditing && (
           <fieldset className="space-y-3">

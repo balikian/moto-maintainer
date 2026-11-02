@@ -104,6 +104,10 @@ export default async function HelpPage() {
               Until then, tasks count by time only.
             </li>
             <li>
+              Bought it used? Add when you bought it and the odometer reading then, so its tasks can count from there.
+              It’s optional, and you can add it later with <Ui>Edit bike</Ui> in the bike’s <Ui>⋯</Ui> menu in Garage.
+            </li>
+            <li>
               Choose the final drive (chain, belt or shaft) and the engine cooling (liquid or air/oil). These pick the
               starter checklist, so a shaft-drive bike doesn’t get chain jobs.
             </li>
@@ -156,6 +160,10 @@ export default async function HelpPage() {
               at once; the next past service starts on the same date.
             </li>
             <li>
+              <Ui>Since I bought it</Ui>: if you added when you bought the bike, the task counts from that date and
+              odometer reading. Handy for a used bike that was serviced when you got it.
+            </li>
+            <li>
               <Ui>Start today</Ui>: if you don’t know, the task counts a full interval from today’s odometer reading.
               If you find an old receipt later, log it and the task counts from that instead.
             </li>
@@ -165,8 +173,8 @@ export default async function HelpPage() {
             </li>
           </ul>
           <p>
-            Open a task to choose for that task, or use <Ui>Start all today</Ui> or <Ui>None done yet</Ui> for all of
-            them at once.
+            Open a task to choose for that task, or use the buttons at the top of the group (<Ui>Start all today</Ui>,{' '}
+            <Ui>None done yet</Ui> and so on) for all of them at once.
           </p>
           <p>
             <Ui>Keep the odometer up to date.</Ui> Distance-based tasks can only count miles you’ve told SwingArm

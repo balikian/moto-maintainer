@@ -55,6 +55,8 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, exporte
       make: bike.make,
       model: bike.model,
       odometer_miles: bike.current_mileage,
+      bought_on: bike.purchased_on ?? null,
+      odometer_when_bought_miles: bike.purchase_mileage ?? null,
       added_on: bike.created_at?.slice(0, 10) ?? null,
       // The rider's own specs, as saved (lib/specs.ts); the manual's are shared, not the rider's data.
       specs: cleanBikeSpecs(bike.specs),

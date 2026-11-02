@@ -25,6 +25,8 @@ const exportFile = () =>
         model: 'Norden 901',
         year: 2023,
         current_mileage: 5200,
+        purchased_on: '2024-03-10',
+        purchase_mileage: 1200,
         specs: { values: { oil_with_filter: { value: 1.7, unit: 'L', page: 140 } }, custom: [{ label: 'Headlight bulb', text: 'H4' }] },
       } as Motorcycle,
     ],
@@ -64,6 +66,7 @@ describe('parseAccountImport', () => {
         make: 'Husqvarna',
         model: 'Norden 901',
         odometerMiles: 5200,
+        purchase: { purchasedOn: '2024-03-10', purchaseMileage: 1200 },
         specs: { values: { oil_with_filter: { value: 1.7, unit: 'L', page: 140 } }, custom: [{ label: 'Headlight bulb', text: 'H4' }] },
         tasks: [
           {
@@ -83,6 +86,20 @@ describe('parseAccountImport', () => {
         ],
       },
     ]);
+  });
+
+  it('drops a purchase that doesn’t fit the bike, and reads files without one', () => {
+    const file = exportFile() as { bikes: Record<string, unknown>[] };
+    file.bikes[0].odometer_when_bought_miles = 9000;
+    const tooHigh = parse(file);
+    assert.ok('data' in tooHigh);
+    assert.deepEqual(tooHigh.data.bikes[0].purchase, { purchasedOn: null, purchaseMileage: null });
+
+    delete file.bikes[0].bought_on;
+    delete file.bikes[0].odometer_when_bought_miles;
+    const older = parse(file);
+    assert.ok('data' in older);
+    assert.deepEqual(older.data.bikes[0].purchase, { purchasedOn: null, purchaseMileage: null });
   });
 
   it('never carries ids, owners or emails from the file', () => {

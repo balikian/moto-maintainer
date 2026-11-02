@@ -28,6 +28,9 @@ export interface Motorcycle {
   year: number;
   /** Null until the rider enters a reading. */
   current_mileage: number | null;
+  /** When the rider bought the bike, with the odometer then (miles); both null if not given. */
+  purchased_on?: string | null;
+  purchase_mileage?: number | null;
   /** The rider's own spec values, over the manual's (lib/specs.ts). Read through cleanBikeSpecs. */
   specs?: unknown;
   created_at?: string;

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { isIsoDate } from './dates';
+import { checkPurchase, type BikePurchase } from './maintenance';
 import { normalizeShop, SHOP_MAX_LENGTH } from './serviceVisits';
 import { cleanBikeSpecs, type BikeSpecs } from './specs';
 import { guessCategory, TASK_CATEGORIES, type TaskCategory } from './taskCategories';
@@ -62,6 +63,9 @@ const bikeSchema = (maxYear: number) =>
     make: requiredText(100),
     model: requiredText(100),
     odometer_miles: miles.nullish(),
+    // Older files have neither.
+    bought_on: isoDate.nullish(),
+    odometer_when_bought_miles: miles.nullish(),
     // Checked by cleanBikeSpecs, which drops anything it doesn't know; older files have none.
     specs: z.unknown().optional(),
     maintenance_tasks: z.array(taskSchema).max(IMPORT_LIMITS.tasksPerBike, `has more than ${IMPORT_LIMITS.tasksPerBike} tasks`).default([]),
@@ -104,6 +108,8 @@ export type ImportBike = {
   model: string;
   /** Null when there was no reading. */
   odometerMiles: number | null;
+  /** When the rider bought it; both null if the file doesn't say, or says something that doesn't fit the bike. */
+  purchase: BikePurchase;
   specs: BikeSpecs;
   tasks: ImportTask[];
   logs: ImportLog[];
@@ -119,6 +125,16 @@ function categoryFromFile(value: string | null | undefined, taskName: string): T
   const wanted = value?.trim().toLowerCase();
   const match = TASK_CATEGORIES.find((category) => category.label.toLowerCase() === wanted || category.id === wanted);
   return match?.id ?? guessCategory(taskName);
+}
+
+/** The purchase date and odometer from the file, if both are there and fit the bike; else none, rather than failing the import. */
+function purchaseFromFile(
+  bike: { year: number; odometer_miles?: number | null; bought_on?: string | null; odometer_when_bought_miles?: number | null },
+  today: string
+): BikePurchase {
+  const purchase: BikePurchase = { purchasedOn: bike.bought_on ?? null, purchaseMileage: bike.odometer_when_bought_miles ?? null };
+  const problem = checkPurchase(purchase, { year: bike.year, currentMileage: bike.odometer_miles ?? null }, (date) => date > today);
+  return problem ? { purchasedOn: null, purchaseMileage: null } : purchase;
 }
 
 /** "bikes.0.service_history.3.cost" → "Bike 1, service record 4, cost" */
@@ -170,6 +186,7 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
         make: bike.make,
         model: bike.model,
         odometerMiles: bike.odometer_miles ?? null,
+        purchase: purchaseFromFile(bike, today),
         specs: cleanBikeSpecs(bike.specs),
         tasks: bike.maintenance_tasks.map((task) => ({
           taskName: task.name,

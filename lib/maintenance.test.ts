@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
   baselineFromLogs,
+  checkPurchase,
   countTasksByStatus,
   findDefaultTask,
   fromNewBaseline,
@@ -13,6 +14,7 @@ import {
   groupTasksByUrgency,
   hasStartPoint,
   NO_START,
+  purchaseBaseline,
   scheduleOverlapsTasks,
   startTodayBaseline,
 } from './maintenance';
@@ -186,6 +188,30 @@ describe('task baselines', () => {
     const state = getTaskDueState({ interval_mileage: 4000, interval_months: 12, ...startTodayBaseline(20000, '2026-09-29') }, 20000, today);
     assert.equal(state.status, 'Healthy');
     assert.equal(state.fractionRemaining, 1);
+  });
+
+  it('counts from when the rider bought the bike, if given', () => {
+    assert.deepEqual(purchaseBaseline({ purchased_on: '2025-05-03', purchase_mileage: 8120 }), {
+      last_performed_mileage: 8120,
+      last_performed_date: '2025-05-03',
+    });
+    assert.equal(purchaseBaseline({ purchased_on: null, purchase_mileage: null }), null);
+    assert.equal(purchaseBaseline({}), null);
+  });
+
+  it('checks the purchase date and odometer', () => {
+    const never = () => false;
+    const bike = { year: 2024, currentMileage: 9000 };
+    const check = (purchasedOn: string | null, purchaseMileage: number | null) => checkPurchase({ purchasedOn, purchaseMileage }, bike, never);
+    assert.equal(check(null, null), null);
+    assert.equal(check('2025-05-03', 8120), null);
+    assert.equal(check('2023-09-15', 0), null);
+    assert.match(check('2025-05-03', null)!, /odometer/);
+    assert.match(check(null, 8120)!, /date/);
+    assert.match(check('2022-12-31', 0)!, /before 2024 models/);
+    assert.match(check('2025-05-03', 9500)!, /higher than its reading now/);
+    assert.match(checkPurchase({ purchasedOn: '2030-01-01', purchaseMileage: 0 }, bike, () => true)!, /future/);
+    assert.equal(checkPurchase({ purchasedOn: '2025-05-03', purchaseMileage: 9500 }, { year: 2024, currentMileage: null }, never), null);
   });
 
   it('uses the latest log, by date and then odometer', () => {

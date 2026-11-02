@@ -13,7 +13,7 @@ import {
 } from '@/lib/actions/tasks';
 import type { CustomModel } from '@/lib/bikeCatalog';
 import { todayIsoDate } from '@/lib/dates';
-import { countTasksByStatus, findDefaultTask, hasStartPoint, scheduleOverlapsTasks } from '@/lib/maintenance';
+import { countTasksByStatus, findDefaultTask, hasStartPoint, scheduleOverlapsTasks, type TaskStart } from '@/lib/maintenance';
 import { fetchModelSchedule, fetchModelSpecs } from '@/lib/modelData';
 import { trackEvent } from '@/lib/analytics';
 import { shopSuggestions } from '@/lib/serviceVisits';
@@ -237,7 +237,7 @@ export default function GarageApp() {
   };
 
   const handleEditBike = async (bike: Motorcycle, values: BikeFormValues) => {
-    const result = await updateBikeAction(bike.id, { year: values.year, make: values.make, model: values.model });
+    const result = await updateBikeAction(bike.id, { year: values.year, make: values.make, model: values.model, purchase: values.purchase });
     if (result.error) return result.error;
     setDialog(null);
     bikesQuery.reload();
@@ -321,7 +321,7 @@ export default function GarageApp() {
     reloadTasks();
   };
 
-  const handleSetStart = async (startTasks: MaintenanceTask[], start: 'today' | 'new') => {
+  const handleSetStart = async (startTasks: MaintenanceTask[], start: TaskStart) => {
     if (!activeBike) return;
     const result = await setTaskStartAction({
       motorcycleId: activeBike.id,

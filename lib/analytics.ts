@@ -9,7 +9,7 @@ import { track } from '@vercel/analytics';
 type AnalyticsEvents = {
   'Bike added': { make: string; model: string };
   'Service logged': { tasks: number; past: boolean };
-  'Start points set': { start: 'today' | 'new'; tasks: number };
+  'Start points set': { start: 'today' | 'new' | 'bought'; tasks: number };
   'Schedule applied': Record<string, never>;
   'Custom task added': Record<string, never>;
   'Share link created': Record<string, never>;

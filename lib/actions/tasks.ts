@@ -1,7 +1,7 @@
 'use server';
 
 import { isFutureEverywhere, isIsoDate } from '../dates';
-import { baselineFromLogs, fromNewBaseline, logMileage, startTodayBaseline } from '../maintenance';
+import { baselineFromLogs, fromNewBaseline, logMileage, purchaseBaseline, startTodayBaseline, type TaskStart } from '../maintenance';
 import { guessCategory, isTaskCategory, type TaskCategory } from '../taskCategories';
 import { normalizeShop, SHOP_MAX_LENGTH } from '../serviceVisits';
 import { getSignedInClient } from '../supabase/server';
@@ -298,13 +298,13 @@ async function rewindTaskIfNeeded(
 
 /**
  * Gives tasks without a start point one: "today" counts from today at the
- * bike's current odometer, "new" from when the bike was new. Tasks that
- * already have a start point are left alone.
+ * bike's current odometer, "new" from when the bike was new, "bought" from
+ * when the rider bought it. Tasks that already have a start point are left alone.
  */
 export async function setTaskStartAction(input: {
   motorcycleId: string;
   taskIds: string[];
-  start: 'today' | 'new';
+  start: TaskStart;
   /** The rider's calendar day, so "today" matches their time zone. */
   today: string;
 }): Promise<ActionResult> {
@@ -312,20 +312,25 @@ export async function setTaskStartAction(input: {
   if (!user) return { error: SIGNED_OUT_ERROR };
 
   if (input.taskIds.length === 0) return {};
-  if (input.start !== 'today' && input.start !== 'new') return { error: 'Choose when to start counting.' };
+  if (!['today', 'new', 'bought'].includes(input.start)) return { error: 'Choose when to start counting.' };
   if (!isIsoDate(input.today)) return { error: 'Please enter a valid date.' };
 
-  const bike = await supabase.from('motorcycles').select('year,current_mileage').eq('id', input.motorcycleId).maybeSingle();
+  const bike = await supabase.from('motorcycles').select('year,current_mileage,purchased_on,purchase_mileage').eq('id', input.motorcycleId).maybeSingle();
   if (bike.error) return { error: bike.error.message };
   if (!bike.data) return { error: 'Motorcycle not found.' };
   if (input.start === 'today' && bike.data.current_mileage === null) {
     return { error: 'Enter your odometer reading first, so there’s a starting point for the miles.' };
   }
 
+  const bought = purchaseBaseline(bike.data);
+  if (input.start === 'bought' && !bought) return { error: 'Add when you bought the bike first (Garage, ⋯, Edit bike).' };
+
   const baseline =
     input.start === 'new'
       ? fromNewBaseline(Number(bike.data.year))
-      : startTodayBaseline(Number(bike.data.current_mileage), input.today);
+      : input.start === 'bought'
+        ? bought!
+        : startTodayBaseline(Number(bike.data.current_mileage), input.today);
 
   const { error } = await supabase
     .from('maintenance_tasks')

@@ -17,6 +17,8 @@ add a line when a feature ships. Main code paths are in brackets.
 - New bike's tasks: the manufacturer schedule if there is one, else generic tasks by final drive and cooling, all without a start point. [`addBikeAction`, `getDefaultTasks`, `genericTasksFor`]
 - "When were these last done?": Log a past service (any of these tasks, the next one starts on the same date), Start today, Never done, and Start all today / None done yet, each with a confirm. [`MaintenanceChecklist`, `setTaskStartAction`]
 - Start today needs an odometer reading; Never done counts from 0 and January 1 of the model year. [`setTaskStartAction`, `fromNewBaseline`]
+- Since I bought it (per task and for the group) shows only when the bike has a purchase date, and counts from that date and odometer. Without one, the group's text says where to add it. [`purchaseBaseline`, `setTaskStartAction`]
+- Purchase date and odometer on Add and Edit bike: optional, both or neither, not in the future, not before the model year went on sale, not above the current odometer; clearing both removes it. In the data export and import. [`checkPurchase`, `addBikeAction`, `updateBikeAction`]
 - Due states: distance or time, whichever comes first; Soon at 25% left, Urgent at 10%, Overdue past due; no-interval and no-start tasks. [`getTaskDueState`]
 - Sorting: no-start group first, then cards most due first, then "All good" rows; ties by name. [`groupTasksByUrgency`]
 - Odometer update: saves in miles, the same reading counts as a check-in, no reading shows Add reading. [`OdometerControl`, `updateOdometerAction`]

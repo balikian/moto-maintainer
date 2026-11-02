@@ -1,7 +1,8 @@
 'use server';
 
 import { BASE_CATALOG, isInCatalog } from '../bikeCatalog';
-import { DEFAULT_BIKE_SETUP, getDefaultTasks, NO_START, type BikeSetup } from '../maintenance';
+import { isFutureEverywhere } from '../dates';
+import { checkPurchase, DEFAULT_BIKE_SETUP, getDefaultTasks, NO_START, type BikePurchase, type BikeSetup } from '../maintenance';
 import { fetchModelSchedule } from '../modelData';
 import { cleanBikeSpecs, type BikeSpecs } from '../specs';
 import { getSignedInClient } from '../supabase/server';
@@ -28,12 +29,27 @@ async function suggestCustomModel(supabase: Awaited<ReturnType<typeof getSignedI
   });
 }
 
+/** The purchase as saved, with the odometer rounded, or an error message. */
+function cleanPurchase(input: BikePurchase | undefined, bike: { year: number; currentMileage: number | null }): BikePurchase | { error: string } {
+  const purchase: BikePurchase = {
+    purchasedOn: input?.purchasedOn || null,
+    purchaseMileage: input?.purchaseMileage === null || input?.purchaseMileage === undefined ? null : normalizeMileage(input.purchaseMileage),
+  };
+  if (input?.purchaseMileage !== null && input?.purchaseMileage !== undefined && purchase.purchaseMileage === null) {
+    return { error: 'Please enter a valid odometer reading.' };
+  }
+  const error = checkPurchase(purchase, bike, isFutureEverywhere);
+  return error ? { error } : purchase;
+}
+
 type AddBikeInput = {
   year: number;
   make: string;
   model: string;
   /** Null when the rider will enter it later. */
   currentMileage: number | null;
+  /** Optional: when the rider bought it, so tasks can count from then. */
+  purchase?: BikePurchase;
   /** Picks the generic starter tasks when there's no manufacturer schedule. */
   setup?: BikeSetup;
 };
@@ -58,10 +74,20 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
   if (input.currentMileage !== null && currentMileage === null) {
     return { error: 'Please enter a valid odometer reading.' };
   }
+  const purchase = cleanPurchase(input.purchase, { year, currentMileage });
+  if ('error' in purchase) return purchase;
 
   const { data: bike, error } = await supabase
     .from('motorcycles')
-    .insert({ user_id: user.id, year, make, model, current_mileage: currentMileage })
+    .insert({
+      user_id: user.id,
+      year,
+      make,
+      model,
+      current_mileage: currentMileage,
+      purchased_on: purchase.purchasedOn,
+      purchase_mileage: purchase.purchaseMileage,
+    })
     .select()
     .single();
 
@@ -95,10 +121,10 @@ export async function addBikeAction(input: AddBikeInput): Promise<ActionResult<M
   return { data: bike as Motorcycle };
 }
 
-/** Changes a bike's year, make, or model. Its tasks and service history are left as they are. */
+/** Changes a bike's year, make, model, or when it was bought. Its tasks and service history are left as they are. */
 export async function updateBikeAction(
   bikeId: string,
-  input: { year: number; make: string; model: string }
+  input: { year: number; make: string; model: string; purchase: BikePurchase }
 ): Promise<ActionResult> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
@@ -110,9 +136,15 @@ export async function updateBikeAction(
     return { error: 'Please choose a year, make, and model.' };
   }
 
+  const current = await supabase.from('motorcycles').select('current_mileage').eq('id', bikeId).maybeSingle();
+  if (current.error) return { error: current.error.message };
+  if (!current.data) return { error: 'Motorcycle not found.' };
+  const purchase = cleanPurchase(input.purchase, { year, currentMileage: current.data.current_mileage as number | null });
+  if ('error' in purchase) return purchase;
+
   const { data, error } = await supabase
     .from('motorcycles')
-    .update({ year, make, model })
+    .update({ year, make, model, purchased_on: purchase.purchasedOn, purchase_mileage: purchase.purchaseMileage })
     .eq('id', bikeId)
     .select('id');
 

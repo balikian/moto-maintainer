@@ -1,7 +1,7 @@
-import { addMonths, daysBetween, parseIsoDate } from './dates';
+import { addMonths, daysBetween, isIsoDate, parseIsoDate } from './dates';
 import { guessCategory, taskCategory, type TaskCategory } from './taskCategories';
-import type { MaintenanceTask, ModelSchedule } from './types';
-import { fromDisplayDistance } from './units';
+import type { MaintenanceTask, ModelSchedule, Motorcycle } from './types';
+import { fromDisplayDistance, normalizeMileage } from './units';
 
 export type TaskDefaults = Pick<MaintenanceTask, 'task_name' | 'interval_mileage' | 'interval_months' | 'is_diy'> & {
   category: TaskCategory;
@@ -120,6 +120,41 @@ export function fromNewBaseline(bikeYear: number): TaskBaseline {
 /** Counting from today, at the bike's current odometer: for when the rider doesn't know. */
 export function startTodayBaseline(currentMileage: number, today: string): TaskBaseline {
   return { last_performed_mileage: currentMileage, last_performed_date: today };
+}
+
+/** The start points a rider can give tasks that have none: today, from new, or since they bought the bike. */
+export type TaskStart = 'today' | 'new' | 'bought';
+
+/** Counting from when the rider bought the bike, at the odometer then; null if the bike has no purchase date. */
+export function purchaseBaseline(bike: Pick<Motorcycle, 'purchased_on' | 'purchase_mileage'>): TaskBaseline | null {
+  if (!bike.purchased_on || bike.purchase_mileage === null || bike.purchase_mileage === undefined) return null;
+  return { last_performed_mileage: Number(bike.purchase_mileage), last_performed_date: bike.purchased_on.slice(0, 10) };
+}
+
+/** When the rider bought the bike, as saved: both null, or a date and an odometer reading in miles. */
+export type BikePurchase = { purchasedOn: string | null; purchaseMileage: number | null };
+
+/**
+ * Checks a purchase date and odometer against the bike: both or neither, not
+ * in the future (`isFuture`, which differs in the browser and on the server),
+ * not before the model year went on sale (the autumn before), and not past the
+ * odometer now. Returns an error message, or null if it's fine.
+ */
+export function checkPurchase(
+  purchase: BikePurchase,
+  bike: { year: number; currentMileage: number | null },
+  isFuture: (date: string) => boolean
+): string | null {
+  const { purchasedOn, purchaseMileage } = purchase;
+  if (purchasedOn === null && purchaseMileage === null) return null;
+  if (purchasedOn === null || !isIsoDate(purchasedOn)) return 'Please enter the date you bought it.';
+  if (purchaseMileage === null || normalizeMileage(purchaseMileage) === null) return 'Please enter the odometer reading when you bought it.';
+  if (isFuture(purchasedOn)) return 'The date you bought it can’t be in the future.';
+  if (purchasedOn < `${bike.year - 1}-01-01`) return `That’s before ${bike.year} models went on sale. Check the date and the model year.`;
+  if (bike.currentMileage !== null && purchaseMileage > bike.currentMileage) {
+    return 'The odometer when you bought it is higher than its reading now.';
+  }
+  return null;
 }
 
 /** The miles a service log's task counts from: its reading, else the bike's odometer saved when it was logged. */

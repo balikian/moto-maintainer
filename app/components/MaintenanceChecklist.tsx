@@ -1,11 +1,12 @@
 'use client';
 
 import { BookOpen, CheckCircle, ChevronDown, History, Plus } from 'lucide-react';
-import { groupTasksByUrgency, type TaskDueState } from '@/lib/maintenance';
+import { formatDisplayDate } from '@/lib/dates';
+import { groupTasksByUrgency, purchaseBaseline, type TaskDueState, type TaskStart } from '@/lib/maintenance';
 import type { ResolvedSpec } from '@/lib/specs';
 import { batchCandidates, type TaskCategory } from '@/lib/taskCategories';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
-import { distanceUnitLabel } from '@/lib/units';
+import { distanceUnitLabel, formatDistance } from '@/lib/units';
 import { useStoredToggle } from '../hooks/useStoredToggle';
 import ConfirmPopover from './ConfirmPopover';
 import TaskCard from './TaskCard';
@@ -26,8 +27,8 @@ type MaintenanceChecklistProps = {
   onSaveIntervals: (task: MaintenanceTask, intervals: { intervalMileage: number; intervalMonths: number; category: TaskCategory }) => Promise<string | null>;
   onResetTask: (task: MaintenanceTask) => void;
   onDeleteTask: (task: MaintenanceTask) => void;
-  /** Gives tasks without a start point one: today, or from when the bike was new. */
-  onSetStart: (tasks: MaintenanceTask[], start: 'today' | 'new') => void;
+  /** Gives tasks without a start point one: today, from when the bike was new, or since the rider bought it. */
+  onSetStart: (tasks: MaintenanceTask[], start: TaskStart) => void;
   /** The bike's specs, shown on the tasks they go with. */
   specs: ResolvedSpec[];
   onOpenSpecs: () => void;
@@ -61,6 +62,10 @@ export default function MaintenanceChecklist({
   const noStartTasks = noStart.map(({ task }) => task);
   const count = noStartTasks.length;
   const these = count === 1 ? 'this task' : `all ${count}`;
+  const bought = purchaseBaseline(bike);
+  const boughtLabel = bought
+    ? `${formatDisplayDate(bought.last_performed_date!)} at ${formatDistance(bought.last_performed_mileage!, unitSystem)}`
+    : null;
 
   const renderTask = ({ task, dueState }: { task: MaintenanceTask; dueState: TaskDueState }, variant: 'card' | 'row') => (
     <TaskCard
@@ -77,6 +82,7 @@ export default function MaintenanceChecklist({
       onDelete={() => onDeleteTask(task)}
       onSetStart={(start) => onSetStart([task], start)}
       bikeYear={bike.year}
+      boughtLabel={boughtLabel}
       specs={specs}
       onOpenSpecs={onOpenSpecs}
     />
@@ -112,7 +118,10 @@ export default function MaintenanceChecklist({
                   <h3 className="text-base font-bold">When were these last done?</h3>
                   <p className="mt-1 text-sm text-muted">
                     {count === 1 ? 'This task' : `These ${count} tasks`} won&apos;t come due until they have a start point. Log
-                    a past service, ticking everything done at that visit. Don&apos;t know? Start counting today.
+                    a past service, ticking everything done at that visit.{' '}
+                    {boughtLabel
+                      ? 'Don’t know? Count from when you bought the bike, or from today.'
+                      : 'Don’t know? Start counting today. Bought it used? Add when you bought it (Garage, ⋯, Edit bike) to count from then.'}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -120,6 +129,20 @@ export default function MaintenanceChecklist({
                     <History size={15} />
                     Log a past service
                   </button>
+                  {boughtLabel && (
+                    <ConfirmPopover
+                      align="left"
+                      message={`Count ${these} from when you bought the bike (${boughtLabel})? You can still log past services for them later.`}
+                      confirmLabel="Count from then"
+                      onConfirm={() => onSetStart(noStartTasks, 'bought')}
+                    >
+                      {(openConfirm, popoverProps) => (
+                        <button type="button" onClick={openConfirm} {...popoverProps} className={ui.secondaryButton}>
+                          Since I bought it
+                        </button>
+                      )}
+                    </ConfirmPopover>
+                  )}
                   <ConfirmPopover
                     align="left"
                     message={`Start counting ${these} today? You can still log past services for them later.`}

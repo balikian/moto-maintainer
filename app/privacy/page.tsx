@@ -18,7 +18,7 @@ export default async function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy policy"
-      updated="October 30, 2026"
+      updated="November 2, 2026"
       signedIn={user !== null}
       intro={
         <>
@@ -40,8 +40,8 @@ export default async function PrivacyPage() {
             and profile picture.
           </li>
           <li>
-            <strong>Your bikes and service:</strong> each bike’s year, make, model, odometer readings and the specs you
-            enter, your maintenance tasks and intervals, and the service you log (dates, odometer readings, where it was done, costs and notes).
+            <strong>Your bikes and service:</strong> each bike’s year, make, model, odometer readings, when you bought it
+            (if you say) and the specs you enter, your maintenance tasks and intervals, and the service you log (dates, odometer readings, where it was done, costs and notes).
           </li>
           <li>
             <strong>Your settings:</strong> distance units, theme, which reminder emails and push notifications you want,

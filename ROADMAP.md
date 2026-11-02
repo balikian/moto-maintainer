@@ -315,7 +315,7 @@ released 2026-10-23, migration on production first; from
   https://claude.ai/artifact/3DgbY84PudX9M3xdG4JczD (A today's, B dot and
   bigger title, C status tag and thin line, D grouped rows). **On hold**
   (owner, 2026-10-23); today's cards stay.
-- 💤 A purchase date on the bike (John): post-launch, below.
+- 🔨 A purchase date on the bike (John): built 2026-11-02, below.
 
 Discussed (2026-10-21), nothing decided: other sign-in options. Passkeys
 are the most secure and quickest but Supabase's support is limited (check
@@ -1148,6 +1148,21 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   launch). So "Never done" and time-based tasks on a used bike count from
   when the rider bought it, not January of the model year. Start points
   (Start today, Log a past service) cover most of this already.
+  🔨 Built (2026-11-02, on `develop`; owner to try on test): an optional
+  "When you bought it" (date and odometer then, both or neither) on Add
+  and Edit bike, and a fourth start point, **Since I bought it**, per task
+  and for the whole "When were these last done?" group, shown only when
+  the bike has one; without one, the group's text says where to add it.
+  Checked in the browser and on the server (`checkPurchase`): not in the
+  future, not before the model year went on sale (January of the year
+  before), not above the current odometer. In the data export and import
+  (an import drops one that doesn't fit). Help and privacy updated.
+  Migration `20261102120000_bike_purchase.sql` (`motorcycles.purchased_on`,
+  `purchase_mileage`), on test only.
+
+**Order picked (owner, 2026-11-02):** purchase date first, then preferred
+shop with scheduling (shop maybe first; they could be built together),
+then storage mode and the battery reminder, since it's storage season.
 - **Upgrade wish list** (owner, 2026-10-14). Mods and accessories the rider
   is thinking about for a bike: a different exhaust, hand guards, crash
   bars, and so on. Each item has a name, an estimated cost, and links to
