@@ -438,6 +438,7 @@ export default function GarageApp() {
                 onUpdateOdometer={handleUpdateOdometer}
                 editOdometer={odometerLinkBikeId === activeBike.id}
                 onCancelOdometer={() => setOdometerLinkBikeId(null)}
+                onOpenSpecs={() => setDialog({ type: 'specs', bikeId: activeBike.id })}
               />
               <BikeList
                 className="hidden lg:block"

@@ -1216,13 +1216,24 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
       admin fix, remove or add specs, and saves them to `model_specs`
       (`saveModelSpecsAction`) for the same years and models as the
       schedule.
-    - 🔨 On tasks (built 2026-10-29, owner to try): an opened task shows
+    - ✅ On tasks (2026-10-29): an opened task shows
       the specs that go with it (`specsForTasks`), with "All specs" to open
       the Specs dialog, or "No engine oil specs yet. Add them" when empty.
       Log service shows the specs for the ticked tasks (not for a past
       service). The dashboard loads the active bike's manual specs once.
       Help has a "Your bike's specs" section.
-    - ⏳ Specs in the account export/import and the shared history.
+    - 🔨 Export and history (built 2026-10-30, owner to try): Download my
+      data and Import a backup carry each bike's own specs (`specs`, as
+      saved; the format stays version 1, since older files just have
+      none). The printable and shared history end with a Specs section
+      (listed specs only, never the rider's own rows, which can hold
+      anything). `get_shared_history` returns the bike's values and the
+      manual's approved ones (migration
+      `20261030120000_shared_history_specs.sql`, on test only). Privacy
+      and help updated.
+    - ✅ Merged into `develop` (2026-11-01) so the owner can try it all on
+      the test site. Before releasing to `main`: push both specs
+      migrations to production (owner's go-ahead).
 
 ## Smaller items and ideas
 

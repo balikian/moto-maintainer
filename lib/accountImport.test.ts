@@ -18,7 +18,15 @@ const exportFile = () =>
     email: 'rider@example.com',
     profile: { unit_system: 'metric' },
     bikes: [
-      { id: 'b1', user_id: 'someone-else', make: 'Husqvarna', model: 'Norden 901', year: 2023, current_mileage: 5200 } as Motorcycle,
+      {
+        id: 'b1',
+        user_id: 'someone-else',
+        make: 'Husqvarna',
+        model: 'Norden 901',
+        year: 2023,
+        current_mileage: 5200,
+        specs: { values: { oil_with_filter: { value: 1.7, unit: 'L', page: 140 } }, custom: [{ label: 'Headlight bulb', text: 'H4' }] },
+      } as Motorcycle,
     ],
     tasks: [
       {
@@ -56,6 +64,7 @@ describe('parseAccountImport', () => {
         make: 'Husqvarna',
         model: 'Norden 901',
         odometerMiles: 5200,
+        specs: { values: { oil_with_filter: { value: 1.7, unit: 'L', page: 140 } }, custom: [{ label: 'Headlight bulb', text: 'H4' }] },
         tasks: [
           {
             taskName: 'Front tire',
@@ -87,6 +96,19 @@ describe('parseAccountImport', () => {
     for (const leaked of ['victim', 'someone-else', 'rider@example.com', '"id"']) {
       assert.ok(!text.includes(leaked), leaked);
     }
+  });
+
+  it('keeps only well-formed specs, and reads files without any', () => {
+    const file = exportFile() as { bikes: Record<string, unknown>[] };
+    file.bikes[0].specs = { values: { oil_grade: { text: '10W-40' }, made_up: { text: 'x' }, fuel_tank: { value: 'lots', unit: 'L' } }, custom: 'nope' };
+    const withBadSpecs = parse(file);
+    assert.ok('data' in withBadSpecs);
+    assert.deepEqual(withBadSpecs.data.bikes[0].specs, { values: { oil_grade: { text: '10W-40' } }, custom: [] });
+
+    delete file.bikes[0].specs;
+    const older = parse(file);
+    assert.ok('data' in older);
+    assert.deepEqual(older.data.bikes[0].specs, { values: {}, custom: [] });
   });
 
   it('rejects files that aren’t SwingArm data', () => {

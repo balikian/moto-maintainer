@@ -228,8 +228,8 @@ export default async function HelpPage() {
 
         <Section id="specs">
           <p>
-            Oil grade and amount, tire pressures, torques: the numbers you look up again and again. In Garage, tap{' '}
-            <Ui>Specs</Ui> on a bike to see them. When we’ve read your model’s owner’s manual, its values are filled in
+            Oil grade and amount, tire pressures, torques: the numbers you look up again and again. Tap <Ui>Specs</Ui> next to
+            the odometer on Tasks, or on a bike in Garage, to see them. When we’ve read your model’s owner’s manual, its values are filled in
             and marked with the manual’s page, like <Ui>Manual p. 142</Ui>.
           </p>
           <p>
@@ -269,7 +269,7 @@ export default async function HelpPage() {
           <p>
             <Ui>Share</Ui> on History, then <Ui>Create share link</Ui>, gives you a read-only page anyone with the link
             can open, handy when you sell the bike or hand it to a shop. It shows dates, odometer readings, where it
-            was done, costs and notes, never your email. <Ui>Turn off link</Ui> stops it working.
+            was done, costs and notes, and the bike’s specs, never your email. <Ui>Turn off link</Ui> stops it working.
           </p>
           <p>
             <Ui>Export</Ui> on History gives you:
@@ -316,7 +316,8 @@ export default async function HelpPage() {
               the link opens in Safari, which doesn’t share the Home Screen app’s sign-in.
             </li>
             <li>
-              <Ui>Download my data</Ui>: every bike, task and service record in one file, to keep as a backup.
+              <Ui>Download my data</Ui>: every bike, with its specs, tasks and service records, in one file, to keep as
+              a backup.
             </li>
             <li>
               <Ui>Import a backup</Ui>: adds bikes from that file, with their tasks and history, e.g. to restore them or

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { isIsoDate } from './dates';
 import { normalizeShop, SHOP_MAX_LENGTH } from './serviceVisits';
+import { cleanBikeSpecs, type BikeSpecs } from './specs';
 import { guessCategory, TASK_CATEGORIES, type TaskCategory } from './taskCategories';
 
 // Reading a "Download my data" file (lib/accountExport.ts) back in. The file
@@ -61,6 +62,8 @@ const bikeSchema = (maxYear: number) =>
     make: requiredText(100),
     model: requiredText(100),
     odometer_miles: miles.nullish(),
+    // Checked by cleanBikeSpecs, which drops anything it doesn't know; older files have none.
+    specs: z.unknown().optional(),
     maintenance_tasks: z.array(taskSchema).max(IMPORT_LIMITS.tasksPerBike, `has more than ${IMPORT_LIMITS.tasksPerBike} tasks`).default([]),
     service_history: z.array(logSchema).max(IMPORT_LIMITS.logsPerBike, `has more than ${IMPORT_LIMITS.logsPerBike} service records`).default([]),
   });
@@ -101,6 +104,7 @@ export type ImportBike = {
   model: string;
   /** Null when there was no reading. */
   odometerMiles: number | null;
+  specs: BikeSpecs;
   tasks: ImportTask[];
   logs: ImportLog[];
 };
@@ -166,6 +170,7 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
         make: bike.make,
         model: bike.model,
         odometerMiles: bike.odometer_miles ?? null,
+        specs: cleanBikeSpecs(bike.specs),
         tasks: bike.maintenance_tasks.map((task) => ({
           taskName: task.name,
           category: categoryFromFile(task.category, task.name),

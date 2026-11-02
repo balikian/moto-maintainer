@@ -11,7 +11,7 @@ type SignedInClient = Awaited<ReturnType<typeof getSignedInClient>>['supabase'];
 async function saveBike(supabase: SignedInClient, userId: string, bike: ImportBike): Promise<{ id?: string; error?: string }> {
   const { data: saved, error } = await supabase
     .from('motorcycles')
-    .insert({ user_id: userId, year: bike.year, make: bike.make, model: bike.model, current_mileage: bike.odometerMiles })
+    .insert({ user_id: userId, year: bike.year, make: bike.make, model: bike.model, current_mileage: bike.odometerMiles, specs: bike.specs })
     .select('id')
     .single();
   if (error || !saved) return { error: error?.message ?? 'Couldn’t save a bike.' };
