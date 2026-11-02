@@ -1189,7 +1189,7 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   - Torque values are tempting but safety-critical: only from the manual,
     with the source shown.
   - Open: Free or Pro.
-  - 🔨 **Building (2026-10-29, branch `feature/specs`).** Decided with the
+  - ✅ **Released (2026-11-01; built from 2026-10-29 on `feature/specs`).** Decided with the
     owner: the list in `lib/specs.ts` (fuel, engine oil, air filter, tires
     and wheels, chain drive, shaft drive, cooling, brakes and clutch,
     suspension, valve clearances, electrical, plus the rider's own rows).
@@ -1198,7 +1198,8 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
     (`specGroupsForTask`) for showing specs on tasks.
     - ✅ Data: `motorcycles.specs` (the bike's own values, over the
       manual's) and `model_specs` (shared, pending/approved like
-      schedules), migration `20261029120000_bike_specs.sql`, on test only.
+      schedules), migration `20261029120000_bike_specs.sql`, on test and
+      production.
     - ✅ Specs dialog from each bike in Garage: a quick read-only list
       ("Manual p. 142" or "Yours" under each value), and Edit, where the
       manual's values are gray placeholders and an empty field keeps them.
@@ -1229,7 +1230,7 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
       (listed specs only, never the rider's own rows, which can hold
       anything). `get_shared_history` returns the bike's values and the
       manual's approved ones (migration
-      `20261030120000_shared_history_specs.sql`, on test only). Privacy
+      `20261030120000_shared_history_specs.sql`, on test and production). Privacy
       and help updated.
     - 🔨 Favorites (owner, 2026-11-01; built, owner to try): a star on each
       spec in the Specs dialog; starred specs with a value show on the
@@ -1251,9 +1252,8 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
       grades drop "unleaded" and "SAE" (`shortGrade`).
       ⏳ Owner's idea (2026-11-01): show the pump grade instead (regular,
       mid grade, premium). Not decided.
-    - ✅ Merged into `develop` (2026-11-01) so the owner can try it all on
-      the test site. Before releasing to `main`: push both specs
-      migrations to production (owner's go-ahead).
+    - ✅ Released to swingarm.app (2026-11-01): both specs migrations
+      pushed to production first, then `develop` fast-forwarded to `main`.
 
 ## Smaller items and ideas
 
