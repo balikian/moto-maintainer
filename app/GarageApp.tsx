@@ -17,7 +17,7 @@ import { countTasksByStatus, findDefaultTask, hasStartPoint, scheduleOverlapsTas
 import { fetchModelSchedule, fetchModelSpecs } from '@/lib/modelData';
 import { trackEvent } from '@/lib/analytics';
 import { shopSuggestions } from '@/lib/serviceVisits';
-import { cleanBikeSpecs, cleanSpecValues, resolveSpecs, type BikeSpecs } from '@/lib/specs';
+import { cleanBikeSpecs, cleanSpecValues, pickFavoriteSpecs, resolveSpecs, type BikeSpecs, type SpecValues } from '@/lib/specs';
 import { createClient } from '@/lib/supabase/client';
 import type { MaintenanceTask, ModelSchedule, ModelSpecs, Motorcycle, ServiceLog } from '@/lib/types';
 import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
@@ -196,6 +196,23 @@ export default function GarageApp() {
   const activeSpecs = activeBike
     ? resolveSpecs(specsQuery.data ? cleanSpecValues(specsQuery.data.specs) : null, cleanBikeSpecs(activeBike.specs))
     : [];
+  const activeFavoriteSpecs = activeBike ? pickFavoriteSpecs(activeSpecs, cleanBikeSpecs(activeBike.specs).favorites) : [];
+
+  // Every bike's manual specs, for the starred specs on Garage's cards; loaded only on Garage.
+  const garageSpecsKey =
+    view === 'garage' && bikes.length > 0 ? bikes.map((bike) => `${bike.id}|${bike.year}|${bike.make}|${bike.model}`).join(',') : null;
+  const garageSpecsQuery = useSupabaseQuery<Record<string, SpecValues | null>>(garageSpecsKey, async () => {
+    // A bike whose lookup fails just shows its own values.
+    const results = await Promise.all(bikes.map((bike) => fetchModelSpecs(supabase, bike)));
+    const manual = bikes.map((bike, index) => [bike.id, results[index].data ? cleanSpecValues(results[index].data.specs) : null]);
+    return { data: Object.fromEntries(manual), error: null };
+  });
+  const garageFavoriteSpecs = Object.fromEntries(
+    bikes.map((bike) => {
+      const own = cleanBikeSpecs(bike.specs);
+      return [bike.id, pickFavoriteSpecs(resolveSpecs(garageSpecsQuery.data?.[bike.id], own), own.favorites)];
+    })
+  );
 
   const loadErrors = [bikesQuery.error, tasksQuery.error, logsQuery.error, allTasksQuery.error]
     .filter((message): message is string => Boolean(message))
@@ -439,6 +456,7 @@ export default function GarageApp() {
                 editOdometer={odometerLinkBikeId === activeBike.id}
                 onCancelOdometer={() => setOdometerLinkBikeId(null)}
                 onOpenSpecs={() => setDialog({ type: 'specs', bikeId: activeBike.id })}
+                favoriteSpecs={activeFavoriteSpecs}
               />
               <BikeList
                 className="hidden lg:block"
@@ -504,6 +522,7 @@ export default function GarageApp() {
             bikes={bikes}
             activeBikeId={activeBikeId}
             allTasks={allTasksQuery.data}
+            favoriteSpecs={garageFavoriteSpecs}
             unitSystem={unitSystem}
             onOpen={(bikeId) => {
               setSelectedBikeId(bikeId);
@@ -607,8 +626,9 @@ export default function GarageApp() {
           }}
           onClose={() => {
             setDialog(null);
-            // Specs imported from the manual show on the tasks.
+            // Specs imported from the manual show on the tasks and in Garage.
             specsQuery.reload();
+            garageSpecsQuery.reload();
           }}
         />
       )}

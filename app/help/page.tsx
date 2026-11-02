@@ -237,6 +237,10 @@ export default async function HelpPage() {
             manual’s; leave a field empty to keep the manual’s value. Torques show in both N·m and lb-ft.
           </p>
           <p>
+            Tap the star next to a spec to show it on the bike’s card in Garage and at the top of Tasks. Fuel grade, oil
+            grade and tire pressures are starred to start with; tap a star again to remove it.
+          </p>
+          <p>
             Open a task to see the specs that go with it, like the oil and drain plug torque on an oil change.{' '}
             <Ui>Log service</Ui> shows them for everything you tick.
           </p>

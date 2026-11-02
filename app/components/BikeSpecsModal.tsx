@@ -2,12 +2,13 @@
 
 import { useState, type ReactNode, type SubmitEvent } from 'react';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { ChevronDown, Pencil, Plus, Trash2 } from 'lucide-react';
+import { ChevronDown, Pencil, Plus, Star, Trash2 } from 'lucide-react';
 import { useSupabaseQuery } from '@/app/hooks/useSupabaseQuery';
 import { fetchModelSpecs } from '@/lib/modelData';
 import {
   cleanBikeSpecs,
   cleanSpecValues,
+  favoriteSpecKeys,
   formatSpec,
   groupResolvedSpecs,
   isMeasured,
@@ -18,6 +19,7 @@ import {
   SPEC_GROUPS,
   specFromDraft,
   specNumberText,
+  toggleFavoriteSpec,
   unitsFor,
   type BikeSpecs,
   type CustomSpec,
@@ -56,6 +58,23 @@ export default function BikeSpecsModal({ supabase, bike, unitSystem, onClose, on
   );
   const manual = manualQuery.data ? cleanSpecValues(manualQuery.data.specs) : null;
   const [editing, setEditing] = useState(false);
+  // Kept here so a star fills as soon as it's tapped, before the bikes reload.
+  const [favorites, setFavorites] = useState(own.favorites);
+  const [favoriteError, setFavoriteError] = useState<string | null>(null);
+  const starred = favoriteSpecKeys(favorites);
+  const withFavorites = (specs: BikeSpecs): BikeSpecs => ({ ...specs, ...(favorites && { favorites }) });
+
+  const toggleFavorite = async (key: SpecKey) => {
+    const previous = favorites;
+    const next = toggleFavoriteSpec(favorites, key);
+    setFavorites(next);
+    setFavoriteError(null);
+    const error = await onSave({ ...own, favorites: next });
+    if (error) {
+      setFavorites(previous);
+      setFavoriteError(`Couldn’t save your star: ${error}`);
+    }
+  };
 
   if (editing) {
     return (
@@ -66,7 +85,7 @@ export default function BikeSpecsModal({ supabase, bike, unitSystem, onClose, on
           unitSystem={unitSystem}
           onCancel={() => setEditing(false)}
           onSave={async (specs) => {
-            const error = await onSave(specs);
+            const error = await onSave(withFavorites(specs));
             if (!error) setEditing(false);
             return error;
           }}
@@ -88,19 +107,37 @@ export default function BikeSpecsModal({ supabase, bike, unitSystem, onClose, on
         </div>
       ) : (
         <div className="space-y-5">
+          {groups.length > 0 && (
+            <p className={`text-sm ${ui.muted}`}>Starred specs show on the bike’s card in Garage and at the top of Tasks.</p>
+          )}
+          {favoriteError && <p className={ui.errorBox}>{favoriteError}</p>}
           {groups.map(({ group, specs }) => (
             <section key={group.id}>
               <h3 className={`${ui.subTitle} mb-1.5`}>{group.label}</h3>
               <dl className="divide-y divide-line rounded-xl border border-line">
-                {specs.map((spec) => (
-                  <div key={spec.key} className="flex items-baseline justify-between gap-3 px-3 py-2">
-                    <dt className="text-sm text-muted">{spec.label}</dt>
-                    <dd className="text-right">
-                      <span className="block text-sm font-bold">{formatSpec(spec.value, unitSystem)}</span>
-                      <span className="block text-xs text-muted">{sourceLabel(spec.value, spec.from)}</span>
-                    </dd>
-                  </div>
-                ))}
+                {specs.map((spec) => {
+                  const isStarred = starred.includes(spec.key);
+                  return (
+                    <div key={spec.key} className="flex items-center justify-between gap-3 py-1 pr-1 pl-3">
+                      <dt className="text-sm text-muted">{spec.label}</dt>
+                      <dd className="flex items-center gap-1 text-right">
+                        <span>
+                          <span className="block text-sm font-bold">{formatSpec(spec.value, unitSystem)}</span>
+                          <span className="block text-xs text-muted">{sourceLabel(spec.value, spec.from)}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => void toggleFavorite(spec.key)}
+                          aria-pressed={isStarred}
+                          aria-label={`Star ${spec.label}`}
+                          className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-colors hover:bg-raised ${isStarred ? 'text-accent' : 'text-muted'}`}
+                        >
+                          <Star size={18} fill={isStarred ? 'currentColor' : 'none'} aria-hidden="true" />
+                        </button>
+                      </dd>
+                    </div>
+                  );
+                })}
               </dl>
             </section>
           ))}

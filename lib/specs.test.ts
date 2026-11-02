@@ -3,15 +3,19 @@ import { describe, it } from 'node:test';
 import {
   cleanBikeSpecs,
   cleanSpecValue,
+  DEFAULT_FAVORITE_SPECS,
+  favoriteSpecKeys,
   formatSpec,
   groupResolvedSpecs,
   parseSpecNumber,
+  pickFavoriteSpecs,
   resolveSpecs,
   SPEC_GROUPS,
   specFromDraft,
   specGroupsForTask,
   specsForTasks,
   specValuesFromRows,
+  toggleFavoriteSpec,
   unitsFor,
   type ExtractedSpecRow,
 } from './specs';
@@ -121,6 +125,31 @@ describe('cleanBikeSpecs', () => {
   it('handles nothing saved', () => {
     assert.deepEqual(cleanBikeSpecs({}), { values: {}, custom: [] });
     assert.deepEqual(cleanBikeSpecs(null), { values: {}, custom: [] });
+  });
+
+  it('keeps known favorites once each, in the list’s order, and an empty choice', () => {
+    assert.deepEqual(cleanBikeSpecs({ favorites: ['battery', 'made_up', 'oil_grade', 'battery', 7] }).favorites, ['oil_grade', 'battery']);
+    assert.deepEqual(cleanBikeSpecs({ favorites: [] }).favorites, []);
+    assert.equal('favorites' in cleanBikeSpecs({ favorites: 'oil_grade' }), false);
+  });
+});
+
+describe('favorites', () => {
+  it('uses the defaults until the bike has its own choice', () => {
+    assert.deepEqual(favoriteSpecKeys(undefined), DEFAULT_FAVORITE_SPECS);
+    assert.deepEqual(favoriteSpecKeys([]), []);
+  });
+
+  it('stars and unstars, starting from the defaults', () => {
+    assert.deepEqual(toggleFavoriteSpec(undefined, 'pressure_rear'), ['fuel_grade', 'oil_grade', 'pressure_front']);
+    assert.deepEqual(toggleFavoriteSpec(undefined, 'battery'), ['fuel_grade', 'oil_grade', 'pressure_front', 'pressure_rear', 'battery']);
+    assert.deepEqual(toggleFavoriteSpec(['battery'], 'fuel_tank'), ['fuel_tank', 'battery']);
+  });
+
+  it('picks the starred specs that have a value', () => {
+    const specs = resolveSpecs({ oil_grade: { text: '10W-40' }, battery: { text: 'YTZ10S' } }, { values: { pressure_front: { value: 36, unit: 'psi' } } });
+    assert.deepEqual(pickFavoriteSpecs(specs, undefined).map(({ key }) => key), ['oil_grade', 'pressure_front']);
+    assert.deepEqual(pickFavoriteSpecs(specs, ['battery']).map(({ key }) => key), ['battery']);
   });
 });
 

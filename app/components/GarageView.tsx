@@ -2,9 +2,11 @@
 
 import { ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react';
 import { countTasksByStatus, type TaskStatus } from '@/lib/maintenance';
+import type { ResolvedSpec } from '@/lib/specs';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
 import { formatOdometer } from '@/lib/units';
 import ConfirmPopover from './ConfirmPopover';
+import FavoriteSpecs from './FavoriteSpecs';
 import { ui } from './ui';
 
 type GarageViewProps = {
@@ -12,6 +14,8 @@ type GarageViewProps = {
   activeBikeId: string | null;
   /** Every bike's tasks, for the status line; null while they load. */
   allTasks: MaintenanceTask[] | null;
+  /** Each bike's starred specs that have a value, by bike id. */
+  favoriteSpecs: Record<string, ResolvedSpec[]>;
   unitSystem: UnitSystem;
   /** Shows the bike's tasks. */
   onOpen: (bikeId: string) => void;
@@ -50,7 +54,18 @@ const smallButton =
   'inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-bold text-muted transition-colors';
 
 /** Every bike, with what each needs; tap one to see its tasks. Bikes are added, edited and removed here, and their specs kept. */
-export default function GarageView({ bikes, activeBikeId, allTasks, unitSystem, onOpen, onAdd, onEdit, onSpecs, onRemove }: GarageViewProps) {
+export default function GarageView({
+  bikes,
+  activeBikeId,
+  allTasks,
+  favoriteSpecs,
+  unitSystem,
+  onOpen,
+  onAdd,
+  onEdit,
+  onSpecs,
+  onRemove,
+}: GarageViewProps) {
   return (
     <div className="space-y-3">
       {bikes.length === 0 ? (
@@ -77,6 +92,7 @@ export default function GarageView({ bikes, activeBikeId, allTasks, unitSystem, 
                     )}
                   </span>
                 </button>
+                <FavoriteSpecs specs={favoriteSpecs[bike.id] ?? []} unitSystem={unitSystem} className="mt-3 border-t border-line pt-3" />
                 <div className="mt-3 flex justify-end gap-2 border-t border-line pt-3">
                   <button type="button" onClick={() => onSpecs(bike)} className={`${smallButton} mr-auto hover:text-fg`}>
                     <ClipboardList size={13} aria-hidden="true" /> Specs

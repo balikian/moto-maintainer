@@ -2,8 +2,10 @@
 
 import { ClipboardList } from 'lucide-react';
 import type { TaskStatus } from '@/lib/maintenance';
+import type { ResolvedSpec } from '@/lib/specs';
 import type { Motorcycle, UnitSystem } from '@/lib/types';
 import BikeSwitcher from './BikeSwitcher';
+import FavoriteSpecs from './FavoriteSpecs';
 import OdometerControl from './OdometerControl';
 import { ui } from './ui';
 
@@ -20,6 +22,8 @@ type BikePanelProps = {
   editOdometer?: boolean;
   onCancelOdometer?: () => void;
   onOpenSpecs: () => void;
+  /** The bike's starred specs that have a value. */
+  favoriteSpecs: ResolvedSpec[];
 };
 
 const STATUS_TILES: { status: TaskStatus; label: string; color: string }[] = [
@@ -29,7 +33,7 @@ const STATUS_TILES: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'Healthy', label: 'All good', color: 'text-muted' },
 ];
 
-/** The top of Tasks: the bike's name (tap to switch), its odometer and specs, and its tasks by status. */
+/** The top of Tasks: the bike's name (tap to switch), its odometer, specs and starred specs, and its tasks by status. */
 export default function BikePanel(props: BikePanelProps) {
   const { statusCounts } = props;
 
@@ -57,6 +61,9 @@ export default function BikePanel(props: BikePanelProps) {
           }
         />
       </div>
+      {props.favoriteSpecs.length > 0 && (
+        <FavoriteSpecs specs={props.favoriteSpecs} unitSystem={props.unitSystem} className="border-t border-line pt-3.5" />
+      )}
       {statusCounts && (
         <ul aria-label="Tasks by status" className="grid grid-cols-4 gap-1.5">
           {STATUS_TILES.map(({ status, label, color }) => (

@@ -166,8 +166,11 @@ export type SpecValues = Partial<Record<SpecKey, SpecValue>>;
 /** A spec the list doesn't have, added by the rider. */
 export type CustomSpec = { label: string; text: string };
 
-/** What `motorcycles.specs` holds: the rider's own values, over the manual's. */
-export type BikeSpecs = { values?: SpecValues; custom?: CustomSpec[] };
+/**
+ * What `motorcycles.specs` holds: the rider's own values, over the manual's,
+ * and the starred specs (absent until the rider stars or unstars one).
+ */
+export type BikeSpecs = { values?: SpecValues; custom?: CustomSpec[]; favorites?: SpecKey[] };
 
 type UnitInfo = {
   kind: Exclude<SpecKind, 'text'>;
@@ -353,7 +356,10 @@ export function specValuesFromRows(rows: ExtractedSpecRow[]): SpecValues {
   return values;
 }
 
-/** A bike's specs as saved: its own values and up to MAX_CUSTOM_SPECS rows of its own. */
+/** Known keys, once each, in the list's order. */
+const cleanFavorites = (input: unknown[]): SpecKey[] => SPEC_KEYS.filter((key) => input.includes(key));
+
+/** A bike's specs as saved: its own values, up to MAX_CUSTOM_SPECS rows of its own, and its starred specs if it has chosen any. */
 export function cleanBikeSpecs(input: unknown): BikeSpecs {
   const raw = typeof input === 'object' && input !== null ? (input as Record<string, unknown>) : {};
   const custom = (Array.isArray(raw.custom) ? raw.custom : [])
@@ -364,7 +370,33 @@ export function cleanBikeSpecs(input: unknown): BikeSpecs {
       return label && text ? [{ label, text }] : [];
     })
     .slice(0, MAX_CUSTOM_SPECS);
-  return { values: cleanSpecValues(raw.values), custom };
+  return {
+    values: cleanSpecValues(raw.values),
+    custom,
+    ...(Array.isArray(raw.favorites) && { favorites: cleanFavorites(raw.favorites) }),
+  };
+}
+
+// --- Favorites ------------------------------------------------------------
+
+/** Starred until the rider chooses their own: what riders check most, at the pump and the air hose. */
+export const DEFAULT_FAVORITE_SPECS: readonly SpecKey[] = ['fuel_grade', 'oil_grade', 'pressure_front', 'pressure_rear'];
+
+/** The bike's starred specs: its own choice, else the defaults. */
+export function favoriteSpecKeys(favorites: readonly SpecKey[] | undefined): readonly SpecKey[] {
+  return favorites ?? DEFAULT_FAVORITE_SPECS;
+}
+
+/** Stars or unstars a spec, starting from the defaults if the bike has no choice of its own yet. */
+export function toggleFavoriteSpec(favorites: readonly SpecKey[] | undefined, key: SpecKey): SpecKey[] {
+  const current = favoriteSpecKeys(favorites);
+  return cleanFavorites(current.includes(key) ? current.filter((k) => k !== key) : [...current, key]);
+}
+
+/** The starred specs that have a value, for the bike's card in Garage and the top of Tasks. */
+export function pickFavoriteSpecs(specs: ResolvedSpec[], favorites: readonly SpecKey[] | undefined): ResolvedSpec[] {
+  const starred = favoriteSpecKeys(favorites);
+  return specs.filter((spec) => starred.includes(spec.key));
 }
 
 // --- The specs a bike shows -------------------------------------------------

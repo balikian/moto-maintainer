@@ -1231,6 +1231,14 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
       manual's approved ones (migration
       `20261030120000_shared_history_specs.sql`, on test only). Privacy
       and help updated.
+    - 🔨 Favorites (owner, 2026-11-01; built, owner to try): a star on each
+      spec in the Specs dialog; starred specs with a value show on the
+      bike's card in Garage and at the top of Tasks. Until the rider stars
+      or unstars one, fuel grade, oil grade and front and rear pressure
+      are starred. Saved per bike as `favorites` in `motorcycles.specs`
+      (no migration; absent means the defaults). Listed specs only, not
+      the rider's own rows. Garage loads every bike's manual specs, only
+      while it's open.
     - ✅ Merged into `develop` (2026-11-01) so the owner can try it all on
       the test site. Before releasing to `main`: push both specs
       migrations to production (owner's go-ahead).
