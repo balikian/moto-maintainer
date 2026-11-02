@@ -59,7 +59,7 @@ export default function BikePanel(props: BikePanelProps) {
       <button
         type="button"
         onClick={props.onOpenSpecs}
-        className="flex min-h-11 w-full items-center gap-2 rounded-xl bg-raised py-2 pl-3 pr-2 text-left transition-colors hover:bg-line/60"
+        className="flex min-h-11 w-full items-start gap-2 rounded-xl bg-raised py-2.5 pl-3 pr-2 text-left transition-colors hover:bg-line/60"
       >
         {props.favoriteSpecs.length > 0 ? (
           <FavoriteSpecs specs={props.favoriteSpecs} className="min-w-0 flex-1" />

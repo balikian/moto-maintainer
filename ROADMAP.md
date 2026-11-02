@@ -1242,8 +1242,9 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
       The card felt too busy, so after mockups
       (https://claude.ai/artifact/4VDXpxsfVmixi4iLVmykx1) the owner picked
       icon chips (2026-11-01): Garage's cards show the starred specs as
-      chips (fuel, oil and tire icons with the value alone; other specs
-      and own rows with their label) that open Specs, and Specs, Edit and
+      chips (label and value, with a fuel, oil or tire icon; first tried
+      with the value alone by the icon, but mixed with labeled ones it read
+      oddly) that open Specs, and Specs, Edit and
       Remove moved into a ⋯ menu. Tasks shows the chips in one strip that
       opens Specs, replacing the Specs button. Chips show the rider's
       units only, front and rear pressure share one ("36 / 42 psi"), and

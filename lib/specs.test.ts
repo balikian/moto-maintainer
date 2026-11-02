@@ -163,7 +163,7 @@ describe('favorites', () => {
 
     const specs = resolveSpecs({ oil_grade: { text: '10W-40' } }, null);
     assert.deepEqual(favoriteSpecRows(specs, { custom }, 'imperial'), [
-      { id: 'oil_grade', label: 'Oil grade', value: '10W-40', icon: 'oil', valueOnly: true },
+      { id: 'oil_grade', label: 'Oil grade', value: '10W-40', icon: 'oil' },
       { id: 'custom-0', label: 'Headlight bulb', value: 'H7' },
     ]);
   });
@@ -183,8 +183,8 @@ describe('favorites', () => {
       null
     );
     assert.deepEqual(favoriteSpecRows(specs, {}, 'imperial'), [
-      { id: 'fuel_grade', label: 'Fuel grade', value: '91 octane', icon: 'fuel', valueOnly: true },
-      { id: 'pressures', label: 'Tire pressure, front and rear', value: '36 / 42 psi', icon: 'tire', valueOnly: true },
+      { id: 'fuel_grade', label: 'Fuel grade', value: '91 octane', icon: 'fuel' },
+      { id: 'pressures', label: 'Tire pressure', value: '36 / 42 psi', icon: 'tire' },
     ]);
     assert.deepEqual(favoriteSpecRows(specs, { favorites: ['pressure_rear', 'battery'] }, 'metric'), [
       { id: 'pressure_rear', label: 'Rear pressure', value: '290 kPa', icon: 'tire' },

@@ -421,12 +421,8 @@ const CHIP_ICONS: Partial<Record<SpecGroup['id'], SpecChipIcon>> = { fuel: 'fuel
 
 const iconFor = (key: SpecKey) => CHIP_ICONS[SPEC_GROUPS.find((group) => group.specs.some((spec) => spec.key === key))!.id];
 
-/**
- * One chip on the bike's card in Garage and at the top of Tasks. `valueOnly`
- * chips leave out the label, which the icon stands for ("91 octane" by a fuel
- * pump); screen readers still read it.
- */
-export type FavoriteSpecRow = { id: string; label: string; value: string; icon?: SpecChipIcon; valueOnly?: boolean };
+/** One chip on the bike's card in Garage and at the top of Tasks. */
+export type FavoriteSpecRow = { id: string; label: string; value: string; icon?: SpecChipIcon };
 
 /** A spec in the rider's units only, without the original in parentheses: chips have little room. */
 function formatShort(spec: SpecValue, units: UnitSystem): string {
@@ -467,12 +463,10 @@ export function favoriteSpecRows(specs: ResolvedSpec[], bike: BikeSpecs, units: 
   const listed = starred.flatMap((spec): FavoriteSpecRow[] => {
     if (front && rear && spec === rear) return [];
     if (front && rear && spec === front) {
-      return [{ id: 'pressures', label: 'Tire pressure, front and rear', value: pressurePair(front.value, rear.value, units), icon: 'tire', valueOnly: true }];
+      return [{ id: 'pressures', label: 'Tire pressure', value: pressurePair(front.value, rear.value, units), icon: 'tire' }];
     }
-    const grade = spec.key === 'fuel_grade' || spec.key === 'oil_grade';
-    const text = formatShort(spec.value, units);
     const icon = iconFor(spec.key);
-    return [{ id: spec.key, label: spec.label, value: grade ? shortGrade(spec.key, text) : text, ...(icon && { icon }), ...(grade && { valueOnly: true }) }];
+    return [{ id: spec.key, label: spec.label, value: shortGrade(spec.key, formatShort(spec.value, units)), ...(icon && { icon }) }];
   });
   return [
     ...listed,

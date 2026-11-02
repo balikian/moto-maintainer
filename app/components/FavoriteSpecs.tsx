@@ -13,9 +13,8 @@ const ICONS: Record<SpecChipIcon, LucideIcon> = { fuel: Fuel, oil: Droplet, tire
 
 /**
  * A bike's starred specs at a glance, on its card in Garage and at the top of
- * Tasks: an icon and the value ("91 octane" by a fuel pump), or the label and
- * the value for specs without their own icon. Phrasing content only, so it can
- * sit inside the button that opens Specs.
+ * Tasks: each one's label and value, with its group's icon if it has one.
+ * Phrasing content only, so it can sit inside the button that opens Specs.
  */
 export default function FavoriteSpecs({ specs, chips = false, className = '' }: FavoriteSpecsProps) {
   if (specs.length === 0) return null;
@@ -30,7 +29,7 @@ export default function FavoriteSpecs({ specs, chips = false, className = '' }: 
           >
             {Icon && <Icon size={14} className="shrink-0 text-muted" aria-hidden="true" />}
             <span className="min-w-0 break-words">
-              <span className={spec.valueOnly ? 'sr-only' : 'font-semibold text-muted'}>{spec.label}: </span>
+              <span className="font-semibold text-muted">{spec.label}: </span>
               {spec.value}
             </span>
           </span>
