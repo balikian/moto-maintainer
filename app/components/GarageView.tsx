@@ -2,10 +2,11 @@
 
 import { useId, useRef, useState } from 'react';
 import { ClipboardList, Ellipsis, Pencil, Plus, Trash2 } from 'lucide-react';
+import { formatDisplayDate } from '@/lib/dates';
 import { countTasksByStatus, type TaskStatus } from '@/lib/maintenance';
 import type { FavoriteSpecRow } from '@/lib/specs';
 import type { MaintenanceTask, Motorcycle, UnitSystem } from '@/lib/types';
-import { formatOdometer } from '@/lib/units';
+import { formatDistance, formatOdometer } from '@/lib/units';
 import { useDismiss } from '../hooks/useDismiss';
 import ConfirmPopover from './ConfirmPopover';
 import FavoriteSpecs from './FavoriteSpecs';
@@ -140,6 +141,11 @@ export default function GarageView({
                         <span className="text-muted">…</span>
                       )}
                     </span>
+                    {bike.purchased_on && bike.purchase_mileage != null && (
+                      <span className="mt-0.5 block text-sm font-semibold text-muted">
+                        Bought {formatDisplayDate(bike.purchased_on)} at {formatDistance(bike.purchase_mileage, unitSystem)}
+                      </span>
+                    )}
                   </button>
                   <BikeMenu name={name} onSpecs={() => onSpecs(bike)} onEdit={() => onEdit(bike)} onRemove={() => onRemove(bike)} />
                 </div>
