@@ -143,7 +143,7 @@ export function pastedLinkProblem(field: 'phone' | 'email' | 'address', value: s
   const google = isGoogleHost(url.hostname);
   if (field === 'phone') {
     return google
-      ? 'That link goes to Google’s search page, and the number isn’t in it. In Google, press and hold the shop’s text (message) button instead and copy that link.'
+      ? 'That link goes to Google’s search page, and the number isn’t in it. In Google, press and hold the shop’s text (message) button instead and copy that link. No text button? Tap Call, then copy the number from your phone’s dialer.'
       : 'That’s a link, not a phone number. Please type the number.';
   }
   if (field === 'address') {
