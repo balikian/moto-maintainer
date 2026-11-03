@@ -265,9 +265,9 @@ export default async function HelpPage() {
           <p>
             Copying from Google? On a phone, Google shows the details as buttons. For the website, press and hold it
             and copy the link: SwingArm finds the real website in Google’s. For the address, copy the address, or paste
-            a Google Maps link, which is kept so <Ui>Directions</Ui> opens that exact place. For the phone, tap{' '}
-            <Ui>Call</Ui> in Google: your phone’s dialer opens with the number, and you can press and hold it to copy
-            it. (Copying Google’s phone button gives a link to the search page, without the number.)
+            a Google Maps link, which is kept so <Ui>Directions</Ui> opens that exact place. For the phone, press and
+            hold the shop’s text (message) button and copy the link: SwingArm reads the number out of it. (Google’s
+            phone number itself copies as a link to the search page, without the number.)
           </p>
           <p>
             Then pick it for each bike in <Ui>Edit bike</Ui> (the bike’s <Ui>⋯</Ui> menu in Garage), or choose{' '}

@@ -147,7 +147,7 @@ export default function ShopFormModal({ shop, onClose, onSubmit }: ShopFormModal
 
         <p className={`text-xs ${ui.muted}`}>
           Copying from Google? Press and hold the website or address and copy it; a Google Maps link works for the
-          address. For the phone, tap Call and copy the number from your phone’s dialer.
+          address. For the phone, press and hold the text (message) button and copy that link.
         </p>
 
         <div>

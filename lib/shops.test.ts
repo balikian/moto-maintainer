@@ -76,6 +76,8 @@ describe('what Google copies', () => {
   it('reads a Call button’s tel: link as the number', () => {
     assert.equal(readPhone('tel:+15415551234'), '(541) 555-1234');
     assert.equal(readPhone('tel:541-555-1234'), '(541) 555-1234');
+    assert.equal(readPhone('sms:+14254703484'), '(425) 470-3484');
+    assert.equal(readPhone('smsto:4254703484?body=Hi'), '(425) 470-3484');
     assert.equal(readPhone('tel:+44%2020%207946%200958'), '+442079460958');
     assert.equal(readPhone('Phone: (541) 555-1234'), '(541) 555-1234');
     assert.equal(readPhone('541.555.1234'), '541.555.1234');
@@ -112,7 +114,7 @@ describe('what Google copies', () => {
   it('explains that a link to Google’s search page has no number or address in it', () => {
     const search = 'https://www.google.com/search?hl=en-US&q=scarab%20werks&client=ms-android-tmus-us-rvc3';
     const errorOf = (result: ReturnType<typeof cleanShop>) => ('error' in result ? result.error : '');
-    assert.match(errorOf(cleanShop({ ...blank, name: 'Scarab Werks', phone: search })), /tap Call/);
+    assert.match(errorOf(cleanShop({ ...blank, name: 'Scarab Werks', phone: search })), /text \(message\) button/);
     assert.match(errorOf(cleanShop({ ...blank, name: 'Scarab Werks', address: search })), /not the address/);
     assert.equal(pastedLinkProblem('phone', '(541) 555-1234'), null);
     assert.equal(pastedLinkProblem('address', ''), null);

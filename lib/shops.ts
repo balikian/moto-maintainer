@@ -5,7 +5,7 @@ import type { Shop } from './types';
 // the links that call one, email it, find it on a map or open its website.
 //
 // Riders often copy a shop's details from Google, where the phone, address and
-// website are buttons, so a long-press copies a link (`tel:…`, a Google Maps
+// website are buttons, so a long-press copies a link (`tel:…`, `sms:…`, a Google Maps
 // link, a google.com/url redirect). Each field takes those as well as plain
 // text, and the read* functions pull out what's inside.
 
@@ -58,11 +58,12 @@ function formatPhone(number: string): string {
   return local ? `(${local.slice(0, 3)}) ${local.slice(3, 6)}-${local.slice(6)}` : number;
 }
 
-/** A phone number as typed or pasted: a `tel:` link (Google's Call button) becomes the number. */
+/** A phone number as typed or pasted: a `tel:` or `sms:` link (Google's Call and text buttons) becomes the number. */
 export function readPhone(text: string): string {
   const value = unlabel(oneLine(text), /^phone\s*:\s*/i);
-  if (!/^tel:/i.test(value)) return value;
-  return formatPhone(decode(value.slice(4)).split(/[;?]/)[0].replace(/[^\d+*#,]/g, ''));
+  const scheme = value.match(/^(?:tel|sms|smsto):(?:\/\/)?/i)?.[0];
+  if (!scheme) return value;
+  return formatPhone(decode(value.slice(scheme.length)).split(/[;?&]/)[0].replace(/[^\d+*#,]/g, ''));
 }
 
 /** An email as typed or pasted: a `mailto:` link becomes the address. */
@@ -142,7 +143,7 @@ export function pastedLinkProblem(field: 'phone' | 'email' | 'address', value: s
   const google = isGoogleHost(url.hostname);
   if (field === 'phone') {
     return google
-      ? 'That link goes to Google’s search page, and the number isn’t in it. In Google, tap Call: your phone’s dialer opens with the number, and you can press and hold it to copy it.'
+      ? 'That link goes to Google’s search page, and the number isn’t in it. In Google, press and hold the shop’s text (message) button instead and copy that link.'
       : 'That’s a link, not a phone number. Please type the number.';
   }
   if (field === 'address') {
