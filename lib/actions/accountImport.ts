@@ -42,6 +42,8 @@ async function saveBike(supabase: SignedInClient, userId: string, bike: ImportBi
       purchase_mileage: bike.purchase.purchaseMileage,
       specs: bike.specs,
       shop_id: shopId,
+      stored_on: bike.storedOn,
+      battery_type: bike.batteryType,
     })
     .select('id')
     .single();

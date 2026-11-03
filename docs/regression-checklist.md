@@ -49,6 +49,13 @@ add a line when a feature ships. Main code paths are in brackets.
 - Spending: this year or all time, by category. [`SpendSummary`, `summarizeSpend`]
 - Share button, and Export: CSV (with Where; formulas neutralized), printable page (owner only; anyone else gets "This page is private"). [`ExportMenu`, `ShareButton`, `buildServiceHistoryCsv`]
 
+## Storage
+
+- Garage ⋯ → Put in storage: battery type (guessed lithium from a battery spec saying so), the storage checklist (lithium: charge then disconnect, no trickle charger), the day (not in the future). Ticks save as they're made and survive closing. The card says "In storage since …". [`StorageModal`, `updateStorageAction`, `storageChecklist`, `checkStoredOn`]
+- Tasks shows the stored card (since, weeks, checklist count) with Back on the road and Storage checklist (which can change the day and battery). [`StorageCard`]
+- Back on the road: tasks due now, the road checklist (insurance first); Not yet keeps the ticks; Back on the road clears the day and all ticks. [`StorageModal`, `roadChecklist`]
+- Storage day and battery type are in Download my data and Import a backup (a future day is dropped). [`buildAccountExport`, `parseAccountImport`]
+
 ## Garage
 
 - Add a bike (year, make, model, optional odometer, drive, cooling); typed-in make/model joins the lists at once and goes for review. [`BikeFormModal`, `addBikeAction`, `suggestCustomModel`]
@@ -94,7 +101,8 @@ add a line when a feature ships. Main code paths are in brackets.
 
 - Daily job (15:00 UTC): only with the cron secret; off production needs `?only=` or `?dry-run`. [`app/api/cron/reminders`]
 - Task reminders at Soon and Overdue, once each per service cycle, not in a bike's first 7 days, never for tasks without a start point. [`planDailyReminders`]
-- Odometer check-in every 30 days the reading stays the same. [`planDaily`]
+- Odometer check-in every 30 days the reading stays the same, not while the bike is stored. [`planDaily`]
+- Stored bike: a battery check every 28 days in storage (under the task reminder switches, `storage:` keys), lithium wording when the battery is lithium; one bike's links to it. [`planDaily`, `storageSentence`, `dailyPush`]
 - Monthly summary on the 1st to 3rd, about last month, if turned on. [`planMonthlySummary`]
 - Push: same reminders under `push:` keys, one push a day to every device, gone devices deleted, failures released for the next run. [`planPushReminders`, `runReminderJob`, `lib/push.ts`]
 - Email cap of 80 a run; claims before sending, releases on failure. [`runReminderJob`]

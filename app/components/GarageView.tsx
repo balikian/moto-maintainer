@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useRef, useState } from 'react';
-import { ClipboardList, Ellipsis, Pencil, Plus, Store, Trash2 } from 'lucide-react';
+import { Bike, ClipboardList, Ellipsis, Pencil, Plus, Store, Trash2, Warehouse } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
 import { countTasksByStatus, type TaskStatus } from '@/lib/maintenance';
 import type { FavoriteSpecRow } from '@/lib/specs';
@@ -29,6 +29,8 @@ type GarageViewProps = {
   onEdit: (bike: Motorcycle) => void;
   onSpecs: (bike: Motorcycle) => void;
   onRemove: (bike: Motorcycle) => void;
+  /** Puts the bike in storage, or (when it's stored) back on the road. */
+  onStorage: (bike: Motorcycle) => void;
   onAddShop: () => void;
   onEditShop: (shop: Shop) => void;
   onRemoveShop: (shop: Shop) => void;
@@ -62,8 +64,22 @@ export function BikeStatusLine({ tasks, mileage }: { tasks: MaintenanceTask[]; m
 const menuItem =
   'flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-left text-sm font-bold text-fg transition-colors hover:bg-raised';
 
-/** The ⋯ menu on a bike's card: Specs, and the rarely needed Edit and Remove. */
-function BikeMenu({ name, onSpecs, onEdit, onRemove }: { name: string; onSpecs: () => void; onEdit: () => void; onRemove: () => void }) {
+/** The ⋯ menu on a bike's card: Specs, storage, and the rarely needed Edit and Remove. */
+function BikeMenu({
+  name,
+  stored,
+  onSpecs,
+  onStorage,
+  onEdit,
+  onRemove,
+}: {
+  name: string;
+  stored: boolean;
+  onSpecs: () => void;
+  onStorage: () => void;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const menuId = useId();
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -90,6 +106,17 @@ function BikeMenu({ name, onSpecs, onEdit, onRemove }: { name: string; onSpecs: 
         <div id={menuId} className={`absolute right-0 top-full z-30 mt-1 flex w-52 flex-col p-1.5 ${ui.popover}`}>
           <button type="button" onClick={choose(onSpecs)} className={menuItem}>
             <ClipboardList size={16} className="text-muted" aria-hidden="true" /> Specs
+          </button>
+          <button type="button" onClick={choose(onStorage)} className={menuItem}>
+            {stored ? (
+              <>
+                <Bike size={16} className="text-muted" aria-hidden="true" /> Back on the road
+              </>
+            ) : (
+              <>
+                <Warehouse size={16} className="text-muted" aria-hidden="true" /> Put in storage
+              </>
+            )}
           </button>
           <button type="button" onClick={choose(onEdit)} className={menuItem}>
             <Pencil size={16} className="text-muted" aria-hidden="true" /> Edit bike
@@ -161,6 +188,7 @@ export default function GarageView({
   onEdit,
   onSpecs,
   onRemove,
+  onStorage,
   onAddShop,
   onEditShop,
   onRemoveShop,
@@ -198,8 +226,20 @@ export default function GarageView({
                         Bought {formatDisplayDate(bike.purchased_on)} at {formatDistance(bike.purchase_mileage, unitSystem)}
                       </span>
                     )}
+                    {bike.stored_on && (
+                      <span className="mt-0.5 flex items-center gap-1.5 text-sm font-bold text-info">
+                        <Warehouse size={15} aria-hidden="true" /> In storage since {formatDisplayDate(bike.stored_on)}
+                      </span>
+                    )}
                   </button>
-                  <BikeMenu name={name} onSpecs={() => onSpecs(bike)} onEdit={() => onEdit(bike)} onRemove={() => onRemove(bike)} />
+                  <BikeMenu
+                    name={name}
+                    stored={Boolean(bike.stored_on)}
+                    onSpecs={() => onSpecs(bike)}
+                    onStorage={() => onStorage(bike)}
+                    onEdit={() => onEdit(bike)}
+                    onRemove={() => onRemove(bike)}
+                  />
                 </div>
                 {specs.length > 0 && (
                   <button type="button" onClick={() => onSpecs(bike)} className="mt-3 block w-full text-left">

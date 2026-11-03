@@ -22,6 +22,7 @@ const SECTIONS = [
   { id: 'specs', title: 'Your bike’s specs' },
   { id: 'shops', title: 'Your shop' },
   { id: 'booking', title: 'Booking service' },
+  { id: 'storage', title: 'Storing your bike' },
   { id: 'manual-and-schedule', title: 'Manual and manufacturer schedule' },
   { id: 'history', title: 'History, spending and sharing' },
   { id: 'settings', title: 'Settings and your account' },
@@ -299,6 +300,29 @@ export default async function HelpPage() {
           </p>
         </Section>
 
+        <Section id="storage">
+          <p>
+            Putting a bike away for the season? In Garage, tap <Ui>⋯</Ui> on its card, then <Ui>Put in storage</Ui>. A
+            checklist walks you through it: the battery, fuel stabilizer, oil, a wash, tire pressure, plugging the
+            exhaust, and asking your insurer about cheaper storage coverage. Tick items as you go; they&apos;re saved, so
+            you can come back to the list over a few days.
+          </p>
+          <p>
+            Say what battery it has: a lithium battery needs a lithium-safe charger, and shouldn&apos;t sit on a regular
+            trickle charger, so the advice changes.
+          </p>
+          <Bullets>
+            <li>
+              While it&apos;s stored, Tasks says so, and reminders ask about the battery every four weeks. Odometer
+              check-ins pause, since it isn&apos;t being ridden.
+            </li>
+            <li>
+              Ready to ride? Tap <Ui>Back on the road</Ui> on Tasks (or in the card&apos;s <Ui>⋯</Ui> menu). Its
+              checklist starts with restoring full insurance, and it shows the tasks that came due while the bike sat.
+            </li>
+          </Bullets>
+        </Section>
+
         <Section id="manual-and-schedule">
           <p>
             Tap <Ui>Manual &amp; schedule</Ui> on Tasks to open your bike’s owner’s manual and see whether we have its
@@ -354,8 +378,9 @@ export default async function HelpPage() {
               <Ui>Theme</Ui>: Auto follows your device’s light or dark mode, or pick Light or Dark.
             </li>
             <li>
-              <Ui>Reminder emails</Ui>: tasks coming due, an odometer check-in when a bike’s reading hasn’t changed in 30
-              days, and a monthly summary. Turn each on or off.
+              <Ui>Reminder emails</Ui>: tasks coming due (and a battery check every four weeks for a bike in storage),
+              an odometer check-in when a bike’s reading hasn’t changed in 30 days, and a monthly summary. Turn each on
+              or off.
             </li>
             <li>
               <Ui>Push notifications</Ui>: the same task and odometer reminders as notifications on your phone or

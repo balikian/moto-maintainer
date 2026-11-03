@@ -1174,6 +1174,25 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   - Lithium batteries need a lithium-safe charger; the reminder could say
     so if the bike has one (a battery-type field on the bike).
   - Built on notifications (step 5).
+  🔨 Storage mode built (2026-11-02, on `develop`; owner to try on test).
+  Decided with the owner: the switch with both checklists, and a battery
+  reminder every 4 weeks in storage.
+  - Garage ⋯ → **Put in storage**: battery type (Lead-acid/AGM/gel,
+    Lithium, Not sure; guessed lithium from a battery spec that says so),
+    the storage checklist (battery, fuel stabilizer, oil, wash and chain,
+    tires, plugs and cover, insurer), and the day. Ticks save as they're
+    made. Tasks shows an "In storage" card with **Back on the road**, whose
+    checklist starts with restoring insurance and lists tasks due now.
+  - The daily job sends a battery check every 28 days in storage, under the
+    task reminder switches (email and push), lithium wording for lithium;
+    odometer check-ins pause while stored. Time-based task reminders still
+    go.
+  - In the data export and import. Migration
+    `20261103180000_bike_storage.sql` (`stored_on`, `battery_type`,
+    `storage_checklist`, and `reminder_job_data` with them), on test only.
+  - Not done: guessing "not ridden" from an unchanged odometer (too few
+    readings to trust), saving the insurer and policy number, holding back
+    time-based task reminders while stored.
 - **Fuel costs and mileage.** A fill-up log: date, odometer, amount
   (gallons or liters), price or total, and "filled the tank?".
   - Economy is worked out between two full fill-ups, in the rider's units:

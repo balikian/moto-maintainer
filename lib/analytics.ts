@@ -14,6 +14,8 @@ type AnalyticsEvents = {
   'Custom task added': Record<string, never>;
   'Shop added': Record<string, never>;
   'Service booked': { tasks: number };
+  'Bike stored': Record<string, never>;
+  'Bike back on the road': Record<string, never>;
   'Share link created': Record<string, never>;
   'Push turned on': Record<string, never>;
   'Backup imported': { bikes: number };

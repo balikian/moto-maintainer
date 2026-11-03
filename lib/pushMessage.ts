@@ -1,5 +1,6 @@
 import { dailySubject, dueText } from './reminderEmail';
-import { dailyReminderPath, type DailyReminders } from './reminders';
+import { allReminders, dailyReminderPath, type DailyReminders } from './reminders';
+import { storageDuration } from './storage';
 import type { UnitSystem } from './types';
 import { formatDistance } from './units';
 
@@ -22,8 +23,9 @@ const MAX_LINES = 4;
 /** The Android notification channel the phone app files reminders under; its name shows in the phone's settings. */
 export const APP_NOTIFICATION_CHANNEL = 'reminders';
 
-export function dailyPush({ tasks, odometer }: DailyReminders, units: UnitSystem): PushMessage {
-  const severalBikes = new Set([...tasks, ...odometer].map((entry) => entry.bike.id)).size > 1;
+export function dailyPush(reminders: DailyReminders, units: UnitSystem, today = new Date()): PushMessage {
+  const { tasks, odometer, storage = [] } = reminders;
+  const severalBikes = new Set(allReminders(reminders).map((entry) => entry.bike.id)).size > 1;
   const lines = [
     ...tasks.map((entry) => {
       const name = severalBikes ? `${entry.bike.model}: ${entry.task.task_name}` : entry.task.task_name;
@@ -36,15 +38,19 @@ export function dailyPush({ tasks, odometer }: DailyReminders, units: UnitSystem
           ? `It’s been ${daysSince} days at ${formatDistance(bike.current_mileage, units)}. Tap to enter the new reading.`
           : `Update the odometer on your ${bike.model}`
     ),
+    ...storage.map(({ bike, storedOn, battery }) => {
+      const check = battery === 'lithium' ? 'Check the lithium battery’s charge.' : 'Is the battery still on its maintainer?';
+      return `${severalBikes ? `${bike.model}: in` : 'In'} storage ${storageDuration(storedOn, today)}. ${check}`;
+    }),
   ];
 
   const shown = lines.length > MAX_LINES ? lines.slice(0, MAX_LINES - 1) : lines;
   if (shown.length < lines.length) shown.push(`And ${lines.length - shown.length} more`);
 
   return {
-    title: dailySubject({ tasks, odometer }),
+    title: dailySubject(reminders),
     body: shown.join('\n'),
-    url: dailyReminderPath({ tasks, odometer }),
+    url: dailyReminderPath(reminders),
     tag: 'daily-reminders',
   };
 }

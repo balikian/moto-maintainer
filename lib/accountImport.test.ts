@@ -28,6 +28,8 @@ const exportFile = () =>
         purchased_on: '2024-03-10',
         purchase_mileage: 1200,
         shop_id: 's1',
+        stored_on: '2026-10-12',
+        battery_type: 'lithium',
         specs: { values: { oil_with_filter: { value: 1.7, unit: 'L', page: 140 } }, custom: [{ label: 'Headlight bulb', text: 'H4' }] },
       } as Motorcycle,
     ],
@@ -74,6 +76,8 @@ describe('parseAccountImport', () => {
         purchase: { purchasedOn: '2024-03-10', purchaseMileage: 1200 },
         specs: { values: { oil_with_filter: { value: 1.7, unit: 'L', page: 140 } }, custom: [{ label: 'Headlight bulb', text: 'H4' }] },
         shop: { name: 'Moto Works', phone: '555-1234', email: null, address: null, website: 'https://motoworks.com/', notes: null, map_url: 'https://maps.app.goo.gl/AbC123' },
+        storedOn: '2026-10-12',
+        batteryType: 'lithium',
         tasks: [
           {
             taskName: 'Front tire',
@@ -92,6 +96,21 @@ describe('parseAccountImport', () => {
         ],
       },
     ]);
+  });
+
+  it('drops a storage day in the future, and reads files without one', () => {
+    const file = exportFile() as { bikes: Record<string, unknown>[] };
+    file.bikes[0].in_storage_since = '2026-10-21';
+    const future = parse(file);
+    assert.ok('data' in future);
+    assert.equal(future.data.bikes[0].storedOn, null);
+
+    delete file.bikes[0].in_storage_since;
+    delete file.bikes[0].battery_type;
+    const older = parse(file);
+    assert.ok('data' in older);
+    assert.equal(older.data.bikes[0].storedOn, null);
+    assert.equal(older.data.bikes[0].batteryType, null);
   });
 
   it('drops a purchase that doesn’t fit the bike, and reads files without one', () => {

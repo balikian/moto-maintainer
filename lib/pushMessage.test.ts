@@ -73,3 +73,17 @@ describe('dailyPush', () => {
     assert.equal(message.url, '/?bike=a&odometer=update');
   });
 });
+
+describe('dailyPush in storage', () => {
+  it('asks about the battery', () => {
+    const stored = { ...norden, stored_on: '2026-09-18' };
+    const message = dailyPush(
+      { tasks: [], odometer: [], storage: [{ key: 's', bike: stored, storedOn: '2026-09-18', battery: 'lithium' }] },
+      'imperial',
+      today
+    );
+    assert.equal(message.title, 'Battery check: your Norden 901 in storage');
+    assert.equal(message.body, 'In storage 4 weeks. Check the lithium battery’s charge.');
+    assert.equal(message.url, '/?bike=a');
+  });
+});

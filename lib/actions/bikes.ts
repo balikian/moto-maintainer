@@ -5,6 +5,7 @@ import { isFutureEverywhere } from '../dates';
 import { checkPurchase, DEFAULT_BIKE_SETUP, getDefaultTasks, NO_START, type BikePurchase, type BikeSetup } from '../maintenance';
 import { fetchModelSchedule } from '../modelData';
 import { cleanBikeSpecs, type BikeSpecs } from '../specs';
+import { checkStoredOn, cleanBatteryType, cleanStorageChecklist } from '../storage';
 import { getSignedInClient } from '../supabase/server';
 import type { Motorcycle } from '../types';
 import { normalizeMileage } from '../units';
@@ -202,6 +203,36 @@ export async function updateBikeSpecsAction(bikeId: string, specs: BikeSpecs): P
     .eq('id', bikeId)
     .select('id');
 
+  if (error) return { error: error.message };
+  if (!data?.length) return { error: 'Motorcycle not found.' };
+  return {};
+}
+
+export type StorageChange =
+  /** Into storage on this day (or a new day, or battery, while it's stored). */
+  | { storedOn: string; batteryType: string | null }
+  /** Out of storage: the checklists start fresh next time. */
+  | { storedOn: null }
+  /** Ticks on the storage or back-on-the-road checklist. */
+  | { checklist: string[] };
+
+/** Puts the bike in storage or takes it out, or saves the checklists' ticks. */
+export async function updateStorageAction(bikeId: string, change: StorageChange): Promise<ActionResult> {
+  const { supabase, user } = await getSignedInClient();
+  if (!user) return { error: SIGNED_OUT_ERROR };
+
+  let update: Record<string, unknown>;
+  if ('checklist' in change) {
+    update = { storage_checklist: cleanStorageChecklist(change.checklist) };
+  } else if (change.storedOn === null) {
+    update = { stored_on: null, storage_checklist: [] };
+  } else {
+    const storedOn = checkStoredOn(change.storedOn);
+    if (typeof storedOn !== 'string') return storedOn;
+    update = { stored_on: storedOn, battery_type: cleanBatteryType(change.batteryType) };
+  }
+
+  const { data, error } = await supabase.from('motorcycles').update(update).eq('id', bikeId).select('id');
   if (error) return { error: error.message };
   if (!data?.length) return { error: 'Motorcycle not found.' };
   return {};

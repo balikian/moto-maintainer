@@ -179,3 +179,22 @@ describe('monthly summary', () => {
     assert.equal(planMonthlySummary(rider({ monthly_summary: true, bikes: [withSpend] }), today), null);
   });
 });
+
+describe('storage', () => {
+  const stored = (overrides: Partial<ReminderBike> = {}) =>
+    bike({ stored_on: '2026-09-18', battery_type: 'lithium', odometer_updated_at: '2026-06-01T18:00:00+00:00', ...overrides });
+
+  it('asks about a stored bike’s battery every four weeks, and skips its odometer check-in', () => {
+    const plan = planDailyReminders(rider({ bikes: [stored()] }), today); // 28 days in
+    assert.equal(plan?.odometer.length, 0);
+    assert.deepEqual(plan?.storage?.map((entry) => [entry.key, entry.battery]), [['storage:bike:2026-09-18:1', 'lithium']]);
+    assert.equal(planDailyReminders(rider({ sent: ['storage:bike:2026-09-18:1'], bikes: [stored()] }), today), null);
+    assert.equal(planDailyReminders(rider({ bikes: [stored({ stored_on: '2026-09-20' })] }), today), null);
+  });
+
+  it('follows the task reminder switches', () => {
+    assert.equal(planDailyReminders(rider({ task_reminders: false, bikes: [stored()] }), today), null);
+    const device = { kind: 'fcm' as const, endpoint: 'token' };
+    assert.equal(planPushReminders(rider({ push: [device], bikes: [stored()] }), today)?.storage?.[0].key, 'push:storage:bike:2026-09-18:1');
+  });
+});

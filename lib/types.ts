@@ -33,6 +33,12 @@ export interface Motorcycle {
   purchase_mileage?: number | null;
   /** The rider's preferred shop for this bike (`shops`); null if none. */
   shop_id?: string | null;
+  /** The day the bike went into storage; null while it's on the road (lib/storage.ts). */
+  stored_on?: string | null;
+  /** 'standard' or 'lithium'; read through cleanBatteryType. */
+  battery_type?: string | null;
+  /** Ticked storage and back-on-the-road checklist items; read through cleanStorageChecklist. */
+  storage_checklist?: string[];
   /** The rider's own spec values, over the manual's (lib/specs.ts). Read through cleanBikeSpecs. */
   specs?: unknown;
   created_at?: string;

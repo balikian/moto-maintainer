@@ -1,13 +1,16 @@
 import { bikeTitle } from './historyExport';
 import {
+  allReminders,
   bikePath,
   dailyReminderPath,
   type DailyReminders,
   type MonthlySummary,
   type OdometerReminder,
   type ReminderBike,
+  type StorageReminder,
   type TaskReminder,
 } from './reminders';
+import { batteryCheckAdvice, storageDuration } from './storage';
 import { dueLabel } from './taskLabels';
 import type { UnitSystem } from './types';
 import { formatDistance } from './units';
@@ -57,7 +60,7 @@ export function dueText(reminder: Pick<TaskReminder, 'dueState'>, units: UnitSys
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
-export function dailySubject({ tasks, odometer }: DailyReminders): string {
+export function dailySubject({ tasks, odometer, storage = [] }: DailyReminders): string {
   if (tasks.length === 1) {
     const [only] = tasks;
     return `${only.kind === 'overdue' ? 'Overdue' : 'Coming up'}: ${only.task.task_name} on your ${only.bike.model}`;
@@ -65,6 +68,9 @@ export function dailySubject({ tasks, odometer }: DailyReminders): string {
   if (tasks.length > 1) {
     const overdue = tasks.filter((entry) => entry.kind === 'overdue').length;
     return overdue > 0 ? `${plural(tasks.length, 'maintenance task')} need attention` : `${plural(tasks.length, 'maintenance task')} coming up`;
+  }
+  if (storage.length > 0) {
+    return storage.length === 1 ? `Battery check: your ${storage[0].bike.model} in storage` : 'Battery check for your stored bikes';
   }
   return odometer.length === 1 ? `Time to update your ${odometer[0].bike.model}’s odometer` : 'Time to update your odometers';
 }
@@ -78,6 +84,11 @@ function byBike<T extends { bike: ReminderBike }>(items: T[]): { bike: ReminderB
     groups.set(item.bike.id, group);
   }
   return [...groups.values()];
+}
+
+/** "Your 2024 Husqvarna Norden 901 has been in storage 4 weeks. Is the battery still on its maintainer? …" */
+export function storageSentence(reminder: Pick<StorageReminder, 'bike' | 'storedOn' | 'battery'>, today: Date): string {
+  return `Your ${bikeTitle(reminder.bike)} has been in storage ${storageDuration(reminder.storedOn, today)}. ${batteryCheckAdvice(reminder.battery)}`;
 }
 
 function odometerSentence(reminder: OdometerReminder, units: UnitSystem): string {
@@ -139,7 +150,7 @@ function footer(reason: string, links: EmailLinks): { html: string; text: string
   };
 }
 
-export function dailyReminderEmail(reminders: DailyReminders, units: UnitSystem, links: EmailLinks): Email {
+export function dailyReminderEmail(reminders: DailyReminders, units: UnitSystem, links: EmailLinks, today = new Date()): Email {
   const rows: string[] = [];
   const text: string[] = [];
 
@@ -169,8 +180,22 @@ export function dailyReminderEmail(reminders: DailyReminders, units: UnitSystem,
     text.push('', tip);
   }
 
-  const bikes = byBike([...reminders.tasks, ...reminders.odometer]).map((group) => group.bike);
-  const onlyOdometer = reminders.tasks.length === 0;
+  const storage = reminders.storage ?? [];
+  if (storage.length > 0) {
+    rows.push(heading('Battery check'));
+    text.push('', 'BATTERY CHECK');
+    for (const entry of storage) {
+      const sentence = storageSentence(entry, today);
+      rows.push(paragraph(escapeHtml(sentence), 'padding-bottom:8px;'));
+      text.push(sentence);
+    }
+    const when = 'We’ll ask again in four weeks, until you take it out of storage on its card in Garage.';
+    rows.push(paragraph(escapeHtml(when), `color:${COLORS.muted};`));
+    text.push(when);
+  }
+
+  const bikes = byBike(allReminders(reminders)).map((group) => group.bike);
+  const onlyOdometer = reminders.odometer.length === allReminders(reminders).length;
 
   if (reminders.odometer.length > 0) {
     rows.push(heading(reminders.odometer.length === 1 ? 'Time to update your odometer' : 'Time to update your odometers'));

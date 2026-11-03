@@ -2,7 +2,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { addBikeAction, deleteBikeAction, updateBikeAction, updateBikeSpecsAction, updateOdometerAction } from '@/lib/actions/bikes';
+import {
+  addBikeAction,
+  deleteBikeAction,
+  updateBikeAction,
+  updateBikeSpecsAction,
+  updateOdometerAction,
+  updateStorageAction,
+  type StorageChange,
+} from '@/lib/actions/bikes';
 import { deleteBookingAction, saveBookingAction } from '@/lib/actions/bookings';
 import { createShopAction, deleteShopAction, updateShopAction } from '@/lib/actions/shops';
 import {
@@ -22,6 +30,7 @@ import { trackEvent } from '@/lib/analytics';
 import { shopSuggestions } from '@/lib/serviceVisits';
 import type { ShopInput } from '@/lib/shops';
 import { cleanBikeSpecs, cleanSpecValues, favoriteSpecRows, resolveSpecs, type BikeSpecs, type SpecValues } from '@/lib/specs';
+import { guessBatteryType } from '@/lib/storage';
 import { createClient } from '@/lib/supabase/client';
 import type { MaintenanceTask, ModelSchedule, ModelSpecs, Motorcycle, ServiceBooking, ServiceLog, Shop } from '@/lib/types';
 import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
@@ -45,6 +54,8 @@ import ScheduleServiceModal from './components/ScheduleServiceModal';
 import ServiceHistoryView from './components/ServiceHistoryView';
 import ShareHistoryModal from './components/ShareHistoryModal';
 import ShopFormModal from './components/ShopFormModal';
+import StorageCard from './components/StorageCard';
+import StorageModal from './components/StorageModal';
 import TopBar from './components/TopBar';
 import { ui } from './components/ui';
 import { useAuthUser } from './hooks/useAuthUser';
@@ -71,6 +82,8 @@ type OpenDialog =
   | { type: 'editBike'; bike: Motorcycle }
   // By id, so saved specs show as soon as the bikes reload.
   | { type: 'specs'; bikeId: string }
+  // Any bike's, from Garage or Tasks.
+  | { type: 'storage'; bikeId: string; mode: 'store' | 'return' }
   | { type: 'addTask' }
   // From a booking: its tasks, day and shop fill in, and logging it removes the booking.
   | { type: 'logService'; task: MaintenanceTask | null; past?: boolean; booking?: ServiceBooking }
@@ -124,6 +137,7 @@ export default function GarageApp() {
   const activeBike = bikes.find((bike) => bike.id === selectedBikeId) ?? bikes[0] ?? null;
   const activeBikeId = activeBike?.id ?? null;
   const specsBike = dialog?.type === 'specs' ? (bikes.find((bike) => bike.id === dialog.bikeId) ?? null) : null;
+  const storageBike = dialog?.type === 'storage' ? (bikes.find((bike) => bike.id === dialog.bikeId) ?? null) : null;
 
   // Switches to the linked bike once the bikes load. One that isn't yours (signed in to another account) is skipped.
   const linkedBikeHandled = useRef(false);
@@ -313,6 +327,30 @@ export default function GarageApp() {
     if (result.error) return result.error;
     bikesQuery.reload();
     return null;
+  };
+
+  // --- Storage -------------------------------------------------------------
+
+  const handleStorage = async (bike: Motorcycle, change: StorageChange) => {
+    const result = await updateStorageAction(bike.id, change);
+    if (result.error) return result.error;
+    if ('storedOn' in change) {
+      if (change.storedOn && !bike.stored_on) trackEvent('Bike stored');
+      if (change.storedOn === null) trackEvent('Bike back on the road');
+      setDialog(null);
+    }
+    bikesQuery.reload();
+    return null;
+  };
+
+  /** Put in storage from Garage's menu, or back on the road when it's already stored. */
+  const openStorage = (bike: Motorcycle) => setDialog({ type: 'storage', bikeId: bike.id, mode: bike.stored_on ? 'return' : 'store' });
+
+  /** The bike's battery spec (its own, else the manual's), for a first guess at its battery type. */
+  const batterySpecFor = (bike: Motorcycle) => {
+    const manual = bike.id === activeBikeId ? (specsQuery.data ? cleanSpecValues(specsQuery.data.specs) : null) : garageSpecsQuery.data?.[bike.id];
+    const battery = resolveSpecs(manual, cleanBikeSpecs(bike.specs)).find((spec) => spec.key === 'battery')?.value;
+    return battery && 'text' in battery ? battery.text : null;
   };
 
   const handleRemoveBike = async (bike: Motorcycle) => {
@@ -559,6 +597,11 @@ export default function GarageApp() {
 
             <div className="grid min-w-0 grid-cols-1 gap-6">
               <GettingStarted />
+              <StorageCard
+                bike={activeBike}
+                onChecklist={() => setDialog({ type: 'storage', bikeId: activeBike.id, mode: 'store' })}
+                onReturn={() => setDialog({ type: 'storage', bikeId: activeBike.id, mode: 'return' })}
+              />
               <BookedService
                 bookings={bookings}
                 bike={activeBike}
@@ -632,6 +675,7 @@ export default function GarageApp() {
             onEdit={(bike) => setDialog({ type: 'editBike', bike })}
             onSpecs={(bike) => setDialog({ type: 'specs', bikeId: bike.id })}
             onRemove={(bike) => void handleRemoveBike(bike)}
+            onStorage={openStorage}
             onAddShop={() => setDialog({ type: 'addShop' })}
             onEditShop={(shop) => setDialog({ type: 'editShop', shop })}
             onRemoveShop={(shop) => void handleRemoveShop(shop)}
@@ -686,6 +730,20 @@ export default function GarageApp() {
           unitSystem={unitSystem}
           onClose={() => setDialog(null)}
           onSave={(specs) => handleSaveSpecs(specsBike, specs)}
+        />
+      )}
+
+      {dialog?.type === 'storage' && storageBike && (
+        <StorageModal
+          bike={storageBike}
+          mode={dialog.mode}
+          tasks={(allTasksQuery.data ?? []).filter((task) => task.motorcycle_id === storageBike.id)}
+          batteryGuess={guessBatteryType(batterySpecFor(storageBike))}
+          unitSystem={unitSystem}
+          onClose={() => setDialog(null)}
+          onChecklist={(checklist) => handleStorage(storageBike, { checklist })}
+          onStore={(storedOn, batteryType) => handleStorage(storageBike, { storedOn, batteryType })}
+          onReturn={() => handleStorage(storageBike, { storedOn: null })}
         />
       )}
 

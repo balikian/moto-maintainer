@@ -41,7 +41,7 @@ export default async function PrivacyPage() {
           </li>
           <li>
             <strong>Your bikes and service:</strong> each bike’s year, make, model, odometer readings, when you bought it
-            (if you say) and the specs you enter, your maintenance tasks and intervals, the service you log (dates, odometer readings, where it was done, costs and notes), the shops you add (the name, and the phone, email, address, website and notes you enter), and the service you book (the day, time, shop, tasks and notes).
+            (if you say), the specs you enter, when you put it in storage and its battery type (if you say) and the storage checklist items you tick, your maintenance tasks and intervals, the service you log (dates, odometer readings, where it was done, costs and notes), the shops you add (the name, and the phone, email, address, website and notes you enter), and the service you book (the day, time, shop, tasks and notes).
           </li>
           <li>
             <strong>Your settings:</strong> distance units, theme, which reminder emails and push notifications you want,

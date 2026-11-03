@@ -162,3 +162,15 @@ describe('adminReviewEmail', () => {
     assert.match(email.text, /Husqvarna Norden 901: Not a valid web address/);
   });
 });
+
+describe('battery check', () => {
+  const stored = bike('a', 'Norden 901', [], { stored_on: '2026-09-18', battery_type: 'standard', odometer_updated_at: '2026-06-01T00:00:00Z' });
+
+  it('asks about the battery and links to the bike', () => {
+    const plan = planDailyReminders(rider([stored]), today)!;
+    assert.equal(dailySubject(plan), 'Battery check: your Norden 901 in storage');
+    const email = dailyReminderEmail(plan, 'imperial', links, today);
+    assert.match(email.text, /Your 2023 Husqvarna Norden 901 has been in storage 4 weeks\. Is the battery still on its maintainer\?/);
+    assert.match(email.text, /Open your Norden 901: https:\/\/swingarm\.app\/\?bike=a\n/);
+  });
+});

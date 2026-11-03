@@ -1,5 +1,6 @@
 import { daysBetween, parseIsoDate, toIsoDate } from './dates';
 import { getTaskDueState, groupTasksByUrgency, type TaskDueState } from './maintenance';
+import { cleanBatteryType, storageCheckInPeriod, type BatteryType } from './storage';
 import type { MaintenanceTask, UnitSystem } from './types';
 
 // What the daily reminder job sends each rider. Pure: the job (lib/reminderJob.ts)
@@ -10,7 +11,10 @@ import type { MaintenanceTask, UnitSystem } from './types';
 // - a task's "soon" and "overdue" emails, once each per service cycle (the
 //   key includes the task's baseline, so logging service starts a new cycle),
 //   starting a week after the bike was added;
-// - a bike's odometer check-in, every 30 days the reading stays unchanged;
+// - a bike's odometer check-in, every 30 days the reading stays unchanged
+//   (not while it's in storage);
+// - a stored bike's battery check-in, every four weeks in storage, under the
+//   task reminder switches;
 // - the monthly summary, once per month.
 //
 // Push sends the same task and odometer reminders, under its own switches,
@@ -32,6 +36,9 @@ export type ReminderBike = {
   created_at: string;
   /** Timestamp of the last odometer entry or confirmation. */
   odometer_updated_at: string;
+  /** The day it went into storage; null (or missing) while it's on the road. */
+  stored_on?: string | null;
+  battery_type?: string | null;
   tasks: ReminderTask[];
   /** Services and spending in the summary's month; null outside the monthly window. */
   spent: { services: number; total: number } | null;
@@ -73,8 +80,13 @@ export type TaskReminder = {
 
 export type OdometerReminder = { key: string; bike: ReminderBike; daysSince: number };
 
-/** The daily email: tasks that just turned Soon/Urgent or Overdue, and stale odometers. */
-export type DailyReminders = { tasks: TaskReminder[]; odometer: OdometerReminder[] };
+export type StorageReminder = { key: string; bike: ReminderBike; storedOn: string; battery: BatteryType | null };
+
+/** The daily email: tasks that just turned Soon/Urgent or Overdue, stale odometers, and stored bikes' battery checks. */
+export type DailyReminders = { tasks: TaskReminder[]; odometer: OdometerReminder[]; storage?: StorageReminder[] };
+
+/** Every reminder in a day's email or push. */
+export const allReminders = ({ tasks, odometer, storage = [] }: DailyReminders) => [...tasks, ...odometer, ...storage];
 
 export type MonthlySummaryBike = {
   bike: ReminderBike;
@@ -135,6 +147,7 @@ function planDaily(
   const sent = new Set(rider.sent);
   const tasks: TaskReminder[] = [];
   const odometer: OdometerReminder[] = [];
+  const storage: StorageReminder[] = [];
 
   for (const bike of rider.bikes) {
     const added = parseIsoDate(bike.created_at);
@@ -149,7 +162,14 @@ function planDaily(
       }
     }
 
-    if (channel.odometer) {
+    // A stored bike isn't ridden, so its odometer can wait; its battery can't.
+    if (bike.stored_on) {
+      const period = storageCheckInPeriod(bike.stored_on, today);
+      const key = `${channel.keyPrefix}storage:${bike.id}:${bike.stored_on}:${period}`;
+      if (channel.tasks && period >= 1 && !sent.has(key)) {
+        storage.push({ key, bike, storedOn: bike.stored_on, battery: cleanBatteryType(bike.battery_type) });
+      }
+    } else if (channel.odometer) {
       const updated = parseIsoDate(bike.odometer_updated_at);
       const daysSince = updated ? daysBetween(updated, today) : 0;
       const period = Math.floor(daysSince / ODOMETER_CHECK_IN_DAYS);
@@ -164,7 +184,7 @@ function planDaily(
       Number(b.kind === 'overdue') - Number(a.kind === 'overdue') ||
       (a.dueState.fractionRemaining ?? 0) - (b.dueState.fractionRemaining ?? 0)
   );
-  return tasks.length > 0 || odometer.length > 0 ? { tasks, odometer } : null;
+  return tasks.length > 0 || odometer.length > 0 || storage.length > 0 ? { tasks, odometer, storage } : null;
 }
 
 /** A bike's Tasks on the dashboard (GarageApp reads `bike` and `odometer`), with its odometer box open if asked. */
@@ -177,11 +197,11 @@ export function bikePath(bikeId: string, updateOdometer = false): string {
  * (with its odometer box open if that's all it asks for), else Garage, which
  * lists every bike with what it needs.
  */
-export function dailyReminderPath({ tasks, odometer }: DailyReminders): string {
-  const bikeIds = new Set([...tasks, ...odometer].map((entry) => entry.bike.id));
+export function dailyReminderPath(reminders: DailyReminders): string {
+  const bikeIds = new Set(allReminders(reminders).map((entry) => entry.bike.id));
   if (bikeIds.size !== 1) return '/?view=garage';
   const [bikeId] = bikeIds;
-  return bikePath(bikeId, tasks.length === 0);
+  return bikePath(bikeId, reminders.odometer.length === allReminders(reminders).length);
 }
 
 /** The first day of last month and of this month, for `reminder_job_data`'s spending window. */

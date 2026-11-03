@@ -12,6 +12,7 @@ import {
   type EmailLinks,
 } from './reminderEmail';
 import {
+  allReminders,
   isMonthlySummaryDay,
   lastMonthRange,
   planDailyReminders,
@@ -75,6 +76,7 @@ function onlyClaimed(reminders: DailyReminders, claimed: Set<string>): DailyRemi
   return {
     tasks: reminders.tasks.filter((entry) => claimed.has(entry.key)),
     odometer: reminders.odometer.filter((entry) => claimed.has(entry.key)),
+    storage: (reminders.storage ?? []).filter((entry) => claimed.has(entry.key)),
   };
 }
 
@@ -109,8 +111,8 @@ export async function runReminderJob({ secret, today, baseUrl, dryRun, onlyEmail
     if (push) {
       outgoingPush.push({
         rider,
-        keys: [...push.tasks, ...push.odometer].map((entry) => entry.key),
-        build: (claimed) => dailyPush(onlyClaimed(push, claimed), rider.unit_system),
+        keys: allReminders(push).map((entry) => entry.key),
+        build: (claimed) => dailyPush(onlyClaimed(push, claimed), rider.unit_system, today),
       });
     }
     const daily = planDailyReminders(rider, today);
@@ -119,8 +121,8 @@ export async function runReminderJob({ secret, today, baseUrl, dryRun, onlyEmail
       outgoing.push({
         rider,
         kind: 'daily',
-        keys: [...daily.tasks, ...daily.odometer].map((entry) => entry.key),
-        build: (claimed) => dailyReminderEmail(onlyClaimed(daily, claimed), rider.unit_system, links),
+        keys: allReminders(daily).map((entry) => entry.key),
+        build: (claimed) => dailyReminderEmail(onlyClaimed(daily, claimed), rider.unit_system, links, today),
       });
     }
     const summary = planMonthlySummary(rider, today);

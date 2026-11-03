@@ -4,6 +4,7 @@ import { checkPurchase, type BikePurchase } from './maintenance';
 import { normalizeShop, SHOP_MAX_LENGTH } from './serviceVisits';
 import { cleanShop, type ShopFields } from './shops';
 import { cleanBikeSpecs, type BikeSpecs } from './specs';
+import { cleanBatteryType, type BatteryType } from './storage';
 import { guessCategory, TASK_CATEGORIES, type TaskCategory } from './taskCategories';
 
 // Reading a "Download my data" file (lib/accountExport.ts) back in. The file
@@ -70,6 +71,9 @@ const bikeSchema = (maxYear: number) =>
     odometer_when_bought_miles: miles.nullish(),
     // The name of one of the file's shops; older files have none.
     shop: z.string().nullish(),
+    // Older files have neither; a storage day in the future is dropped.
+    in_storage_since: isoDate.nullish(),
+    battery_type: z.string().nullish(),
     // Checked by cleanBikeSpecs, which drops anything it doesn't know; older files have none.
     specs: z.unknown().optional(),
     maintenance_tasks: z.array(taskSchema).max(IMPORT_LIMITS.tasksPerBike, `has more than ${IMPORT_LIMITS.tasksPerBike} tasks`).default([]),
@@ -119,6 +123,9 @@ export type ImportBike = {
   specs: BikeSpecs;
   /** The bike's shop, from the file's list of shops; null if it has none or it isn't in the list. */
   shop: ShopFields | null;
+  /** The day it went into storage; null while it's on the road. */
+  storedOn: string | null;
+  batteryType: BatteryType | null;
   tasks: ImportTask[];
   logs: ImportLog[];
 };
@@ -204,6 +211,8 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
         purchase: purchaseFromFile(bike, today),
         specs: cleanBikeSpecs(bike.specs),
         shop: shops.get(normalizeShop(bike.shop)?.toLowerCase() ?? '') ?? null,
+        storedOn: bike.in_storage_since && bike.in_storage_since <= today ? bike.in_storage_since : null,
+        batteryType: cleanBatteryType(bike.battery_type),
         tasks: bike.maintenance_tasks.map((task) => ({
           taskName: task.name,
           category: categoryFromFile(task.category, task.name),

@@ -1,5 +1,6 @@
 import { serviceType } from './historyExport';
 import { cleanBikeSpecs } from './specs';
+import { cleanBatteryType } from './storage';
 import { categoryLabel, taskCategory } from './taskCategories';
 import type { MaintenanceTask, Motorcycle, ServiceBooking, ServiceLog, Shop } from './types';
 
@@ -71,6 +72,9 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, shops, 
       odometer_when_bought_miles: bike.purchase_mileage ?? null,
       // The name of one of the shops above.
       shop: shops.find((shop) => shop.id === bike.shop_id)?.name ?? null,
+      // Null while it's on the road.
+      in_storage_since: bike.stored_on ?? null,
+      battery_type: cleanBatteryType(bike.battery_type),
       added_on: bike.created_at?.slice(0, 10) ?? null,
       // The rider's own specs, as saved (lib/specs.ts); the manual's are shared, not the rider's data.
       specs: cleanBikeSpecs(bike.specs),
