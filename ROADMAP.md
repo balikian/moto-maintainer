@@ -1238,9 +1238,9 @@ then storage mode and the battery reminder, since it's storage season.
   - Open: just links typed in by hand, or a preview (title, image, price)
     fetched from the link? Fetching is nicer, but sites block it and
     prices go stale.
-  🔨 Built 2026-11-03 as **Repairs & upgrades** (owner: include repairs,
+  ✅ Released 2026-11-03 as **Repairs & upgrades** (owner: include repairs,
   "non-recurring tasks like repairs to broken things or upgrades you
-  want/plan to do"; on test, not released). A section below the tasks on
+  want/plan to do"; migration on production first). A section below the tasks on
   Tasks: each job is a **Repair** (listed first) or an **Upgrade**, with a
   name, optional estimated cost, up to 10 links (address plus an optional
   label, like "SW-Motech, $420"; typed in by hand, no previews) and notes;
@@ -1256,8 +1256,7 @@ then storage mode and the battery reminder, since it's storage season.
   privacy updated; analytics event "Repair or upgrade added" (kind).
   Migration `20261103200000_bike_jobs.sql` (`bike_jobs`;
   `service_logs.job_id`, unique, and `job_kind`; `get_shared_history`
-  returns `job_kind`): ✅ on test. ✅ Owner tried it on test (2026-11-03): looks good. ⏳ Production
-  migration before release.
+  returns `job_kind`): ✅ on test and production. Owner tried it on test (2026-11-03): looks good.
   - Not done yet: ordering or a priority ("next up"), booking a repair or
     upgrade with a shop, a due date for a repair, turning an upgrade's
     upkeep (a new chain, a different air filter) into a task, affiliate tags.
