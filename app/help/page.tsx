@@ -21,6 +21,7 @@ const SECTIONS = [
   { id: 'your-checklist', title: 'Change your checklist' },
   { id: 'specs', title: 'Your bike’s specs' },
   { id: 'shops', title: 'Your shop' },
+  { id: 'booking', title: 'Booking service' },
   { id: 'manual-and-schedule', title: 'Manual and manufacturer schedule' },
   { id: 'history', title: 'History, spending and sharing' },
   { id: 'settings', title: 'Settings and your account' },
@@ -278,6 +279,23 @@ export default async function HelpPage() {
           <p>
             Edit or remove a shop from its card in Garage. Removing one leaves its bikes without a shop; your service
             history keeps the name it was logged with.
+          </p>
+        </Section>
+
+        <Section id="booking">
+          <p>
+            Tap <Ui>Schedule service</Ui> on Tasks. Tick what needs doing (what&apos;s coming due is ticked for you) and
+            pick where. If the shop has a phone or email, there&apos;s a message ready to send, with your bike, its
+            odometer and the work: tap <Ui>Text</Ui> or <Ui>Email</Ui>, or <Ui>Copy</Ui> it.
+          </p>
+          <p>
+            Once you have a day, pick it (and the time, if there is one) and tap <Ui>Save booking</Ui>. It shows at the
+            top of Tasks, and each task in it says <Ui>Booked</Ui>. Tap <Ui>Add to calendar</Ui> for Google Calendar or
+            a calendar file for any other calendar app, with a reminder the day before.
+          </p>
+          <p>
+            On the day, tap <Ui>Log it</Ui>: Log service opens with the booked tasks ticked and the shop filled in, and
+            saving it clears the booking. Tap the pencil to change a booking, or <Ui>Cancel</Ui> to remove it.
           </p>
         </Section>
 

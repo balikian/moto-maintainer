@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
-import { Check, Layers, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import { CalendarCheck, Check, Layers, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
 import { categoryLabel, isTaskCategory, TASK_CATEGORIES, taskCategory, type TaskCategory } from '@/lib/taskCategories';
 import type { TaskDueState, TaskStart, TaskStatus } from '@/lib/maintenance';
@@ -37,6 +37,8 @@ type TaskCardProps = {
   /** The bike's specs; the ones that go with this task show when it's opened. */
   specs: ResolvedSpec[];
   onOpenSpecs: () => void;
+  /** "Booked Nov 14" when service including this task is booked; null if not. */
+  bookedLabel: string | null;
 };
 
 const STATUS_TEXT: Record<TaskStatus, string> = {
@@ -85,6 +87,7 @@ export default function TaskCard({
   boughtLabel,
   specs,
   onOpenSpecs,
+  bookedLabel,
 }: TaskCardProps) {
   const noStart = dueState.status === 'NoStart';
   const [open, setOpen] = useState(false);
@@ -297,7 +300,10 @@ export default function TaskCard({
             </span>
           ) : (
             <>
-              <span className="font-semibold">{task.task_name}</span>
+              <span className="min-w-0">
+                <span className="font-semibold">{task.task_name}</span>
+                {bookedLabel && <span className="ml-2 text-xs font-bold text-info">{bookedLabel}</span>}
+              </span>
               <span className="shrink-0 text-sm font-semibold text-muted tabular-nums">
                 {due.value} {due.caption}
               </span>
@@ -322,6 +328,11 @@ export default function TaskCard({
           <span className="min-w-0">
             <span className="block text-base font-bold leading-snug">{task.task_name}</span>
             <span className="mt-0.5 block text-sm text-muted">{meta}</span>
+            {bookedLabel && (
+              <span className="mt-1 flex items-center gap-1 text-sm font-bold text-info">
+                <CalendarCheck size={14} aria-hidden="true" /> {bookedLabel}
+              </span>
+            )}
           </span>
           <span className={`flex shrink-0 flex-col items-end ${STATUS_TEXT[dueState.status]}`}>
             <span className="text-2xl font-extrabold leading-none tracking-tight tabular-nums">{due.value}</span>

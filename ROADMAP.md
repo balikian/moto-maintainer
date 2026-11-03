@@ -317,6 +317,7 @@ released 2026-10-23, migration on production first; from
   (owner, 2026-10-23); today's cards stay.
 - 🔨 A purchase date on the bike (John): built 2026-11-02, below.
 - 🔨 Preferred shop, one per bike: built 2026-11-02, below.
+- 🔨 Scheduling service (booked visit, ask the shop, add to calendar): built 2026-11-02, below.
 
 Discussed (2026-10-21), nothing decided: other sign-in options. Passkeys
 are the most secure and quickest but Supabase's support is limited (check
@@ -1086,6 +1087,20 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   4. Real online booking. Every shop system (dealer software and so on) is
      different, so this is a per-vendor integration; much later, if ever.
   Suggested: 1–3 together.
+  🔨 Built 1–3 (2026-11-02, on `develop`; owner to try on test). A booking
+  is a visit, not a date on each task: `service_bookings` (day, optional
+  local time, shop, task ids, notes; migration
+  `20261103120000_service_bookings.sql`, test only). **Schedule service** on
+  Tasks: tick the work (due tasks ticked), pick where (the bike's shop to
+  start), a ready-made message to Text, Email, Call or Copy when the shop
+  has a phone or email, then the day and time. The booked card at the top of
+  Tasks has Add to calendar (Google Calendar link, or an .ics file with a
+  reminder the day before), Call and Directions, change and cancel; booked
+  tasks say "Booked Nov 14". From the day on it asks "did it happen?" with
+  **Log it**, which opens Log service filled in and removes the booking. In
+  the data export (not read back by an import). Not done: SwingArm's own
+  reminder email or push about a booking (the calendar reminds), and
+  holding back Soon/Overdue reminders for booked tasks.
 - **How-to for each task.** Options:
   - The owner's manual: we already keep manual links. The schedule import
     could also note the page with the procedure, and PDF links can open at a

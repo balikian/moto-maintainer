@@ -13,6 +13,7 @@ type AnalyticsEvents = {
   'Schedule applied': Record<string, never>;
   'Custom task added': Record<string, never>;
   'Shop added': Record<string, never>;
+  'Service booked': { tasks: number };
   'Share link created': Record<string, never>;
   'Push turned on': Record<string, never>;
   'Backup imported': { bikes: number };

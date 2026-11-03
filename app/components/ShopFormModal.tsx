@@ -58,6 +58,8 @@ export default function ShopFormModal({ shop, onClose, onSubmit }: ShopFormModal
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
+    // Opened from another form (ShopPicker): React would pass the submit on to it.
+    event.stopPropagation();
     const cleaned = cleanShop(values);
     if ('error' in cleaned) {
       setError(cleaned.error);

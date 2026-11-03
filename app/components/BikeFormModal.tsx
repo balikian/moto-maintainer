@@ -9,7 +9,7 @@ import type { Motorcycle, Shop, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
 import MakeModelFields, { modelYears, useMakeModel } from './MakeModelFields';
 import Modal from './Modal';
-import ShopFormModal from './ShopFormModal';
+import ShopPicker from './ShopPicker';
 import { ui } from './ui';
 
 /** currentMileage is null when the rider leaves the odometer for later; the purchase and shop are optional too. */
@@ -23,8 +23,6 @@ export type BikeFormValues = {
   setup: BikeSetup;
 };
 
-/** The shop picker's choice that opens the Add a shop dialog. */
-const NEW_SHOP = 'new';
 
 /** A row of segmented buttons, for short either/or choices. */
 function ChoiceRow<T extends string>({
@@ -91,10 +89,6 @@ export default function BikeFormModal({ bike, customModels, shops, onAddShop, un
   );
   // A shop removed since isn't offered, so it's saved as none.
   const [shopId, setShopId] = useState(() => (shops.some((shop) => shop.id === bike?.shop_id) ? bike!.shop_id! : ''));
-  const [addingShop, setAddingShop] = useState(false);
-  // One added here shows in the picker before the list reloads.
-  const [addedShop, setAddedShop] = useState<Shop | null>(null);
-  const shopOptions = addedShop && !shops.some((shop) => shop.id === addedShop.id) ? [...shops, addedShop] : shops;
   const [setup, setSetup] = useState<BikeSetup>(DEFAULT_BIKE_SETUP);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -225,27 +219,15 @@ export default function BikeFormModal({ bike, customModels, shops, onAddShop, un
           </p>
         </fieldset>
 
-        <div>
-          <label htmlFor="bike-shop" className={ui.label}>
-            Shop <span className="font-normal text-muted">optional</span>
-          </label>
-          <select
-            id="bike-shop"
-            value={shopId}
-            onChange={(event) => {
-              if (event.target.value === NEW_SHOP) setAddingShop(true);
-              else setShopId(event.target.value);
-            }}
-            className={ui.input}
-          >
-            <option value="">None</option>
-            {shopOptions.map((shop) => (
-              <option key={shop.id} value={shop.id}>{shop.name}</option>
-            ))}
-            <option value={NEW_SHOP}>Add a shop…</option>
-          </select>
-          <p className={`mt-1 text-xs ${ui.muted}`}>Where it usually goes for service. Its card gets Call and Directions.</p>
-        </div>
+        <ShopPicker
+          id="bike-shop"
+          label="Shop"
+          value={shopId}
+          onChange={setShopId}
+          shops={shops}
+          onAddShop={onAddShop}
+          hint="Where it usually goes for service. Its card gets Call and Directions."
+        />
 
         {!isEditing && (
           <fieldset className="space-y-3">
@@ -286,20 +268,6 @@ export default function BikeFormModal({ bike, customModels, shops, onAddShop, un
           </button>
         </div>
       </form>
-
-      {addingShop && (
-        <ShopFormModal
-          onClose={() => setAddingShop(false)}
-          onSubmit={async (input) => {
-            const result = await onAddShop(input);
-            if (typeof result === 'string') return result;
-            setAddedShop(result);
-            setShopId(result.id);
-            setAddingShop(false);
-            return null;
-          }}
-        />
-      )}
     </Modal>
   );
 }

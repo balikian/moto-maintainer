@@ -54,6 +54,22 @@ export interface Shop {
   created_at?: string;
 }
 
+/** Service booked for a bike (lib/bookings.ts), until it's logged or cancelled. */
+export interface ServiceBooking {
+  id: string;
+  user_id: string;
+  motorcycle_id: string;
+  /** Null for a booking without a shop (at home), or whose shop was removed. */
+  shop_id: string | null;
+  booked_on: string;
+  /** Local time, "HH:MM:SS" from the database; null for just the day. */
+  booked_time: string | null;
+  /** The bike's tasks it covers; may include ids of tasks deleted since. */
+  task_ids: string[];
+  notes: string | null;
+  created_at?: string;
+}
+
 export interface MaintenanceTask {
   id: string;
   motorcycle_id: string;

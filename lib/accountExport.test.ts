@@ -61,6 +61,9 @@ describe('buildAccountExport', () => {
       log('l3', 'b', '2025-07-04', 25, null),
     ],
     shops: [shop],
+    bookings: [
+      { id: 'k1', user_id: 'rider', motorcycle_id: 'a', shop_id: 's1', booked_on: '2026-11-14', booked_time: '09:30:00', task_ids: ['t1', 'gone'], notes: null },
+    ],
     exportedOn: '2026-10-16',
   });
 
@@ -100,6 +103,11 @@ describe('buildAccountExport', () => {
       { name: 'Moto Works', phone: '(555) 123-4567', email: null, address: '12 Main St', website: null, notes: 'Ask for Sam', map_link: null },
     ]);
     assert.deepEqual(data.bikes.map((entry) => entry.shop), ['Moto Works', null]);
+  });
+
+  it('lists booked service with its shop and tasks by name', () => {
+    assert.deepEqual(data.bikes[0].booked_service, [{ date: '2026-11-14', time: '09:30', shop: 'Moto Works', tasks: ['Engine oil'], notes: null }]);
+    assert.deepEqual(data.bikes[1].booked_service, []);
   });
 
   it('names the file by date', () => {

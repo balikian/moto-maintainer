@@ -28,6 +28,12 @@ add a line when a feature ships. Main code paths are in brackets.
 - Bike panel status counts and "N tasks need a start point". [`BikePanel`, `countTasksByStatus`]
 - Getting started card at the top of Tasks: three steps; Got it or X hides it for good on that browser. [`GettingStarted`]
 
+## Booking service
+
+- Schedule service (Tasks): due tasks ticked to start, Where defaults to the bike's shop (Add a shop… there too); with a phone or email, the message (bike, odometer, ticked work) updates with the ticks until edited, and Text/Email/Call/Copy open it; saving needs a day, time optional. Only the bike's own tasks are saved. [`ScheduleServiceModal`, `saveBookingAction`, `cleanBooking`, `bookingRequestMessage`]
+- Booked card at the top of Tasks, soonest first: when ("Tomorrow, 9:30 AM"), shop, tasks, notes; Add to calendar (Google Calendar link, .ics with a reminder the day before; timed = one hour, floating; else all day); Call/Directions; pencil changes it; Cancel removes it. Booked tasks say "Booked Nov 14". [`BookedService`, `bookingEvent`, `googleCalendarHref`, `bookingIcs`, `bookedDates`]
+- From the booked day on, the card says "did it happen?" with Log it: Log service opens with its tasks ticked, its shop as Where, its day (if past); saving removes the booking. A removed shop leaves the booking without one; a removed bike removes its bookings. [`GarageApp` `handleLogService`, `service_bookings` foreign keys]
+
 ## Log service (bottom bar and task cards)
 
 - Log service from the bar or a task card: tick any tasks plus an optional one-off, date (not in the future), optional odometer, where (Home and earlier places as choices), cost for the visit, notes; each task's baseline moves only if this is its newest service. [`LogServiceModal`, `logServiceAction`]
@@ -60,7 +66,7 @@ add a line when a feature ships. Main code paths are in brackets.
 - Theme Auto/Light/Dark, cached so the first paint matches. [`usePreferences`, `THEME_BOOT_SCRIPT`]
 - Reminder email switches (tasks, odometer, monthly summary). [`updatePreferencesAction`]
 - Push: turn on for this device, send a test, the two type switches; iPhone Safari asks for Add to Home Screen first. [`usePush`, `lib/actions/push.ts`]
-- Download my data (JSON, with shops); Import a backup adds bikes as new, all or nothing, duplicates unticked; a bike's shop reuses one with the same name or is added. [`buildAccountExport`, `importAccountDataAction`, `parseAccountImport`]
+- Download my data (JSON, with shops and booked service); Import a backup adds bikes as new, all or nothing, duplicates unticked; a bike's shop reuses one with the same name or is added. [`buildAccountExport`, `importAccountDataAction`, `parseAccountImport`]
 - Install SwingArm row where the browser offers it. [`useInstallPrompt`]
 - `?view=` with a junk value falls back to Tasks. [`useView`]
 

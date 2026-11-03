@@ -1,7 +1,7 @@
 import { serviceType } from './historyExport';
 import { cleanBikeSpecs } from './specs';
 import { categoryLabel, taskCategory } from './taskCategories';
-import type { MaintenanceTask, Motorcycle, ServiceLog, Shop } from './types';
+import type { MaintenanceTask, Motorcycle, ServiceBooking, ServiceLog, Shop } from './types';
 
 // "Download all my data": everything a rider has in SwingArm as one JSON file,
 // laid out for a person to read (each bike holds its tasks and history).
@@ -15,6 +15,8 @@ export type AccountExportInput = {
   tasks: MaintenanceTask[];
   logs: ServiceLog[];
   shops: Shop[];
+  /** Missing in older callers; booked service isn't read back by an import. */
+  bookings?: ServiceBooking[];
   /** "YYYY-MM-DD" */
   exportedOn: string;
 };
@@ -29,7 +31,7 @@ function cost(value: number | string | null): number | null {
   return Number.isFinite(amount) ? amount : null;
 }
 
-export function buildAccountExport({ email, profile, bikes, tasks, logs, shops, exportedOn }: AccountExportInput) {
+export function buildAccountExport({ email, profile, bikes, tasks, logs, shops, bookings = [], exportedOn }: AccountExportInput) {
   const saved = profile ?? {};
   return {
     app: 'SwingArm',
@@ -83,6 +85,15 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, shops, 
           last_done_on: task.last_performed_date,
           do_it_yourself: task.is_diy,
           notes: task.notes ?? null,
+        })),
+      booked_service: bookings
+        .filter((booking) => booking.motorcycle_id === bike.id)
+        .map((booking) => ({
+          date: booking.booked_on,
+          time: booking.booked_time?.slice(0, 5) ?? null,
+          shop: shops.find((shop) => shop.id === booking.shop_id)?.name ?? null,
+          tasks: tasks.filter((task) => booking.task_ids.includes(task.id)).map((task) => task.task_name),
+          notes: booking.notes,
         })),
       service_history: logs
         .filter((log) => log.motorcycle_id === bike.id)

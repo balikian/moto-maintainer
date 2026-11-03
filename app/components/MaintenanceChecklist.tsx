@@ -1,7 +1,7 @@
 'use client';
 
-import { BookOpen, CheckCircle, ChevronDown, History, Plus } from 'lucide-react';
-import { formatDisplayDate } from '@/lib/dates';
+import { BookOpen, CalendarPlus, CheckCircle, ChevronDown, History, Plus } from 'lucide-react';
+import { formatDisplayDate, parseIsoDate } from '@/lib/dates';
 import { groupTasksByUrgency, purchaseBaseline, type TaskDueState, type TaskStart } from '@/lib/maintenance';
 import type { ResolvedSpec } from '@/lib/specs';
 import { batchCandidates, type TaskCategory } from '@/lib/taskCategories';
@@ -32,7 +32,12 @@ type MaintenanceChecklistProps = {
   /** The bike's specs, shown on the tasks they go with. */
   specs: ResolvedSpec[];
   onOpenSpecs: () => void;
+  /** Each booked task's booking day, by task id (bookedDates in lib/bookings.ts). */
+  bookedOn: Map<string, string>;
+  onSchedule: () => void;
 };
+
+const bookedDay = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
 
 /**
  * The bike's tasks, most due first. Tasks without a start point come first,
@@ -55,6 +60,8 @@ export default function MaintenanceChecklist({
   onSetStart,
   specs,
   onOpenSpecs,
+  bookedOn,
+  onSchedule,
 }: MaintenanceChecklistProps) {
   const [healthyCollapsed, toggleHealthy] = useStoredToggle('moto-maintain:healthy-tasks-collapsed', true);
   const { needsAttention, healthy, noStart } = groupTasksByUrgency(tasks, bike.current_mileage, new Date());
@@ -66,6 +73,11 @@ export default function MaintenanceChecklist({
   const boughtLabel = bought
     ? `${formatDisplayDate(bought.last_performed_date!)} at ${formatDistance(bought.last_performed_mileage!, unitSystem)}`
     : null;
+
+  const bookedLabel = (taskId: string) => {
+    const date = parseIsoDate(bookedOn.get(taskId));
+    return date ? `Booked ${bookedDay.format(date)}` : null;
+  };
 
   const renderTask = ({ task, dueState }: { task: MaintenanceTask; dueState: TaskDueState }, variant: 'card' | 'row') => (
     <TaskCard
@@ -85,6 +97,7 @@ export default function MaintenanceChecklist({
       boughtLabel={boughtLabel}
       specs={specs}
       onOpenSpecs={onOpenSpecs}
+      bookedLabel={bookedLabel(task.id)}
     />
   );
 
@@ -94,6 +107,10 @@ export default function MaintenanceChecklist({
         <h2 className={ui.sectionTitle}>Needs attention</h2>
         {/* Add task is here too, not only below a long list where it gets missed. */}
         <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={onSchedule} className={ui.chipButton}>
+            <CalendarPlus size={15} />
+            Schedule service
+          </button>
           <button type="button" onClick={onAddTask} className={ui.chipButton}>
             <Plus size={15} />
             Add task

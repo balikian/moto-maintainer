@@ -5,7 +5,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { Check, Download } from 'lucide-react';
 import { accountExportFileName, buildAccountExport } from '@/lib/accountExport';
 import { todayIsoDate } from '@/lib/dates';
-import type { MaintenanceTask, Motorcycle, ServiceLog, Shop } from '@/lib/types';
+import type { MaintenanceTask, Motorcycle, ServiceBooking, ServiceLog, Shop } from '@/lib/types';
 import { downloadFile, type SaveResult } from './download';
 import { ui } from './ui';
 
@@ -26,14 +26,15 @@ async function downloadAllData(
   userId: string,
   email: string | null,
 ): Promise<{ saved: SaveResult } | { error: string }> {
-  const [profile, bikes, tasks, logs, shops] = await Promise.all([
+  const [profile, bikes, tasks, logs, shops, bookings] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
     supabase.from('motorcycles').select('*').order('created_at'),
     supabase.from('maintenance_tasks').select('*').order('created_at'),
     supabase.from('service_logs').select('*'),
     supabase.from('shops').select('*').order('name'),
+    supabase.from('service_bookings').select('*').order('booked_on'),
   ]);
-  const failed = [profile, bikes, tasks, logs, shops].find((result) => result.error);
+  const failed = [profile, bikes, tasks, logs, shops, bookings].find((result) => result.error);
   if (failed?.error) return { error: `Couldn't gather your data: ${failed.error.message}` };
 
   const exportedOn = todayIsoDate();
@@ -44,6 +45,7 @@ async function downloadAllData(
     tasks: (tasks.data ?? []) as MaintenanceTask[],
     logs: (logs.data ?? []) as ServiceLog[],
     shops: (shops.data ?? []) as Shop[],
+    bookings: (bookings.data ?? []) as ServiceBooking[],
     exportedOn,
   });
   try {

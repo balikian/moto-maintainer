@@ -40,6 +40,9 @@ type LogServiceModalProps = {
   initialDate?: string;
   /** Places to offer as one-tap choices for "Where". */
   shopChoices: string[];
+  /** Logging a booking: its tasks start ticked and its shop fills in Where. */
+  initialTaskIds?: string[];
+  initialShop?: string;
   /** The bike's specs; the ones for the ticked tasks are shown. */
   specs: ResolvedSpec[];
   onClose: () => void;
@@ -65,13 +68,15 @@ export default function LogServiceModal({
   defaultOdometer,
   initialDate,
   shopChoices,
+  initialTaskIds,
+  initialShop,
   specs,
   onClose,
   onSubmit,
 }: LogServiceModalProps) {
   // Opened for a task without a start point, or for all of them: the rider is filling in when they were last done.
   const pastService = past || (task !== null && !hasStartPoint(task));
-  const [selectedIds, setSelectedIds] = useState<string[]>(task ? [task.id] : []);
+  const [selectedIds, setSelectedIds] = useState<string[]>(task ? [task.id] : (initialTaskIds ?? []));
   const [oneOffChecked, setOneOffChecked] = useState(tasks.length === 0);
   const [oneOffName, setOneOffName] = useState('');
   const [performedAt, setPerformedAt] = useState(() => initialDate ?? todayIsoDate());
@@ -79,7 +84,7 @@ export default function LogServiceModal({
   const [odometer, setOdometer] = useState(() =>
     defaultOdometer === null || pastService ? '' : String(toDisplayDistance(defaultOdometer, unitSystem))
   );
-  const [shop, setShop] = useState('');
+  const [shop, setShop] = useState(initialShop ?? '');
   const [cost, setCost] = useState('');
   const [notes, setNotes] = useState('');
   const [showAll, setShowAll] = useState(false);
@@ -103,6 +108,7 @@ export default function LogServiceModal({
   }));
   const isFeatured = (entry: ChecklistEntry) =>
     entry.task.id === task?.id ||
+    Boolean(initialTaskIds?.includes(entry.task.id)) ||
     entry.hint !== null ||
     (pastService ? entry.dueState.status === 'NoStart' : ['Overdue', 'Urgent', 'Soon'].includes(entry.dueState.status));
   // The opened task goes first, then the ones that pair with it.
