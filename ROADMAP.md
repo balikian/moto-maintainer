@@ -1174,7 +1174,7 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   - Lithium batteries need a lithium-safe charger; the reminder could say
     so if the bike has one (a battery-type field on the bike).
   - Built on notifications (step 5).
-  🔨 Storage mode built (2026-11-02, on `develop`; owner to try on test).
+  🔨 Storage mode built (2026-11-02, on `develop`; the owner tried it on test: "Looks great").
   Decided with the owner: the switch with both checklists, and a battery
   reminder every 4 weeks in storage.
   - Garage ⋯ → **Put in storage**: battery type (Lead-acid/AGM/gel,
