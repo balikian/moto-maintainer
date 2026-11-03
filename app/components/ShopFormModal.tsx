@@ -2,7 +2,17 @@
 
 import { useState, type SubmitEvent } from 'react';
 import { MapPin, X } from 'lucide-react';
-import { cleanShop, readAddress, readEmail, readPhone, readWebsite, SHOP_FIELD_LIMITS, shopInput, type ShopInput } from '@/lib/shops';
+import {
+  cleanShop,
+  pastedLinkProblem,
+  readAddress,
+  readEmail,
+  readPhone,
+  readWebsite,
+  SHOP_FIELD_LIMITS,
+  shopInput,
+  type ShopInput,
+} from '@/lib/shops';
 import type { Shop } from '@/lib/types';
 import Modal from './Modal';
 import { ui } from './ui';
@@ -21,6 +31,15 @@ const FIELDS: { key: 'phone' | 'email' | 'website'; label: string; autoComplete:
   { key: 'email', label: 'Email', autoComplete: 'email', placeholder: 'service@example.com', read: readEmail },
   { key: 'website', label: 'Website', autoComplete: 'url', placeholder: 'example.com', read: readWebsite },
 ];
+
+/** What's wrong with a pasted link, under its field, as soon as it's pasted. */
+function FieldProblem({ id, message }: { id: string; message: string | null }) {
+  return (
+    <p id={id} aria-live="polite" className="mt-1.5 text-sm text-danger empty:hidden">
+      {message}
+    </p>
+  );
+}
 
 /**
  * Add or edit a shop or mechanic: a name, and any of phone, email, address, website and notes.
@@ -85,8 +104,12 @@ export default function ShopFormModal({ shop, onClose, onSubmit }: ShopFormModal
               onBlur={() => set(field.key)(field.read(values[field.key]))}
               maxLength={SHOP_FIELD_LIMITS.mapUrl}
               placeholder={field.placeholder}
+              aria-describedby={`shop-${field.key}-problem`}
               className={ui.input}
             />
+            {field.key !== 'website' && (
+              <FieldProblem id={`shop-${field.key}-problem`} message={pastedLinkProblem(field.key, field.read(values[field.key]))} />
+            )}
           </div>
         ))}
 
@@ -103,8 +126,10 @@ export default function ShopFormModal({ shop, onClose, onSubmit }: ShopFormModal
             onBlur={readAddressField}
             maxLength={SHOP_FIELD_LIMITS.mapUrl}
             placeholder="12 Main St, Bend, OR, or a Google Maps link"
+            aria-describedby="shop-address-problem"
             className={ui.input}
           />
+          <FieldProblem id="shop-address-problem" message={pastedLinkProblem('address', readAddress(values.address).address)} />
           {values.map_url && (
             <p className="mt-1.5 flex items-center gap-2 text-sm text-muted">
               <MapPin size={15} className="shrink-0 text-good" aria-hidden="true" />
@@ -121,7 +146,8 @@ export default function ShopFormModal({ shop, onClose, onSubmit }: ShopFormModal
         </div>
 
         <p className={`text-xs ${ui.muted}`}>
-          Copying from Google? Long-press the shop’s phone, address or website and copy the link; SwingArm reads it.
+          Copying from Google? Press and hold the website or address and copy it; a Google Maps link works for the
+          address. For the phone, tap Call and copy the number from your phone’s dialer.
         </p>
 
         <div>

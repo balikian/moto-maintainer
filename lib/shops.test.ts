@@ -5,6 +5,7 @@ import {
   directionsHref,
   mapsHref,
   normalizeWebsite,
+  pastedLinkProblem,
   phoneHref,
   readAddress,
   readEmail,
@@ -106,6 +107,15 @@ describe('what Google copies', () => {
   it('joins a pasted address’s lines, and leaves other links alone', () => {
     assert.deepEqual(readAddress('Address: 12 Main St\nBend, OR 97701\n'), { address: '12 Main St, Bend, OR 97701', mapUrl: null });
     assert.equal(readAddress('https://example.com/maps').mapUrl, null);
+  });
+
+  it('explains that a link to Google’s search page has no number or address in it', () => {
+    const search = 'https://www.google.com/search?hl=en-US&q=scarab%20werks&client=ms-android-tmus-us-rvc3';
+    const errorOf = (result: ReturnType<typeof cleanShop>) => ('error' in result ? result.error : '');
+    assert.match(errorOf(cleanShop({ ...blank, name: 'Scarab Werks', phone: search })), /tap Call/);
+    assert.match(errorOf(cleanShop({ ...blank, name: 'Scarab Werks', address: search })), /not the address/);
+    assert.equal(pastedLinkProblem('phone', '(541) 555-1234'), null);
+    assert.equal(pastedLinkProblem('address', ''), null);
   });
 
   it('saves the cleaned values, and Directions prefers the map link', () => {

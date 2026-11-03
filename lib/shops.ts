@@ -131,6 +131,28 @@ export function readAddress(text: string, shopName = ''): { address: string; map
   return { address: lines.join(', ').replace(/\s+/g, ' ').replace(/,(\s*,)+/g, ',').trim(), mapUrl: null };
 }
 
+/**
+ * Why a link pasted into the phone, email or address (after reading it, above)
+ * can't be used there, or null. Google's long-press on a phone number in search
+ * copies a link to the search page itself, which has no number in it.
+ */
+export function pastedLinkProblem(field: 'phone' | 'email' | 'address', value: string): string | null {
+  const url = parseUrl(value.trim());
+  if (!url) return null;
+  const google = isGoogleHost(url.hostname);
+  if (field === 'phone') {
+    return google
+      ? 'That link goes to Google’s search page, and the number isn’t in it. In Google, tap Call: your phone’s dialer opens with the number, and you can press and hold it to copy it.'
+      : 'That’s a link, not a phone number. Please type the number.';
+  }
+  if (field === 'address') {
+    return google
+      ? 'That link goes to Google’s search page, not the address. Copy the address itself, or a Google Maps link.'
+      : 'That’s a link, not an address. Paste the address, or a Google or Apple Maps link.';
+  }
+  return 'That’s a link, not an email address.';
+}
+
 /** "example.com" or "http://example.com/x" → a full http(s) address; null if it isn't one. */
 export function normalizeWebsite(value: string): string | null {
   const text = value.trim();
@@ -156,11 +178,15 @@ export function cleanShop(input: Partial<Record<keyof ShopFields, unknown>>): { 
   if (!name) return { error: 'Please enter the shop’s name.' };
 
   const phone = readPhone(text(input.phone));
+  const phoneLink = pastedLinkProblem('phone', phone);
+  if (phoneLink) return { error: phoneLink };
   if (phone && (phone.length > SHOP_FIELD_LIMITS.phone || (phone.match(/\d/g)?.length ?? 0) < 3 || /[^\d\s()+.\-#*,;/xext]/i.test(phone))) {
     return { error: 'Please enter a phone number with digits only, like (555) 123-4567.' };
   }
 
   const email = readEmail(text(input.email));
+  const emailLink = pastedLinkProblem('email', email);
+  if (emailLink) return { error: emailLink };
   if (email && (email.length > SHOP_FIELD_LIMITS.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) {
     return { error: 'Please enter an email address like service@example.com.' };
   }
@@ -168,6 +194,8 @@ export function cleanShop(input: Partial<Record<keyof ShopFields, unknown>>): { 
   // A map link pasted into the address, or the one kept from before.
   const pasted = readAddress(text(input.address), name);
   const address = pasted.address;
+  const addressLink = pastedLinkProblem('address', address);
+  if (addressLink) return { error: addressLink };
   if (address.length > SHOP_FIELD_LIMITS.address) return { error: `Please keep the address under ${SHOP_FIELD_LIMITS.address} characters.` };
   const mapText = pasted.mapUrl ?? oneLine(input.map_url);
   const mapUrl = mapText && isMapLink(mapText) ? new URL(mapText).href : null;
