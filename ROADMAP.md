@@ -315,9 +315,7 @@ released 2026-10-23, migration on production first; from
   https://claude.ai/artifact/3DgbY84PudX9M3xdG4JczD (A today's, B dot and
   bigger title, C status tag and thin line, D grouped rows). **On hold**
   (owner, 2026-10-23); today's cards stay.
-- 🔨 A purchase date on the bike (John): built 2026-11-02, below.
-- 🔨 Preferred shop, one per bike: built 2026-11-02, below.
-- 🔨 Scheduling service (booked visit, ask the shop, add to calendar): built 2026-11-02, below.
+- ✅ **Released 2026-11-02** (all of `develop`, owner's go-ahead; the five migrations pushed to production first): a purchase date on the bike (John), preferred shop (one per bike), scheduling service (booked visit, ask the shop, add to calendar), and storage mode with the battery reminder. Details below.
 
 Discussed (2026-10-21), nothing decided: other sign-in options. Passkeys
 are the most secure and quickest but Supabase's support is limited (check
@@ -1052,7 +1050,7 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   shows who did the work (useful at resale). Typed in by hand first; looking
   shops up (Google Places) costs money per search.
   **Decided (owner, 2026-11-02):** one shop per bike, no garage-wide
-  default. 🔨 Built (2026-11-02, on `develop`; owner to try on test): a
+  default. ✅ Released 2026-11-02: a
   **Shops** section in Garage under the bikes (add, edit, remove; name
   required, phone, email, address, website and notes optional, checked by
   `cleanShop`). Each bike picks one in Add and Edit bike, where "Add a
@@ -1073,7 +1071,7 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   this, 2026-11-02): a `tel:` link becomes the number, Google's redirect the
   real website, and a Google or Apple Maps link pasted as the address is
   kept in `shops.map_url` for Directions (migration
-  `20261102200000_shop_map_link.sql`, test only). Later options: pick from
+  `20261102200000_shop_map_link.sql`). Later options: pick from
   the phone's contacts (Contact Picker on Android, a Capacitor plugin in
   the apps) and an OpenStreetMap search (its data may be saved, credited;
   often no phone for small shops).
@@ -1087,10 +1085,10 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   4. Real online booking. Every shop system (dealer software and so on) is
      different, so this is a per-vendor integration; much later, if ever.
   Suggested: 1–3 together.
-  🔨 Built 1–3 (2026-11-02, on `develop`; owner to try on test). A booking
+  ✅ Built 1–3, released 2026-11-02. A booking
   is a visit, not a date on each task: `service_bookings` (day, optional
   local time, shop, task ids, notes; migration
-  `20261103120000_service_bookings.sql`, test only). **Schedule service** on
+  `20261103120000_service_bookings.sql`). **Schedule service** on
   Tasks: tick the work (due tasks ticked), pick where (the bike's shop to
   start), a ready-made message to Text, Email, Call or Copy when the shop
   has a phone or email, then the day and time. The booked card at the top of
@@ -1174,7 +1172,7 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   - Lithium batteries need a lithium-safe charger; the reminder could say
     so if the bike has one (a battery-type field on the bike).
   - Built on notifications (step 5).
-  🔨 Storage mode built (2026-11-02, on `develop`; the owner tried it on test: "Looks great").
+  ✅ Storage mode released 2026-11-02 (the owner tried it on test: "Looks great").
   Decided with the owner: the switch with both checklists, and a battery
   reminder every 4 weeks in storage.
   - Garage ⋯ → **Put in storage**: battery type (Lead-acid/AGM/gel,
@@ -1189,7 +1187,7 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
     go.
   - In the data export and import. Migration
     `20261103180000_bike_storage.sql` (`stored_on`, `battery_type`,
-    `storage_checklist`, and `reminder_job_data` with them), on test only.
+    `storage_checklist`, and `reminder_job_data` with them).
   - Not done: guessing "not ridden" from an unchanged odometer (too few
     readings to trust), saving the insurer and policy number, holding back
     time-based task reminders while stored.
@@ -1209,7 +1207,7 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   launch). So "Never done" and time-based tasks on a used bike count from
   when the rider bought it, not January of the model year. Start points
   (Start today, Log a past service) cover most of this already.
-  🔨 Built (2026-11-02, on `develop`; owner to try on test): an optional
+  ✅ Released 2026-11-02: an optional
   "When you bought it" (date and odometer then, both or neither) on Add
   and Edit bike, and a fourth start point, **Since I bought it**, per task
   and for the whole "When were these last done?" group, shown only when
@@ -1219,7 +1217,7 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   before), not above the current odometer. In the data export and import
   (an import drops one that doesn't fit). Help and privacy updated.
   Migration `20261102120000_bike_purchase.sql` (`motorcycles.purchased_on`,
-  `purchase_mileage`), on test only.
+  `purchase_mileage`).
 
 **Order picked (owner, 2026-11-02):** purchase date first, then preferred
 shop with scheduling (shop maybe first; they could be built together),
