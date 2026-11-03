@@ -1256,7 +1256,7 @@ then storage mode and the battery reminder, since it's storage season.
   privacy updated; analytics event "Repair or upgrade added" (kind).
   Migration `20261103200000_bike_jobs.sql` (`bike_jobs`;
   `service_logs.job_id`, unique, and `job_kind`; `get_shared_history`
-  returns `job_kind`): ✅ on test. ⏳ Owner: try it on test; production
+  returns `job_kind`): ✅ on test. ✅ Owner tried it on test (2026-11-03): looks good. ⏳ Production
   migration before release.
   - Not done yet: ordering or a priority ("next up"), booking a repair or
     upgrade with a shop, a due date for a repair, turning an upgrade's
