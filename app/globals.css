@@ -176,6 +176,12 @@ select.select-compact {
   padding-right: 1.6rem;
 }
 
+/* Date and time fields: the phone's own picker caret, set in from the edge like the dropdowns' arrow. */
+input[type='date'],
+input[type='time'] {
+  padding-right: 1.1rem;
+}
+
 /* Thin scrollbars in the theme's colors. Phones already show theirs only while scrolling. */
 * {
   scrollbar-width: thin;
