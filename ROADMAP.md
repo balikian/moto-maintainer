@@ -1061,8 +1061,7 @@ Ideas from the owner (2026-10-13), with first thoughts. Nothing decided yet.
   `shops` list, each bike's shop by name) and import (reuses a shop with
   the same name, else adds it). Help and privacy updated. Migration
   `20261102180000_shops.sql` (`shops`, `motorcycles.shop_id` with a
-  two-column foreign key so a bike can only use its owner's shops), on test
-  only. Next: scheduling (below), whose "Contact the shop" builds on this.
+  two-column foreign key so a bike can only use its owner's shops).
   **Shop search (owner asked, 2026-11-02): not possible with Google.**
   Google's Maps Platform Terms forbid an app to "copy and save business
   names, addresses, or user reviews"; only the place ID may be kept.
