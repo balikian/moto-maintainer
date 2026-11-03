@@ -1,11 +1,13 @@
 import { z } from 'zod';
 import { isIsoDate } from './dates';
+import { cleanJob, cleanJobLinks, isJobKind, type JobFields } from './jobs';
 import { checkPurchase, type BikePurchase } from './maintenance';
 import { normalizeShop, SHOP_MAX_LENGTH } from './serviceVisits';
 import { cleanShop, type ShopFields } from './shops';
 import { cleanBikeSpecs, type BikeSpecs } from './specs';
 import { cleanBatteryType, type BatteryType } from './storage';
 import { guessCategory, TASK_CATEGORIES, type TaskCategory } from './taskCategories';
+import type { JobKind } from './types';
 
 // Reading a "Download my data" file (lib/accountExport.ts) back in. The file
 // is untrusted: anyone can edit one or write it by hand, so every field is
@@ -19,6 +21,7 @@ export const IMPORT_LIMITS = {
   bikes: 50,
   tasksPerBike: 200,
   logsPerBike: 2_000,
+  jobsPerBike: 200,
   shops: 100,
 };
 
@@ -78,6 +81,11 @@ const bikeSchema = (maxYear: number) =>
     specs: z.unknown().optional(),
     maintenance_tasks: z.array(taskSchema).max(IMPORT_LIMITS.tasksPerBike, `has more than ${IMPORT_LIMITS.tasksPerBike} tasks`).default([]),
     service_history: z.array(logSchema).max(IMPORT_LIMITS.logsPerBike, `has more than ${IMPORT_LIMITS.logsPerBike} service records`).default([]),
+    // Each checked by cleanJob, which drops one that doesn't make sense; older files have none.
+    repairs_and_upgrades: z
+      .array(z.record(z.string(), z.unknown()))
+      .max(IMPORT_LIMITS.jobsPerBike, `has more than ${IMPORT_LIMITS.jobsPerBike} repairs and upgrades`)
+      .default([]),
   });
 
 const fileSchema = (maxYear: number) =>
@@ -103,6 +111,8 @@ export type ImportLog = {
   taskName: string;
   /** Routine services are linked to the bike's task with the same name, if there is one. */
   routine: boolean;
+  /** Set for a repair's or upgrade's record, which finishes the matching job (jobForEachLog). */
+  jobKind: JobKind | null;
   performedAt: string;
   /** Null when there was no reading. */
   odometerMiles: number | null;
@@ -128,6 +138,12 @@ export type ImportBike = {
   batteryType: BatteryType | null;
   tasks: ImportTask[];
   logs: ImportLog[];
+  jobs: ImportJob[];
+};
+
+export type ImportJob = JobFields & {
+  /** The day the file says it was done; null while it's still to do. */
+  doneOn: string | null;
 };
 
 export type AccountImport = {
@@ -152,9 +168,36 @@ function purchaseFromFile(
   return problem ? { purchasedOn: null, purchaseMileage: null } : purchase;
 }
 
+/** "Repair" or "Upgrade" as a record's type; null for anything else. */
+function jobKindFromType(type: string | null | undefined): JobKind | null {
+  const kind = type?.trim().toLowerCase();
+  return isJobKind(kind) ? kind : null;
+}
+
+/** The file's repairs and upgrades that make sense; any that don't are left out rather than failing the import. */
+function jobsFromFile(rows: Record<string, unknown>[], today: string): ImportJob[] {
+  return rows.flatMap((row) => {
+    const cleaned = cleanJob({
+      kind: row.kind,
+      name: row.name,
+      notes: row.notes,
+      estimatedCost: row.estimated_cost,
+      links: cleanJobLinks(row.links).map((link) => ({ url: link.url, label: link.label ?? '' })),
+    });
+    if ('error' in cleaned) return [];
+    const doneOn = typeof row.done_on === 'string' && isIsoDate(row.done_on) && row.done_on <= today ? row.done_on : null;
+    return [{ ...cleaned.job, doneOn }];
+  });
+}
+
 /** "bikes.0.service_history.3.cost" → "Bike 1, service record 4, cost" */
 function describePath(path: PropertyKey[]): string {
-  const names: Record<string, string> = { bikes: 'Bike', maintenance_tasks: 'task', service_history: 'service record' };
+  const names: Record<string, string> = {
+    bikes: 'Bike',
+    maintenance_tasks: 'task',
+    service_history: 'service record',
+    repairs_and_upgrades: 'repair or upgrade',
+  };
   const parts: string[] = [];
   for (let i = 0; i < path.length; i++) {
     const key = String(path[i]);
@@ -227,12 +270,14 @@ export function parseAccountImport(raw: unknown, today: string): { data: Account
         logs: bike.service_history.map((log) => ({
           taskName: log.service,
           routine: log.type?.trim().toLowerCase() === 'routine',
+          jobKind: jobKindFromType(log.type),
           performedAt: log.date,
           odometerMiles: log.odometer_miles ?? null,
           shop: normalizeShop(log.where),
           cost: log.cost ?? null,
           notes: log.notes,
         })),
+        jobs: jobsFromFile(bike.repairs_and_upgrades, today),
       })),
     },
   };
@@ -265,6 +310,29 @@ export function findDuplicateBikes(
 /** The task a routine service belongs to, matched by name (case-insensitive), or null for a one-off. */
 export function taskIdForLog(log: Pick<ImportLog, 'taskName' | 'routine'>, taskIds: Map<string, string>): string | null {
   return log.routine ? (taskIds.get(log.taskName.trim().toLowerCase()) ?? null) : null;
+}
+
+/**
+ * For each service record, the index of the repair or upgrade it finished: a
+ * done job of the same kind and name (ignoring case), done that day. Each job
+ * goes with one record at most; records that match none stay plain records.
+ */
+export function jobForEachLog(
+  logs: Pick<ImportLog, 'taskName' | 'jobKind' | 'performedAt'>[],
+  jobs: Pick<ImportJob, 'kind' | 'name' | 'doneOn'>[]
+): (number | null)[] {
+  const used = new Set<number>();
+  return logs.map((log) => {
+    if (!log.jobKind) return null;
+    const name = log.taskName.trim().toLowerCase();
+    const index = jobs.findIndex(
+      (job, candidate) =>
+        !used.has(candidate) && job.kind === log.jobKind && job.doneOn === log.performedAt.slice(0, 10) && job.name.trim().toLowerCase() === name
+    );
+    if (index < 0) return null;
+    used.add(index);
+    return index;
+  });
 }
 
 /** Name → id for a bike's newly created tasks; the first task wins if two share a name. */

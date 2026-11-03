@@ -1,6 +1,7 @@
 'use server';
 
-import { parseAccountImportText, taskIdForLog, taskIdsByName, type ImportBike } from '../accountImport';
+import { randomUUID } from 'node:crypto';
+import { jobForEachLog, parseAccountImportText, taskIdForLog, taskIdsByName, type ImportBike } from '../accountImport';
 import { todayIsoDate } from '../dates';
 import { getSignedInClient } from '../supabase/server';
 import { SIGNED_OUT_ERROR, type ActionResult } from './result';
@@ -28,7 +29,7 @@ async function shopIdFor(
   return { id: data.id };
 }
 
-/** Saves one bike with its tasks and service history. Returns the new bike's id, or an error after saving the bike. */
+/** Saves one bike with its tasks, repairs and upgrades, and service history. Returns the new bike's id, or an error after saving the bike. */
 async function saveBike(supabase: SignedInClient, userId: string, bike: ImportBike, shopId: string | null): Promise<{ id?: string; error?: string }> {
   const { data: saved, error } = await supabase
     .from('motorcycles')
@@ -72,13 +73,34 @@ async function saveBike(supabase: SignedInClient, userId: string, bike: ImportBi
     taskIds = taskIdsByName(tasks ?? []);
   }
 
-  if (bike.logs.length > 0) {
-    const { error: logError } = await supabase.from('service_logs').insert(
-      bike.logs.map((log) => ({
+  // Ids made here, so each finished record can point at its job.
+  const jobIds = bike.jobs.map(() => randomUUID());
+  if (bike.jobs.length > 0) {
+    const { error: jobError } = await supabase.from('bike_jobs').insert(
+      bike.jobs.map((job, index) => ({
+        id: jobIds[index],
         user_id: userId,
         motorcycle_id: saved.id,
-        task_id: taskIdForLog(log, taskIds),
+        kind: job.kind,
+        name: job.name,
+        notes: job.notes,
+        estimated_cost: job.estimated_cost,
+        links: job.links,
+      }))
+    );
+    if (jobError) return { id: saved.id, error: jobError.message };
+  }
+
+  if (bike.logs.length > 0) {
+    const logJobs = jobForEachLog(bike.logs, bike.jobs);
+    const { error: logError } = await supabase.from('service_logs').insert(
+      bike.logs.map((log, index) => ({
+        user_id: userId,
+        motorcycle_id: saved.id,
+        task_id: log.jobKind ? null : taskIdForLog(log, taskIds),
         task_name: log.taskName,
+        job_id: logJobs[index] === null ? null : jobIds[logJobs[index]],
+        job_kind: log.jobKind,
         performed_at: log.performedAt,
         odometer_at_service: log.odometerMiles,
         shop: log.shop,
@@ -94,7 +116,7 @@ async function saveBike(supabase: SignedInClient, userId: string, bike: ImportBi
 
 /**
  * Adds the chosen bikes from a "Download my data" file to the signed-in
- * rider's garage, as new bikes with their tasks, service history and shop (one
+ * rider’s garage, as new bikes with their tasks, repairs and upgrades, service history and shop (one
  * of the rider's with the same name, or a new one). The file is checked again
  * here (never trust the browser's check), and nothing in it decides who owns
  * the rows. All or nothing: if any bike fails, the bikes and shops already

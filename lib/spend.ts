@@ -1,17 +1,24 @@
-import { taskCategory, type TaskCategory } from './taskCategories';
+import { categoryLabel, taskCategory, type TaskCategory } from './taskCategories';
 import type { MaintenanceTask, ServiceLog } from './types';
 
 // What a bike's maintenance has cost, from the costs entered when logging service.
 
-type SpendLog = Pick<ServiceLog, 'task_id' | 'task_name' | 'performed_at' | 'cost'>;
+type SpendLog = Pick<ServiceLog, 'task_id' | 'task_name' | 'performed_at' | 'cost'> & Partial<Pick<ServiceLog, 'job_kind'>>;
+
+/** A task category, or upgrades (lib/jobs.ts), which are kept apart from upkeep. */
+export type SpendCategory = TaskCategory | 'upgrades';
 
 export type SpendSummary = {
   total: number;
   /** Service records that had a cost. */
   paidServices: number;
   /** Largest first; categories with no spending are left out. */
-  byCategory: { category: TaskCategory; total: number }[];
+  byCategory: { category: SpendCategory; total: number }[];
 };
+
+export function spendCategoryLabel(category: SpendCategory): string {
+  return category === 'upgrades' ? 'Upgrades' : categoryLabel(category);
+}
 
 function costOf(log: SpendLog): number | null {
   const cost = Number(log.cost);
@@ -20,8 +27,8 @@ function costOf(log: SpendLog): number | null {
 
 /**
  * Totals the logged costs, optionally for one calendar year only. Each record
- * counts toward its task's category; one-off jobs (or tasks since deleted)
- * are categorised from the job's name.
+ * counts toward its task's category; upgrades count as Upgrades; repairs and
+ * one-off jobs (or tasks since deleted) are categorised from the job's name.
  */
 export function summarizeSpend(
   logs: SpendLog[],
@@ -29,7 +36,7 @@ export function summarizeSpend(
   year?: number
 ): SpendSummary {
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
-  const totals = new Map<TaskCategory, number>();
+  const totals = new Map<SpendCategory, number>();
   let total = 0;
   let paidServices = 0;
 
@@ -38,7 +45,8 @@ export function summarizeSpend(
     if (cost === null) continue;
     if (year !== undefined && log.performed_at.slice(0, 4) !== String(year)) continue;
 
-    const category = taskCategory((log.task_id && tasksById.get(log.task_id)) || { task_name: log.task_name });
+    const category: SpendCategory =
+      log.job_kind === 'upgrade' ? 'upgrades' : taskCategory((log.task_id && tasksById.get(log.task_id)) || { task_name: log.task_name });
     totals.set(category, (totals.get(category) ?? 0) + cost);
     total += cost;
     paidServices += 1;

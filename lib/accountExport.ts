@@ -1,8 +1,9 @@
 import { serviceType } from './historyExport';
+import { cleanJobLinks } from './jobs';
 import { cleanBikeSpecs } from './specs';
 import { cleanBatteryType } from './storage';
 import { categoryLabel, taskCategory } from './taskCategories';
-import type { MaintenanceTask, Motorcycle, ServiceBooking, ServiceLog, Shop } from './types';
+import type { BikeJob, MaintenanceTask, Motorcycle, ServiceBooking, ServiceLog, Shop } from './types';
 
 // "Download all my data": everything a rider has in SwingArm as one JSON file,
 // laid out for a person to read (each bike holds its tasks and history).
@@ -18,6 +19,8 @@ export type AccountExportInput = {
   shops: Shop[];
   /** Missing in older callers; booked service isn't read back by an import. */
   bookings?: ServiceBooking[];
+  /** Repairs and upgrades; missing in older callers. */
+  jobs?: BikeJob[];
   /** "YYYY-MM-DD" */
   exportedOn: string;
 };
@@ -32,7 +35,7 @@ function cost(value: number | string | null): number | null {
   return Number.isFinite(amount) ? amount : null;
 }
 
-export function buildAccountExport({ email, profile, bikes, tasks, logs, shops, bookings = [], exportedOn }: AccountExportInput) {
+export function buildAccountExport({ email, profile, bikes, tasks, logs, shops, bookings = [], jobs = [], exportedOn }: AccountExportInput) {
   const saved = profile ?? {};
   return {
     app: 'SwingArm',
@@ -98,6 +101,18 @@ export function buildAccountExport({ email, profile, bikes, tasks, logs, shops, 
           shop: shops.find((shop) => shop.id === booking.shop_id)?.name ?? null,
           tasks: tasks.filter((task) => booking.task_ids.includes(task.id)).map((task) => task.task_name),
           notes: booking.notes,
+        })),
+      repairs_and_upgrades: jobs
+        .filter((job) => job.motorcycle_id === bike.id)
+        .map((job) => ({
+          kind: job.kind,
+          name: job.name,
+          notes: job.notes,
+          estimated_cost: cost(job.estimated_cost),
+          links: cleanJobLinks(job.links),
+          added_on: job.created_at?.slice(0, 10) ?? null,
+          // The date of the service record that finished it (the one in service_history with its name); null while it's still to do.
+          done_on: logs.find((log) => log.job_id === job.id)?.performed_at.slice(0, 10) ?? null,
         })),
       service_history: logs
         .filter((log) => log.motorcycle_id === bike.id)

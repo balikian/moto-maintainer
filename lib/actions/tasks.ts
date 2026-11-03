@@ -120,6 +120,8 @@ type LogServiceActionInput = {
   motorcycleId: string;
   /** Checklist tasks done in this visit. */
   taskIds: string[];
+  /** Repairs and upgrades done in this visit; each is marked done by its record. */
+  jobIds?: string[];
   /** A job that isn't on the checklist, logged as a one-off. */
   oneOffName: string | null;
   performedAt: string;
@@ -132,26 +134,28 @@ type LogServiceActionInput = {
   shop: string | null;
 };
 
-/** The most tasks one visit can log; a bike's whole checklist fits. */
+/** The most tasks (or repairs and upgrades) one visit can log; a bike's whole checklist fits. */
 const MAX_TASKS_PER_VISIT = 200;
 
 /**
- * Records one service visit: a service record for each task done (and the
- * one-off job, if any), all with the same date, odometer and place. Each task's
- * "last performed" moves forward if this is its newest service.
+ * Records one service visit: a service record for each task, repair and
+ * upgrade done (and the one-off job, if any), all with the same date, odometer
+ * and place. Each task's "last performed" moves forward if this is its newest
+ * service; a repair or upgrade is done once its record points at it.
  */
 export async function logServiceAction(input: LogServiceActionInput): Promise<ActionResult> {
   const { supabase, user } = await getSignedInClient();
   if (!user) return { error: SIGNED_OUT_ERROR };
 
   const taskIds = [...new Set(input.taskIds)];
+  const jobIds = [...new Set(input.jobIds ?? [])];
   const oneOffName = input.oneOffName?.trim() || null;
   const odometer = input.odometerAtService === null ? null : normalizeMileage(input.odometerAtService);
   const cost = input.cost !== null && Number.isFinite(input.cost) && input.cost >= 0 ? input.cost : null;
 
   if (!input.motorcycleId) return { error: 'A motorcycle must be selected.' };
-  if (taskIds.length === 0 && !oneOffName) return { error: 'Choose what was done.' };
-  if (taskIds.length > MAX_TASKS_PER_VISIT) return { error: 'That’s more tasks than one visit can hold.' };
+  if (taskIds.length === 0 && jobIds.length === 0 && !oneOffName) return { error: 'Choose what was done.' };
+  if (taskIds.length > MAX_TASKS_PER_VISIT || jobIds.length > MAX_TASKS_PER_VISIT) return { error: 'That’s more tasks than one visit can hold.' };
   if (oneOffName && oneOffName.length > 200) return { error: 'Keep the description under 200 characters.' };
   if (input.shop && input.shop.trim().length > SHOP_MAX_LENGTH) {
     return { error: `Keep where it was done under ${SHOP_MAX_LENGTH} characters.` };
@@ -186,10 +190,25 @@ export async function logServiceAction(input: LogServiceActionInput): Promise<Ac
     for (const log of logs.data ?? []) tasksWithLogs.add(log.task_id as string);
   }
 
+  let jobs: { id: string; name: string; kind: string }[] = [];
+  if (jobIds.length > 0) {
+    const lookup = await supabase.from('bike_jobs').select('id,name,kind').in('id', jobIds).eq('motorcycle_id', input.motorcycleId);
+    if (lookup.error) return { error: lookup.error.message };
+    if ((lookup.data ?? []).length !== jobIds.length) return { error: 'Repair or upgrade not found for this motorcycle.' };
+    // Done already (logged on another device, say); the unique index on job_id would refuse it anyway.
+    const done = await supabase.from('service_logs').select('job_id').in('job_id', jobIds).limit(1);
+    if (done.error) return { error: done.error.message };
+    if ((done.data ?? []).length > 0) return { error: 'That repair or upgrade is already logged. Check History.' };
+    const byId = new Map(lookup.data.map((job) => [job.id as string, job]));
+    jobs = jobIds.map((id) => byId.get(id)!);
+  }
+
   const shop = normalizeShop(input.shop);
+  // Tasks first, so the visit's cost lands on the first one picked.
   const entries = [
-    ...tasks.map((task) => ({ taskId: task.id, taskName: task.task_name })),
-    ...(oneOffName ? [{ taskId: null, taskName: oneOffName }] : []),
+    ...tasks.map((task) => ({ taskId: task.id, taskName: task.task_name, jobId: null, jobKind: null })),
+    ...jobs.map((job) => ({ taskId: null, taskName: job.name, jobId: job.id, jobKind: job.kind })),
+    ...(oneOffName ? [{ taskId: null, taskName: oneOffName, jobId: null, jobKind: null }] : []),
   ];
   const logInsert = await supabase.from('service_logs').insert(
     entries.map((entry, index) => ({
@@ -197,6 +216,8 @@ export async function logServiceAction(input: LogServiceActionInput): Promise<Ac
       motorcycle_id: input.motorcycleId,
       task_id: entry.taskId,
       task_name: entry.taskName,
+      job_id: entry.jobId,
+      job_kind: entry.jobKind,
       performed_at: input.performedAt,
       odometer_at_service: odometer,
       // What the task counts from, kept so deleting a newer service later can fall back to it exactly.

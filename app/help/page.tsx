@@ -19,6 +19,7 @@ const SECTIONS = [
   { id: 'what-is-due', title: 'How tasks come due' },
   { id: 'log-service', title: 'Log service' },
   { id: 'your-checklist', title: 'Change your checklist' },
+  { id: 'repairs-and-upgrades', title: 'Repairs and upgrades' },
   { id: 'specs', title: 'Your bike’s specs' },
   { id: 'shops', title: 'Your shop' },
   { id: 'booking', title: 'Booking service' },
@@ -193,8 +194,8 @@ export default async function HelpPage() {
             <li>
               Tick everything done at that visit. Tasks that need attention are listed first, and related jobs coming up
               too (like the air filter with the oil change) say <Ui>Do it with this</Ui>. <Ui>Show all tasks</Ui> lists
-              the rest. Tick <Ui>Something else (one-off job)</Ui> for work that isn’t on your checklist, like a new tire
-              or fork seals.
+              the rest. Your <Ui>repairs and upgrades</Ui> are on the list too. Tick{' '}
+              <Ui>Something else (one-off job)</Ui> for work that isn’t on either, like a new tire or fork seals.
             </li>
             <li>
               Enter the date and, if you have it, the odometer reading when it was done. Without a reading, the tasks’
@@ -235,6 +236,31 @@ export default async function HelpPage() {
             To track something else, tap <Ui>Add task</Ui> at the top of Tasks (or <Ui>Add a custom task</Ui> at the
             bottom). Give it a name, an interval,
             and when it was last done, so it counts from the right place.
+          </p>
+        </Section>
+
+        <Section id="repairs-and-upgrades">
+          <p>
+            Some jobs only happen once: a cracked mirror to replace, or crash bars you’re thinking of fitting. Keep them
+            under <Ui>Repairs &amp; upgrades</Ui>, below your tasks. Tap <Ui>Add</Ui> and pick:
+          </p>
+          <Bullets>
+            <li>
+              <Ui>Repair</Ui>: something to fix. Repairs are listed first.
+            </li>
+            <li>
+              <Ui>Upgrade</Ui>: a mod or accessory you want. Add an estimated cost and links to the products you’re
+              comparing (give each link a label, like the brand and price). The list adds up the estimates.
+            </li>
+          </Bullets>
+          <p>
+            When it’s done, tap <Ui>Log it</Ui>, or tick it in Log service along with anything else done at that
+            visit. It moves to <Ui>Done</Ui> and goes in your history, marked Repair or Upgrade, with the date, odometer,
+            where it was done and what it cost. Upgrades get their own line in the spending summary.
+          </p>
+          <p>
+            Tap the pencil to change one or remove it. Deleting its service record from History puts it back on the
+            list.
           </p>
         </Section>
 

@@ -1,14 +1,19 @@
+import { isJobKind, jobKindLabel } from './jobs';
 import type { Motorcycle, ServiceLog, UnitSystem } from './types';
 import { distanceUnitLabel, toDisplayDistance } from './units';
 
 export type ReportBike = Pick<Motorcycle, 'year' | 'make' | 'model' | 'current_mileage'>;
-export type ReportLog = Pick<ServiceLog, 'id' | 'task_id' | 'task_name' | 'performed_at' | 'odometer_at_service' | 'cost' | 'notes' | 'shop'>;
+export type ReportLog = Pick<ServiceLog, 'id' | 'task_id' | 'task_name' | 'performed_at' | 'odometer_at_service' | 'cost' | 'notes' | 'shop' | 'job_kind'>;
+
+export type ServiceType = 'Routine' | 'Repair' | 'Upgrade' | 'One-off';
 
 export function bikeTitle(bike: Pick<Motorcycle, 'year' | 'make' | 'model'>): string {
   return `${bike.year} ${bike.make} ${bike.model}`;
 }
 
-export function serviceType(log: Pick<ServiceLog, 'task_id'>): 'Routine' | 'One-off' {
+/** Routine for a checklist task's service, Repair or Upgrade for one of those (lib/jobs.ts), else One-off. */
+export function serviceType(log: Pick<ServiceLog, 'task_id' | 'job_kind'>): ServiceType {
+  if (isJobKind(log.job_kind)) return jobKindLabel(log.job_kind);
   return log.task_id ? 'Routine' : 'One-off';
 }
 

@@ -139,6 +139,13 @@ describe('planScheduleApply', () => {
     assert.deepEqual(task.relinkLogIds.sort(), ['l1', 'l2']);
   });
 
+  it('never takes a repair’s or upgrade’s record for a task', () => {
+    const logs = [{ ...log('l1', 'Replace chain', '2026-06-15', 8000), job_kind: 'repair' }];
+    const [task] = planScheduleApply([scheduleTask('Replace chain')], [], { logs }).additions;
+    assert.equal(task.last_performed_mileage, null);
+    assert.deepEqual(task.relinkLogIds, []);
+  });
+
   it('removes generic starter tasks the schedule replaces, unless they were logged', () => {
     const existing = [
       { id: 'oil', task_name: 'Replace engine oil and filter' },

@@ -76,6 +76,22 @@ export interface ServiceBooking {
   created_at?: string;
 }
 
+export type JobKind = 'repair' | 'upgrade';
+
+/** A repair or upgrade planned for a bike (lib/jobs.ts): done once a service record points at it. */
+export interface BikeJob {
+  id: string;
+  user_id: string;
+  motorcycle_id: string;
+  kind: JobKind;
+  name: string;
+  notes: string | null;
+  estimated_cost: number | null;
+  /** Products being compared; read through cleanJobLinks. */
+  links: unknown;
+  created_at?: string;
+}
+
 export interface MaintenanceTask {
   id: string;
   motorcycle_id: string;
@@ -149,5 +165,8 @@ export interface ServiceLog {
   notes: string | null;
   /** Where it was done ("Home", a shop's name); null if not given, missing on older shared data. */
   shop?: string | null;
+  /** The repair or upgrade this finished (null once that's removed), and which it was; missing on older shared data. */
+  job_id?: string | null;
+  job_kind?: string | null;
   created_at?: string;
 }

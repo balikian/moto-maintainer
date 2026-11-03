@@ -1238,6 +1238,29 @@ then storage mode and the battery reminder, since it's storage season.
   - Open: just links typed in by hand, or a preview (title, image, price)
     fetched from the link? Fetching is nicer, but sites block it and
     prices go stale.
+  🔨 Built 2026-11-03 as **Repairs & upgrades** (owner: include repairs,
+  "non-recurring tasks like repairs to broken things or upgrades you
+  want/plan to do"; on test, not released). A section below the tasks on
+  Tasks: each job is a **Repair** (listed first) or an **Upgrade**, with a
+  name, optional estimated cost, up to 10 links (address plus an optional
+  label, like "SW-Motech, $420"; typed in by hand, no previews) and notes;
+  the open estimates are added up. **Log it** (or ticking it in Log service,
+  where repairs show and upgrades past three wait behind "Show upgrades")
+  saves a service record pointing at it, which marks it done: it moves to a
+  collapsed **Done** list. Deleting that record puts it back on the list;
+  removing a done job keeps its record. History, the printable and shared
+  history, the CSV and the backup label records Repair or Upgrade (the
+  backup carries the jobs and re-links done ones on import); the spending
+  summary has an **Upgrades** line (repairs count by the part, like
+  one-offs); schedule import never takes their records for a task. Help and
+  privacy updated; analytics event "Repair or upgrade added" (kind).
+  Migration `20261103200000_bike_jobs.sql` (`bike_jobs`;
+  `service_logs.job_id`, unique, and `job_kind`; `get_shared_history`
+  returns `job_kind`): ✅ on test. ⏳ Owner: try it on test; production
+  migration before release.
+  - Not done yet: ordering or a priority ("next up"), booking a repair or
+    upgrade with a shop, a due date for a repair, turning an upgrade's
+    upkeep (a new chain, a different air filter) into a task, affiliate tags.
 - **Bike specs** (owner, 2026-10-19). The numbers a rider looks up again
   and again, saved on the bike: fuel grade (octane, ethanol limit) and tank
   size, tire sizes and pressures (front and rear, solo and with a passenger

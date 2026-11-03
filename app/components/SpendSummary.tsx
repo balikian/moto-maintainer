@@ -1,7 +1,6 @@
 'use client';
 
-import { summarizeSpend } from '@/lib/spend';
-import { categoryLabel } from '@/lib/taskCategories';
+import { spendCategoryLabel, summarizeSpend } from '@/lib/spend';
 import type { MaintenanceTask, ServiceLog } from '@/lib/types';
 import { useStoredToggle } from '../hooks/useStoredToggle';
 import { ui } from './ui';
@@ -61,7 +60,7 @@ export default function SpendSummary({ logs, tasks }: SpendSummaryProps) {
             {summary.byCategory.map(({ category, total }) => (
               <li key={category}>
                 <div className="flex items-baseline justify-between gap-3 text-xs">
-                  <span className="font-medium">{categoryLabel(category)}</span>
+                  <span className="font-medium">{spendCategoryLabel(category)}</span>
                   <span className={ui.muted}>{currencyFormatter.format(total)}</span>
                 </div>
                 <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-track" aria-hidden="true">

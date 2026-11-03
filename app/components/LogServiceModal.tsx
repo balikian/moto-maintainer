@@ -3,12 +3,13 @@
 import { useState, type SubmitEvent } from 'react';
 import { Check } from 'lucide-react';
 import { todayIsoDate } from '@/lib/dates';
+import { jobKindLabel } from '@/lib/jobs';
 import { groupTasksByUrgency, hasStartPoint, type TaskDueState } from '@/lib/maintenance';
 import { SHOP_MAX_LENGTH } from '@/lib/serviceVisits';
 import { specsForTasks, type ResolvedSpec } from '@/lib/specs';
 import { batchCandidates } from '@/lib/taskCategories';
 import { dueLabel } from '@/lib/taskLabels';
-import type { MaintenanceTask, UnitSystem } from '@/lib/types';
+import type { BikeJob, MaintenanceTask, UnitSystem } from '@/lib/types';
 import { distanceUnitLabel, fromDisplayDistance, toDisplayDistance } from '@/lib/units';
 import Modal from './Modal';
 import TaskSpecs from './TaskSpecs';
@@ -17,6 +18,8 @@ import { ui } from './ui';
 export type LogServiceValues = {
   /** Checklist tasks done in this visit, in the order shown. */
   taskIds: string[];
+  /** Repairs and upgrades done in this visit. */
+  jobIds: string[];
   /** A job not on the checklist. */
   oneOffName: string | null;
   performedAt: string;
@@ -43,6 +46,10 @@ type LogServiceModalProps = {
   /** Logging a booking: its tasks start ticked and its shop fills in Where. */
   initialTaskIds?: string[];
   initialShop?: string;
+  /** The bike's repairs and upgrades still to do (lib/jobs.ts). */
+  jobs: BikeJob[];
+  /** Logging one from its card: it starts ticked, and the list starts with them. */
+  initialJobIds?: string[];
   /** The bike's specs; the ones for the ticked tasks are shown. */
   specs: ResolvedSpec[];
   onClose: () => void;
@@ -51,6 +58,8 @@ type LogServiceModalProps = {
 };
 
 type ChecklistEntry = { task: MaintenanceTask; dueState: TaskDueState; hint: string | null };
+
+const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 const DUE_TONE: Record<TaskDueState['status'], string> = {
   Overdue: 'text-danger',
@@ -70,6 +79,8 @@ export default function LogServiceModal({
   shopChoices,
   initialTaskIds,
   initialShop,
+  jobs,
+  initialJobIds,
   specs,
   onClose,
   onSubmit,
@@ -77,7 +88,9 @@ export default function LogServiceModal({
   // Opened for a task without a start point, or for all of them: the rider is filling in when they were last done.
   const pastService = past || (task !== null && !hasStartPoint(task));
   const [selectedIds, setSelectedIds] = useState<string[]>(task ? [task.id] : (initialTaskIds ?? []));
-  const [oneOffChecked, setOneOffChecked] = useState(tasks.length === 0);
+  const [selectedJobIds, setSelectedJobIds] = useState<string[]>(initialJobIds ?? []);
+  const [showAllJobs, setShowAllJobs] = useState(false);
+  const [oneOffChecked, setOneOffChecked] = useState(tasks.length === 0 && jobs.length === 0);
   const [oneOffName, setOneOffName] = useState('');
   const [performedAt, setPerformedAt] = useState(() => initialDate ?? todayIsoDate());
   // A past service wasn't at today's odometer, so it starts blank.
@@ -124,10 +137,21 @@ export default function LogServiceModal({
   const tickedNames = tasks.filter((candidate) => selectedIds.includes(candidate.id)).map((candidate) => candidate.task_name);
   const specGroups = pastService ? [] : specsForTasks(tickedNames, specs);
 
-  const itemCount = selectedIds.length + (oneOffChecked && oneOffName.trim() ? 1 : 0);
+  // Repairs show; upgrades (a wish list can run long) wait behind "Show upgrades" unless ticked or few.
+  const visibleJobs =
+    showAllJobs || jobs.length <= 3 ? jobs : jobs.filter((job) => job.kind === 'repair' || selectedJobIds.includes(job.id));
+  const hiddenJobCount = jobs.length - visibleJobs.length;
+  const jobsFirst = Boolean(initialJobIds?.length);
+
+  const itemCount = selectedIds.length + selectedJobIds.length + (oneOffChecked && oneOffName.trim() ? 1 : 0);
+  // Just one job ticked: its estimate is a hint for the cost.
+  const onlyJob = itemCount === 1 && selectedJobIds.length === 1 ? jobs.find((job) => job.id === selectedJobIds[0]) : undefined;
+  const costHint = onlyJob?.estimated_cost != null ? `Estimated ${currencyFormatter.format(Number(onlyJob.estimated_cost))}` : 'e.g. 49.99';
 
   const toggleTask = (taskId: string) =>
     setSelectedIds((previous) => (previous.includes(taskId) ? previous.filter((id) => id !== taskId) : [...previous, taskId]));
+  const toggleJob = (jobId: string) =>
+    setSelectedJobIds((previous) => (previous.includes(jobId) ? previous.filter((id) => id !== jobId) : [...previous, jobId]));
 
   const handleSubmit = async (event: SubmitEvent) => {
     event.preventDefault();
@@ -140,7 +164,7 @@ export default function LogServiceModal({
       setError('Describe the other work, or untick it.');
       return;
     }
-    if (selectedIds.length === 0 && !oneOff) {
+    if (selectedIds.length === 0 && selectedJobIds.length === 0 && !oneOff) {
       setError('Tick what was done.');
       return;
     }
@@ -163,6 +187,7 @@ export default function LogServiceModal({
     const shownOrder = [...featured, ...others].map((entry) => entry.task.id);
     const submitError = await onSubmit({
       taskIds: shownOrder.filter((id) => selectedIds.includes(id)),
+      jobIds: jobs.map((job) => job.id).filter((id) => selectedJobIds.includes(id)),
       oneOffName: oneOff || null,
       performedAt,
       odometer: miles,
@@ -173,6 +198,32 @@ export default function LogServiceModal({
     setSaving(false);
     if (submitError) setError(submitError);
   };
+
+  const jobRows = (
+    <>
+      {visibleJobs.map((job) => (
+        <label key={job.id} className="flex min-h-12 cursor-pointer items-center gap-3 px-3 py-2">
+          <input
+            type="checkbox"
+            checked={selectedJobIds.includes(job.id)}
+            onChange={() => toggleJob(job.id)}
+            className="h-5 w-5 shrink-0 accent-brand"
+          />
+          <span className="min-w-0 flex-1 font-semibold leading-snug">{job.name}</span>
+          <span className={`shrink-0 text-xs font-semibold ${job.kind === 'repair' ? 'text-warn' : 'text-accent'}`}>{jobKindLabel(job.kind)}</span>
+        </label>
+      ))}
+      {hiddenJobCount > 0 && (
+        <button
+          type="button"
+          onClick={() => setShowAllJobs(true)}
+          className="block w-full px-3 py-2.5 text-left text-sm font-bold text-accent hover:underline"
+        >
+          Show upgrades ({hiddenJobCount} more)
+        </button>
+      )}
+    </>
+  );
 
   return (
     <Modal
@@ -189,6 +240,7 @@ export default function LogServiceModal({
         <fieldset>
           <legend className={ui.label}>What was done</legend>
           <div className="divide-y divide-line rounded-xl border border-line">
+            {jobsFirst && jobRows}
             {visible.map(({ task: candidate, dueState, hint }) => {
               const due = dueLabel(dueState, unitSystem, candidate.interval_mileage);
               return (
@@ -218,6 +270,7 @@ export default function LogServiceModal({
                 Show all tasks ({hiddenCount} more)
               </button>
             )}
+            {!jobsFirst && jobRows}
             <div className="px-3 py-2">
               <label className="flex min-h-8 cursor-pointer items-center gap-3">
                 <input
@@ -327,7 +380,7 @@ export default function LogServiceModal({
             step="0.01"
             value={cost}
             onChange={(event) => setCost(event.target.value)}
-            placeholder="e.g. 49.99"
+            placeholder={costHint}
             className={ui.input}
           />
         </div>

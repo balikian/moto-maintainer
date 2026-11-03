@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Clock3, Link2, MapPin, Trash2 } from 'lucide-react';
 import { formatDisplayDate } from '@/lib/dates';
+import { serviceType, type ServiceType } from '@/lib/historyExport';
 import { groupServiceVisits } from '@/lib/serviceVisits';
 import type { MaintenanceTask, Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
 import { formatDistance } from '@/lib/units';
@@ -25,6 +26,14 @@ type ServiceHistoryViewProps = {
 };
 
 const currencyFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+
+/** Logs tied to a checklist task are routine; repairs and upgrades come from that list; anything else is a one-off job. */
+const TYPE_TONE: Record<ServiceType, string> = {
+  Routine: 'bg-info/10 text-info',
+  Repair: 'bg-warn/10 text-warn',
+  Upgrade: 'bg-accent/10 text-accent',
+  'One-off': 'bg-raised text-muted',
+};
 
 export default function ServiceHistoryView({ bike, logs, tasks, loading, unitSystem, onAddLog, onDeleteLog, onShare }: ServiceHistoryViewProps) {
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
@@ -94,15 +103,14 @@ export default function ServiceHistoryView({ bike, logs, tasks, loading, unitSys
                     <li key={log.id} className="flex items-center justify-between gap-3">
                       <span className="flex min-w-0 flex-wrap items-center gap-2">
                         <span className="text-base font-bold leading-snug">{log.task_name}</span>
-                        {/* Logs tied to a checklist task are routine; everything else is a one-off job. */}
-                        {log.task_id ? (
-                          <span className={`${ui.tag} bg-info/10 text-info`}>Routine</span>
-                        ) : (
-                          <span className={`${ui.tag} bg-raised text-muted`}>One-off</span>
-                        )}
+                        <span className={`${ui.tag} ${TYPE_TONE[serviceType(log)]}`}>{serviceType(log)}</span>
                       </span>
                       <ConfirmPopover
-                        message={`Delete the "${log.task_name}" service record?`}
+                        message={
+                          log.job_id
+                            ? `Delete the "${log.task_name}" service record? It goes back on your repairs & upgrades list.`
+                            : `Delete the "${log.task_name}" service record?`
+                        }
                         confirmLabel="Delete record"
                         onConfirm={() => void handleDelete(log)}
                       >

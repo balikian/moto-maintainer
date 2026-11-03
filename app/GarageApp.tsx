@@ -12,6 +12,7 @@ import {
   type StorageChange,
 } from '@/lib/actions/bikes';
 import { deleteBookingAction, saveBookingAction } from '@/lib/actions/bookings';
+import { createJobAction, deleteJobAction, updateJobAction } from '@/lib/actions/jobs';
 import { createShopAction, deleteShopAction, updateShopAction } from '@/lib/actions/shops';
 import {
   createMaintenanceTaskAction,
@@ -24,6 +25,7 @@ import {
 import type { CustomModel } from '@/lib/bikeCatalog';
 import { bookedDates, type BookingInput } from '@/lib/bookings';
 import { todayIsoDate } from '@/lib/dates';
+import { splitJobs, type JobInput } from '@/lib/jobs';
 import { countTasksByStatus, findDefaultTask, hasStartPoint, scheduleOverlapsTasks, type TaskStart } from '@/lib/maintenance';
 import { fetchModelSchedule, fetchModelSpecs } from '@/lib/modelData';
 import { trackEvent } from '@/lib/analytics';
@@ -32,8 +34,9 @@ import type { ShopInput } from '@/lib/shops';
 import { cleanBikeSpecs, cleanSpecValues, favoriteSpecRows, resolveSpecs, type BikeSpecs, type SpecValues } from '@/lib/specs';
 import { guessBatteryType } from '@/lib/storage';
 import { createClient } from '@/lib/supabase/client';
-import type { MaintenanceTask, ModelSchedule, ModelSpecs, Motorcycle, ServiceBooking, ServiceLog, Shop } from '@/lib/types';
+import type { BikeJob, MaintenanceTask, ModelSchedule, ModelSpecs, Motorcycle, ServiceBooking, ServiceLog, Shop } from '@/lib/types';
 import BikeFormModal, { type BikeFormValues } from './components/BikeFormModal';
+import BikeJobs from './components/BikeJobs';
 import AddCustomTaskModal, { type NewTaskValues } from './components/AddCustomTaskModal';
 import AppNav from './components/AppNav';
 import BikeManualPanel from './components/BikeManualPanel';
@@ -45,6 +48,7 @@ import DesktopHeader from './components/DesktopHeader';
 import ErrorList from './components/ErrorList';
 import GarageView from './components/GarageView';
 import GettingStarted from './components/GettingStarted';
+import JobFormModal from './components/JobFormModal';
 import LoadingScreen from './components/LoadingScreen';
 import LoginCard from './components/LoginCard';
 import LogServiceModal, { type LogServiceValues } from './components/LogServiceModal';
@@ -85,8 +89,10 @@ type OpenDialog =
   // Any bike's, from Garage or Tasks.
   | { type: 'storage'; bikeId: string; mode: 'store' | 'return' }
   | { type: 'addTask' }
-  // From a booking: its tasks, day and shop fill in, and logging it removes the booking.
-  | { type: 'logService'; task: MaintenanceTask | null; past?: boolean; booking?: ServiceBooking }
+  // From a booking: its tasks, day and shop fill in, and logging it removes the booking. From a repair or upgrade: it's ticked.
+  | { type: 'logService'; task: MaintenanceTask | null; past?: boolean; booking?: ServiceBooking; job?: BikeJob }
+  | { type: 'addJob' }
+  | { type: 'editJob'; job: BikeJob }
   | { type: 'schedule'; booking?: ServiceBooking; task?: MaintenanceTask }
   | { type: 'share' }
   | { type: 'manual' }
@@ -187,6 +193,12 @@ export default function GarageApp() {
   );
   const bookings = bookingsQuery.data ?? [];
 
+  // The bike's repairs and upgrades; the service records say which are done.
+  const jobsQuery = useSupabaseQuery<BikeJob[]>(activeBikeId, (bikeId) =>
+    supabase.from('bike_jobs').select('*').eq('motorcycle_id', bikeId).order('created_at', { ascending: true })
+  );
+  const jobs = splitJobs(jobsQuery.data ?? [], logsQuery.data ?? []);
+
   // The date of the last past service entered, so the next one starts there (most were done together).
   const [lastPastDate, setLastPastDate] = useState<string | undefined>(undefined);
 
@@ -255,7 +267,7 @@ export default function GarageApp() {
     })
   );
 
-  const loadErrors = [bikesQuery.error, tasksQuery.error, logsQuery.error, allTasksQuery.error, shopsQuery.error, bookingsQuery.error]
+  const loadErrors = [bikesQuery.error, tasksQuery.error, logsQuery.error, allTasksQuery.error, shopsQuery.error, bookingsQuery.error, jobsQuery.error]
     .filter((message): message is string => Boolean(message))
     .map((message) => `Couldn't load your garage: ${message}`);
 
@@ -463,6 +475,31 @@ export default function GarageApp() {
     bookingsQuery.reload();
   };
 
+  // --- Repairs and upgrades ------------------------------------------------
+
+  const handleSaveJob = async (input: JobInput, job?: BikeJob) => {
+    if (!activeBike) return 'Select a bike first.';
+    const result = job ? await updateJobAction(job.id, input) : await createJobAction(activeBike.id, input);
+    if (result.error) return result.error;
+    if (!job) trackEvent('Repair or upgrade added', { kind: input.kind === 'upgrade' ? 'upgrade' : 'repair' });
+    setDialog(null);
+    jobsQuery.reload();
+    // A done one's record took its kind.
+    if (job) logsQuery.reload();
+    return null;
+  };
+
+  const handleRemoveJob = async (job: BikeJob) => {
+    const result = await deleteJobAction(job.id);
+    if (result.error) {
+      reportError(`Unable to remove ${job.name}: ${result.error}`);
+      return;
+    }
+    setDialog(null);
+    jobsQuery.reload();
+    logsQuery.reload();
+  };
+
   // --- Service logs --------------------------------------------------------
 
   const handleLogService = async (values: LogServiceValues) => {
@@ -470,6 +507,7 @@ export default function GarageApp() {
     const result = await logServiceAction({
       motorcycleId: activeBike.id,
       taskIds: values.taskIds,
+      jobIds: values.jobIds,
       oneOffName: values.oneOffName,
       performedAt: values.performedAt,
       odometerAtService: values.odometer,
@@ -487,7 +525,7 @@ export default function GarageApp() {
     }
 
     const past = values.performedAt !== todayIsoDate();
-    trackEvent('Service logged', { tasks: values.taskIds.length + (values.oneOffName ? 1 : 0), past });
+    trackEvent('Service logged', { tasks: values.taskIds.length + values.jobIds.length + (values.oneOffName ? 1 : 0), past });
     if (past) setLastPastDate(values.performedAt);
     setDialog(null);
     bikesQuery.reload();
@@ -642,6 +680,15 @@ export default function GarageApp() {
                 bookedOn={bookedDates(bookings)}
                 onSchedule={() => setDialog({ type: 'schedule' })}
               />
+
+              <BikeJobs
+                open={jobs.open}
+                done={jobs.done}
+                loading={jobsQuery.loading}
+                onAdd={() => setDialog({ type: 'addJob' })}
+                onEdit={(job) => setDialog({ type: 'editJob', job })}
+                onLog={(job) => setDialog({ type: 'logService', task: null, job })}
+              />
             </div>
           </div>
         ) : addFirstBike)}
@@ -785,6 +832,8 @@ export default function GarageApp() {
           }
           initialTaskIds={dialog.booking?.task_ids}
           initialShop={shops.find((shop) => shop.id === dialog.booking?.shop_id)?.name}
+          jobs={jobs.open}
+          initialJobIds={dialog.job ? [dialog.job.id] : undefined}
           shopChoices={shopSuggestions(placesQuery.data ?? [], [activeShop?.name ?? null])}
           specs={activeSpecs}
           onClose={() => setDialog(null)}
@@ -840,6 +889,20 @@ export default function GarageApp() {
 
       {dialog?.type === 'editShop' && (
         <ShopFormModal shop={dialog.shop} onClose={() => setDialog(null)} onSubmit={(input) => handleEditShop(dialog.shop, input)} />
+      )}
+
+      {dialog?.type === 'addJob' && (
+        <JobFormModal onClose={() => setDialog(null)} onSubmit={(input) => handleSaveJob(input)} />
+      )}
+
+      {dialog?.type === 'editJob' && (
+        <JobFormModal
+          job={dialog.job}
+          doneOn={jobs.done.find((entry) => entry.job.id === dialog.job.id)?.log.performed_at.slice(0, 10) ?? null}
+          onClose={() => setDialog(null)}
+          onSubmit={(input) => handleSaveJob(input, dialog.job)}
+          onRemove={() => void handleRemoveJob(dialog.job)}
+        />
       )}
 
       {dialog?.type === 'share' && activeBike && (

@@ -3,13 +3,14 @@ import { describe, it } from 'node:test';
 import { buildAccountExport } from './accountExport';
 import {
   findDuplicateBikes,
+  jobForEachLog,
   IMPORT_LIMITS,
   parseAccountImport,
   parseAccountImportText,
   taskIdForLog,
   taskIdsByName,
 } from './accountImport';
-import type { MaintenanceTask, Motorcycle, ServiceLog } from './types';
+import type { BikeJob, MaintenanceTask, Motorcycle, ServiceLog } from './types';
 
 const TODAY = '2026-10-20';
 
@@ -51,7 +52,12 @@ const exportFile = () =>
     logs: [
       { id: 'l1', motorcycle_id: 'b1', task_id: 't1', task_name: 'Front tire', performed_at: '2025-06-01T00:00:00Z', odometer_at_service: 3000, cost: 189.5, notes: null },
       { id: 'l2', motorcycle_id: 'b1', task_id: null, task_name: 'New grips', performed_at: '2025-07-04', odometer_at_service: 3400, cost: null, notes: 'Heated', shop: 'Home' },
+      { id: 'l3', motorcycle_id: 'b1', task_id: null, task_name: 'Crash bars', performed_at: '2025-08-01', odometer_at_service: 3900, cost: 420, notes: null, job_id: 'j1', job_kind: 'upgrade' },
     ] as ServiceLog[],
+    jobs: [
+      { id: 'j1', user_id: 'someone-else', motorcycle_id: 'b1', kind: 'upgrade', name: 'Crash bars', notes: null, estimated_cost: 450, links: [{ url: 'https://revzilla.com/bars', label: 'SW-Motech' }], created_at: '2025-07-20T10:00:00Z' },
+      { id: 'j2', user_id: 'someone-else', motorcycle_id: 'b1', kind: 'repair', name: 'Cracked mirror', notes: 'Left side', estimated_cost: null, links: [], created_at: '2025-09-01T10:00:00Z' },
+    ] as BikeJob[],
     shops: [
       { id: 's1', user_id: 'someone-else', name: 'Moto Works', phone: '555-1234', email: null, address: null, website: 'https://motoworks.com/', notes: null, map_url: 'https://maps.app.goo.gl/AbC123' },
       { id: 's2', user_id: 'someone-else', name: 'moto works', phone: null, email: null, address: null, website: null, notes: 'A second one', map_url: null },
@@ -91,11 +97,30 @@ describe('parseAccountImport', () => {
           },
         ],
         logs: [
-          { taskName: 'New grips', routine: false, performedAt: '2025-07-04', odometerMiles: 3400, shop: 'Home', cost: null, notes: 'Heated' },
-          { taskName: 'Front tire', routine: true, performedAt: '2025-06-01', odometerMiles: 3000, shop: null, cost: 189.5, notes: null },
+          { taskName: 'Crash bars', routine: false, jobKind: 'upgrade', performedAt: '2025-08-01', odometerMiles: 3900, shop: null, cost: 420, notes: null },
+          { taskName: 'New grips', routine: false, jobKind: null, performedAt: '2025-07-04', odometerMiles: 3400, shop: 'Home', cost: null, notes: 'Heated' },
+          { taskName: 'Front tire', routine: true, jobKind: null, performedAt: '2025-06-01', odometerMiles: 3000, shop: null, cost: 189.5, notes: null },
+        ],
+        jobs: [
+          { kind: 'upgrade', name: 'Crash bars', notes: null, estimated_cost: 450, links: [{ url: 'https://revzilla.com/bars', label: 'SW-Motech' }], doneOn: '2025-08-01' },
+          { kind: 'repair', name: 'Cracked mirror', notes: 'Left side', estimated_cost: null, links: [], doneOn: null },
         ],
       },
     ]);
+  });
+
+  it('drops a repair or upgrade that doesn’t make sense, and reads files without any', () => {
+    const file = exportFile() as { bikes: { repairs_and_upgrades?: Record<string, unknown>[] }[] };
+    file.bikes[0].repairs_and_upgrades![0].kind = 'wish';
+    file.bikes[0].repairs_and_upgrades![1].links = [{ url: 'javascript:alert(1)', label: 'Bad' }, { url: 'shop.com/mirror', label: null }];
+    const bad = parse(file);
+    assert.ok('data' in bad);
+    assert.deepEqual(bad.data.bikes[0].jobs.map((job) => [job.name, job.links]), [['Cracked mirror', [{ url: 'https://shop.com/mirror', label: null }]]]);
+
+    delete file.bikes[0].repairs_and_upgrades;
+    const older = parse(file);
+    assert.ok('data' in older);
+    assert.deepEqual(older.data.bikes[0].jobs, []);
   });
 
   it('drops a storage day in the future, and reads files without one', () => {
@@ -280,5 +305,28 @@ describe('taskIdForLog', () => {
   it('leaves one-offs and unmatched names unlinked', () => {
     assert.equal(taskIdForLog({ taskName: 'Front tire', routine: false }, ids), null);
     assert.equal(taskIdForLog({ taskName: 'Chain', routine: true }, ids), null);
+  });
+});
+
+describe('jobForEachLog', () => {
+  it('pairs each repair or upgrade record with its done job, once each', () => {
+    const jobs = [
+      { kind: 'upgrade' as const, name: 'Crash bars', doneOn: '2025-08-01' },
+      { kind: 'repair' as const, name: 'Mirror', doneOn: null },
+      { kind: 'repair' as const, name: 'Mirror', doneOn: '2025-09-01' },
+    ];
+    assert.deepEqual(
+      jobForEachLog(
+        [
+          { taskName: 'crash bars', jobKind: 'upgrade', performedAt: '2025-08-01' },
+          { taskName: 'Crash bars', jobKind: 'upgrade', performedAt: '2025-08-01' },
+          { taskName: 'Mirror', jobKind: 'repair', performedAt: '2025-09-01' },
+          { taskName: 'Mirror', jobKind: null, performedAt: '2025-09-01' },
+          { taskName: 'Crash bars', jobKind: 'repair', performedAt: '2025-08-01' },
+        ],
+        jobs
+      ),
+      [0, null, 2, null, null]
+    );
   });
 });

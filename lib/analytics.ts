@@ -12,6 +12,7 @@ type AnalyticsEvents = {
   'Start points set': { start: 'today' | 'new' | 'bought'; tasks: number };
   'Schedule applied': Record<string, never>;
   'Custom task added': Record<string, never>;
+  'Repair or upgrade added': { kind: 'repair' | 'upgrade' };
   'Shop added': Record<string, never>;
   'Service booked': { tasks: number };
   'Bike stored': Record<string, never>;

@@ -67,6 +67,8 @@ type LogForApply = {
   performed_at: string;
   odometer_at_service: number | null;
   baseline_mileage?: number | null;
+  /** Set on a repair's or upgrade's record (lib/jobs.ts), which never joins a task. */
+  job_kind?: string | null;
 };
 
 export type ScheduleApplyPlan = {
@@ -104,7 +106,7 @@ export function planScheduleApply(
 ): ScheduleApplyPlan {
   const orphanLogsByName = new Map<string, LogForApply[]>();
   for (const log of logs) {
-    if (log.task_id) continue;
+    if (log.task_id || log.job_kind) continue;
     const key = nameKey(log.task_name);
     orphanLogsByName.set(key, [...(orphanLogsByName.get(key) ?? []), log]);
   }

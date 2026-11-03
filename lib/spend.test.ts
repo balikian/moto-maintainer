@@ -50,6 +50,20 @@ describe('summarizeSpend', () => {
     ]);
   });
 
+  it('keeps upgrades apart, and puts repairs with the part they fix', () => {
+    const summary = summarizeSpend(
+      [
+        { ...log('Crash bars', '2026-04-01', 420), job_kind: 'upgrade' },
+        { ...log('Bent brake lever', '2026-04-02', 30), job_kind: 'repair' },
+      ],
+      tasks
+    );
+    assert.deepEqual(summary.byCategory, [
+      { category: 'upgrades', total: 420 },
+      { category: 'brakes', total: 30 },
+    ]);
+  });
+
   it('is empty when nothing had a cost', () => {
     assert.deepEqual(summarizeSpend([log('Wash', '2026-01-01', null)], tasks), { total: 0, paidServices: 0, byCategory: [] });
   });

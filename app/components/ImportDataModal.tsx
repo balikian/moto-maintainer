@@ -114,6 +114,7 @@ export default function ImportDataModal({ garage, onClose, onImported }: ImportD
                   </span>
                   <span className={`block ${ui.muted}`}>
                     {count(bike.tasks.length, 'task', 'tasks')} · {count(bike.logs.length, 'service record', 'service records')}
+                    {bike.jobs.length > 0 && <> · {count(bike.jobs.length, 'repair or upgrade', 'repairs and upgrades')}</>}
                     {bike.shop && <> · {bike.shop.name}</>}
                   </span>
                   {loaded.duplicates[index] && (
