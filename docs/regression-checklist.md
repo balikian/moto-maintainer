@@ -30,7 +30,7 @@ add a line when a feature ships. Main code paths are in brackets.
 
 ## Booking service
 
-- Schedule service (Tasks): due tasks ticked to start, Where defaults to the bike's shop (Add a shop… there too); with a phone or email, the message (bike, odometer, ticked work) updates with the ticks until edited, and Text/Email/Call/Copy open it; saving needs a day, time optional. Only the bike's own tasks are saved. [`ScheduleServiceModal`, `saveBookingAction`, `cleanBooking`, `bookingRequestMessage`]
+- Schedule service (Tasks): every task listed, most urgent first, any number can be ticked; due ones ticked to start; Where defaults to the bike's shop (Add a shop… there too); with a phone or email, the message (bike, odometer, ticked work) updates with the ticks until edited, and Text/Email/Call/Copy open it; saving needs a day, time optional. Only the bike's own tasks are saved. [`ScheduleServiceModal`, `saveBookingAction`, `cleanBooking`, `bookingRequestMessage`]
 - Booked card at the top of Tasks, soonest first: when ("Tomorrow, 9:30 AM"), shop, tasks, notes; Add to calendar (Google Calendar link, .ics with a reminder the day before; timed = one hour, floating; else all day); Call/Directions; pencil changes it; Cancel removes it. Booked tasks say "Booked Nov 14". [`BookedService`, `bookingEvent`, `googleCalendarHref`, `bookingIcs`, `bookedDates`]
 - From the booked day on, the card says "did it happen?" with Log it: Log service opens with its tasks ticked, its shop as Where, its day (if past); saving removes the booking. A removed shop leaves the booking without one; a removed bike removes its bookings. [`GarageApp` `handleLogService`, `service_bookings` foreign keys]
 

@@ -284,7 +284,7 @@ export default async function HelpPage() {
 
         <Section id="booking">
           <p>
-            Tap <Ui>Schedule service</Ui> on Tasks. Tick what needs doing (what&apos;s coming due is ticked for you) and
+            Tap <Ui>Schedule service</Ui> on Tasks. Tick everything you want done (what&apos;s coming due is ticked for you) and
             pick where. If the shop has a phone or email, there&apos;s a message ready to send, with your bike, its
             odometer and the work: tap <Ui>Text</Ui> or <Ui>Email</Ui>, or <Ui>Copy</Ui> it.
           </p>

@@ -49,7 +49,6 @@ export default function ScheduleServiceModal({
   const { needsAttention, healthy, noStart } = groupTasksByUrgency(tasks, bike.current_mileage, today);
   const dueIds = needsAttention.map(({ task: entry }) => entry.id);
   const [selectedIds, setSelectedIds] = useState<string[]>(() => booking?.task_ids ?? (task ? [task.id] : dueIds));
-  const [showAll, setShowAll] = useState(false);
   const [shopId, setShopId] = useState(() => {
     const wanted = booking ? booking.shop_id : bike.shop_id;
     return shops.some((shop) => shop.id === wanted) ? wanted! : '';
@@ -63,10 +62,8 @@ export default function ScheduleServiceModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Every task, most urgent first: a shop visit often takes care of more than what's due.
   const entries = [...needsAttention, ...healthy, ...noStart];
-  const featured = entries.filter(({ task: entry }) => dueIds.includes(entry.id) || selectedIds.includes(entry.id));
-  const visible = showAll || featured.length === 0 ? entries : featured;
-  const hiddenCount = entries.length - visible.length;
   const selectedNames = entries.filter(({ task: entry }) => selectedIds.includes(entry.id)).map(({ task: entry }) => entry.task_name);
 
   const shop = shops.find((candidate) => candidate.id === shopId) ?? null;
@@ -120,7 +117,7 @@ export default function ScheduleServiceModal({
             <p className="text-sm text-muted">This bike has no tasks yet. Say what you need in the notes.</p>
           ) : (
             <ul className={`divide-y divide-line ${ui.card}`}>
-              {visible.map(({ task: entry, dueState }) => {
+              {entries.map(({ task: entry, dueState }) => {
                 const due = dueState.status === 'NoStart' ? null : dueLabel(dueState, unitSystem, entry.interval_mileage);
                 return (
                   <li key={entry.id}>
@@ -146,11 +143,6 @@ export default function ScheduleServiceModal({
                 );
               })}
             </ul>
-          )}
-          {hiddenCount > 0 && (
-            <button type="button" onClick={() => setShowAll(true)} className="mt-2 min-h-11 text-sm font-bold text-accent hover:underline">
-              Show all tasks ({hiddenCount} more)
-            </button>
           )}
         </fieldset>
 
