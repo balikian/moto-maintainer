@@ -114,13 +114,13 @@ account, so "Add Sign in with Apple" on More could cover riders who
 signed up another way.)
 
 **Phone apps** (step 7 below)
-1. ✅ D-U-N-S number for Cheese and Beer LLC: **025614636** (2026-10-23).
-   Apple can take up to 2 business days to see a new number.
-   ⏳ Blocked (2026-10-27): the D-U-N-S record shows an old,
-   out-of-business company of the same name (the LLC reuses an old
-   business name). The owner has a case open with Dun & Bradstreet to fix
-   it. No Apple Developer account until then; Google Play's organization
-   account checks the D-U-N-S too.
+1. ✅ D-U-N-S number for Cheese and Beer LLC: **150042197** (new record,
+   2026-11-04), listed as "Cheese And Beer LLC", a corporation, in Renton,
+   WA. It replaces 025614636 (2026-10-23), which pointed at an old,
+   out-of-business company of the same name (the LLC reuses an old business
+   name). Enroll with the name exactly as D&B lists it; Apple can take up
+   to 2 business days to see a new number. The full record (address) is in
+   the owner's notes, not here, since the repo is public.
 2. Owner: Apple Developer Program as the LLC ($99 a year) and a Google Play
    organization account ($25 once). Organization accounts skip Google's
    12-tester, 14-day closed test.
@@ -810,8 +810,8 @@ for now.
   advisories) with the app work below. The site changes are invisible in
   browsers; the app-only code switches on inside the app. Checked: pages
   load, the sign-in callback redirects to swingarm.app.
-- 🔨 **Started 2026-10-27** (store accounts wait on the D-U-N-S fix, so
-  Android first): Capacitor 8.5.3, app id `app.swingarm`,
+- 🔨 **Started 2026-10-27** (store accounts waited on the D-U-N-S fix,
+  done 2026-11-04, so Android first): Capacitor 8.5.3, app id `app.swingarm`,
   `capacitor.config.ts` loads swingarm.app (`CAPACITOR_SERVER_URL` points
   a build at the test site), an offline page (`mobile/offline.html`, "Can't
   reach SwingArm"), the user agent ends in `SwingArmApp`. `android/`
