@@ -832,9 +832,18 @@ for now.
   for production"; it's still the plan, since the site needs its server
   (server actions) and can't be bundled into the app.
   Next:
-  1. ⏳ Owner: install Android Studio (it brings Java and the Android SDK),
+  1. ✅ Owner: install Android Studio (it brings Java and the Android SDK),
      then a first build on the owner's Android phone, pointed at the test
      site.
+     ✅ **First store build (2026-11-08):** the Play app (`app.swingarm`,
+     free) is created, and the signed bundle (versionCode 1, synced
+     against swingarm.app) is on **internal testing** (tester list:
+     "SwingArm Testers"). Upload key made in Android Studio (Build →
+     Generate Signed App Bundle, alias `upload`), kept outside the repo
+     and backed up by the owner; Play App Signing holds the app's real
+     signing key. Owner installed it from Play on the Pixel: Google
+     sign-in against production, push (Test, and a tap opens the app) all
+     work.
   2. ✅ Splash on Android 12+ (2026-10-28): the icon on the page color for
      the phone's light or dark mode (`windowSplashScreenBackground`,
      `page_background` in `values/` and `values-night/`), and the web view
