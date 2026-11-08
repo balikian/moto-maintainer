@@ -851,7 +851,9 @@ for now.
      and `app.swingarm://auth/callback` to swingarm-test's Redirect URLs
      (Authentication → URL Configuration), then try Google in the app.
      ✅ Owner added both (2026-10-28).
-     Production gets `app.swingarm://auth/callback` with the store build.
+     ✅ Production has `app.swingarm://auth/callback` (owner, 2026-11-08;
+     its stray `http://localhost:3000/auth/callback` removed: local dev
+     uses the test database).
      The email's link still opens the browser (needs Android App Links,
      below).
   4. Links that open the app (Android App Links: `assetlinks.json` on
