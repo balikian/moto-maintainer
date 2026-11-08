@@ -124,6 +124,8 @@ signed up another way.)
 2. Owner: Apple Developer Program as the LLC ($99 a year) and a Google Play
    organization account ($25 once). Organization accounts skip Google's
    12-tester, 14-day closed test.
+   ✅ Google Play organization account created (owner, 2026-11-08).
+   ⏳ Apple next.
 3. Claude: wrap the app with Capacitor (icon, splash screen, deep links,
    Google sign-in through the system browser and back), native push through
    the existing reminder job, Sign in with Apple (required on iPhone when
@@ -131,9 +133,15 @@ signed up another way.)
 4. Owner + Claude: store listings (screenshots, description, privacy labels
    including analytics, age rating), privacy policy updates (Apple and
    Google push, Sign in with Apple), then review.
-5. Check before enrolling: the business address on the D-U-N-S record, and
-   whether Apple (EU trader status) or Google show the developer's address
-   publicly. Use the LLC's registered address, not a home address.
+5. ✅ **Decided (owner, 2026-11-08): enroll with the LLC's address as on
+   the D&B record**, with no paid business address: the LLC has no other
+   address, and the state's business registry already lists it. Google
+   likely shows an organization's address and phone on the listing
+   (Google's account has the owner's own phone number). Apple shows them
+   only on EU storefronts (EU trader status), so leave the EU out on the
+   App Store at first. A business address can come later if SwingArm
+   grows, but then the state registry, D&B and both stores all have to
+   change together.
 
 ---
 
