@@ -887,7 +887,8 @@ for now.
      go) and `/auth/confirm`, and `lib/appLinks.ts` opens those in the
      app's web view. **Decided (Claude):** share links stay in the
      browser (someone else's bike). New `app/auth/confirm` route
-     (`verifyOtp` with the token hash). versionCode 2.
+     (`verifyOtp` with the token hash). versionCode 2. ✅ Released
+     2026-11-08; Google's Digital Asset Links API reads the file.
      Order: release so swingarm.app serves the file (Android checks it at
      install), then upload versionCode 2 and try a reminder email's link on
      the Pixel. Then the sign-in emails (Supabase → Authentication → Email
