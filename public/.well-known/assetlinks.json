@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.swingarm",
+      "sha256_cert_fingerprints": [
+        "81:C8:02:9C:11:CB:AC:97:B5:2A:95:13:25:59:F1:EA:77:52:BB:02:EF:9A:37:F3:3C:76:43:EA:E4:26:D7:1D"
+      ]
+    }
+  }
+]

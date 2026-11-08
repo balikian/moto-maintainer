@@ -27,6 +27,21 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="${applicationId}" />
             </intent-filter>
+            <!-- swingarm.app links that open the app instead of the browser
+                 (Android App Links): the dashboard, where reminder emails go,
+                 and the sign-in email's link. Keep the paths in step with
+                 WEB_APP_LINK_PATHS in lib/appLinks.ts. Android checks
+                 swingarm.app/.well-known/assetlinks.json against the store
+                 build's signing key, so development builds don't get them. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="swingarm.app" />
+                <data android:path="/" />
+                <data android:path="/auth/confirm" />
+            </intent-filter>
         </activity>
 
         <provider

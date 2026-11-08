@@ -880,6 +880,20 @@ for now.
      link to swingarm.app (`/auth/confirm` with `{{ .TokenHash }}`, which
      works in any browser, no sign-in cookie needed). Meanwhile the app
      signs in with the email's code or Google.
+     🔨 Built 2026-11-08: `public/.well-known/assetlinks.json` with Play's
+     app signing key (SHA-256 `81:C8:…:D7:1D`, from Play Console →
+     Protected with Play → Manage Play app signing), an `autoVerify`
+     intent filter for `https://swingarm.app` `/` (where reminder emails
+     go) and `/auth/confirm`, and `lib/appLinks.ts` opens those in the
+     app's web view. **Decided (Claude):** share links stay in the
+     browser (someone else's bike). New `app/auth/confirm` route
+     (`verifyOtp` with the token hash). versionCode 2.
+     Order: release so swingarm.app serves the file (Android checks it at
+     install), then upload versionCode 2 and try a reminder email's link on
+     the Pixel. Then the sign-in emails (Supabase → Authentication → Email
+     Templates: Magic Link and Confirm signup) link to
+     `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`,
+     on test first, then production.
   5. 🔨 Native push (built 2026-10-28): Firebase Cloud Messaging. ✅ Owner
      made the Firebase project `swingarm-e40d2` (Analytics off) with both
      app ids, and downloaded `android/app/google-services.json`

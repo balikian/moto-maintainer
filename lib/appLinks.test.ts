@@ -8,9 +8,26 @@ describe('appLinkPath', () => {
     assert.equal(appLinkPath('app.swingarm.dev://auth/callback?code=abc123'), '/auth/callback?code=abc123');
   });
 
-  it("ignores other apps' schemes and web addresses", () => {
+  it("ignores other apps' schemes", () => {
     assert.equal(appLinkPath('other.app://auth/callback?code=abc123'), null);
+  });
+
+  it('opens swingarm.app links meant for the app: the dashboard and the sign-in link', () => {
+    assert.equal(appLinkPath('https://swingarm.app/?bike=b1&odometer=update'), '/?bike=b1&odometer=update');
+    assert.equal(appLinkPath('https://swingarm.app/?view=garage'), '/?view=garage');
+    assert.equal(appLinkPath('https://swingarm.app'), '/');
+    assert.equal(
+      appLinkPath('https://swingarm.app/auth/confirm?token_hash=abc&type=email'),
+      '/auth/confirm?token_hash=abc&type=email',
+    );
+  });
+
+  it('leaves other swingarm.app pages and other sites alone', () => {
+    assert.equal(appLinkPath('https://swingarm.app/share/abc'), null);
     assert.equal(appLinkPath('https://swingarm.app/auth/callback?code=abc123'), null);
+    assert.equal(appLinkPath('https://test.swingarm.app/?view=garage'), null);
+    assert.equal(appLinkPath('http://swingarm.app/'), null);
+    assert.equal(appLinkPath('https://evil.example/?view=garage'), null);
   });
 
   it('only opens pages meant for app links', () => {
