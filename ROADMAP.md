@@ -889,6 +889,8 @@ for now.
      browser (someone else's bike). New `app/auth/confirm` route
      (`verifyOtp` with the token hash). versionCode 2. ✅ Released
      2026-11-08; Google's Digital Asset Links API reads the file.
+     ✅ versionCode 2 on internal testing; a swingarm.app link opens the
+     app on the Pixel (owner, 2026-11-08). ⏳ The email templates next.
      Order: release so swingarm.app serves the file (Android checks it at
      install), then upload versionCode 2 and try a reminder email's link on
      the Pixel. Then the sign-in emails (Supabase → Authentication → Email
