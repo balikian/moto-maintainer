@@ -124,7 +124,10 @@ signed up another way.)
 2. Owner: Apple Developer Program as the LLC ($99 a year) and a Google Play
    organization account ($25 once). Organization accounts skip Google's
    12-tester, 14-day closed test.
-   ✅ Google Play organization account created (owner, 2026-11-08).
+   ✅ Google Play organization account created (owner, 2026-11-08):
+   trader status declared (the LLC is a business); the organization's
+   website, cheeseandbeer.com, verified in Search Console with a TXT record
+   at DreamHost (its DNS host; keep the record).
    ⏳ Apple next.
 3. Claude: wrap the app with Capacitor (icon, splash screen, deep links,
    Google sign-in through the system browser and back), native push through
