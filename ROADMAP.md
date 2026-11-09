@@ -890,7 +890,13 @@ for now.
      (`verifyOtp` with the token hash). versionCode 2. ✅ Released
      2026-11-08; Google's Digital Asset Links API reads the file.
      ✅ versionCode 2 on internal testing; a swingarm.app link opens the
-     app on the Pixel (owner, 2026-11-08). ⏳ The email templates next.
+     app on the Pixel (owner, 2026-11-08). ✅ swingarm-test's Magic Link
+     and Confirm signup templates link to `/auth/confirm` ("Or tap here to
+     sign in.", no more "same device and browser"); its Site URL was
+     `http://localhost:3000`, now `https://test.swingarm.app`, so local dev
+     signs in with the code (the link goes to the test site). Owner signed
+     in on the test site by the link (2026-11-09). ⏳ Production's
+     templates next.
      Order: release so swingarm.app serves the file (Android checks it at
      install), then upload versionCode 2 and try a reminder email's link on
      the Pixel. Then the sign-in emails (Supabase → Authentication → Email
