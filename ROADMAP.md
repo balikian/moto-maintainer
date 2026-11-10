@@ -139,8 +139,17 @@ signed up another way.)
    🔨 Google Play drafted (Claude, 2026-11-09): `docs/store-listing.md`
    (name, descriptions, App content and data safety answers, target
    audience 18+) and `assets/store/` (512 icon, feature graphic from the
-   link preview picture). ⏳ Owner: enter it in the Play Console;
-   screenshots from the Pixel.
+   link preview picture). Screenshots from the Pixel in
+   `assets/store/screenshots/`. ✅ Entered in the Play Console (owner,
+   2026-11-10), with advertising ID: No (the release build has no `AD_ID`
+   permission) and AI asset labels: none. ✅ **Production release sent
+   for review (2026-11-10):** versionCode 2, all countries. Play's two
+   recommendations were skipped for now: edge-to-edge (fine on the
+   Pixel, Android 16; check an Android 10–14 phone some day) and R8
+   shrinking (`minifyEnabled false`; little to gain in a thin shell, and
+   it could break Capacitor's plugin lookup in store builds only).
+   ⏳ Google's review; then Claude updates the home page's Play link and
+   help ("Before the public release" in `docs/store-listing.md`).
    **Review account (2026-11-09):** Play's "Sign in details" says
    reviewers can't create accounts (and they can't get our email codes),
    so `review@swingarm.app` signs in with a password: typing it on the
