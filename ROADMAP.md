@@ -134,8 +134,13 @@ signed up another way.)
    LLC). Meanwhile Claude builds what needs neither the account nor a Mac:
    `ios/`, Sign in with Apple (web too), push through Firebase. After
    approval: App IDs, keys, Team ID for universal links, App Store Connect.
-   ⏳ Owner: check whether the old MacBook runs macOS Sequoia 15.6+ (step
-   7, item 7, under Phone apps). Then the App Store listing (reusing
+   ✅ The Mac (owner, 2026-11-10): a 2018 13" MacBook Pro on macOS
+   Sequoia 15.7.9, so Xcode 26.0–26.3 run on it (not 26.4+, which needs
+   Tahoe, and Tahoe doesn't support this Mac). It works until Apple
+   requires a newer Xcode for uploads (usually each April; Xcode 27 likely
+   needs Tahoe), then a newer Mac or a cloud build. ⏳ Owner: install
+   Xcode 26.3 from developer.apple.com/download/all (the App Store only
+   offers the newest). Then the App Store listing (reusing
    `docs/store-listing.md` and the review account).
 3. Claude: wrap the app with Capacitor (icon, splash screen, deep links,
    Google sign-in through the system browser and back), native push through
