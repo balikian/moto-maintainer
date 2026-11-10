@@ -141,6 +141,14 @@ signed up another way.)
    audience 18+) and `assets/store/` (512 icon, feature graphic from the
    link preview picture). ⏳ Owner: enter it in the Play Console;
    screenshots from the Pixel.
+   **Review account (2026-11-09):** Play's "Sign in details" says
+   reviewers can't create accounts (and they can't get our email codes),
+   so `review@swingarm.app` signs in with a password: typing it on the
+   sign-in screen shows a password box (`lib/reviewAccount.ts`,
+   `signInReviewAccount`, which refuses any other email). On `develop`.
+   ⏳ Owner: create the user on test (Supabase → Authentication → Users →
+   Add user, Auto Confirm) and try it; then production, sample bikes,
+   reminder emails off (nothing receives mail there). Apple needs the same.
 5. ✅ **Decided (owner, 2026-11-08): enroll with the LLC's address as on
    the D&B record**, with no paid business address: the LLC has no other
    address, and the state's business registry already lists it. Google
