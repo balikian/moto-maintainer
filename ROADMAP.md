@@ -138,9 +138,15 @@ signed up another way.)
    Sequoia 15.7.9, so Xcode 26.0–26.3 run on it (not 26.4+, which needs
    Tahoe, and Tahoe doesn't support this Mac). It works until Apple
    requires a newer Xcode for uploads (usually each April; Xcode 27 likely
-   needs Tahoe), then a newer Mac or a cloud build. ⏳ Owner: install
-   Xcode 26.3 from developer.apple.com/download/all (the App Store only
-   offers the newest). Then the App Store listing (reusing
+   needs Tahoe), then a newer Mac or a cloud build. ✅ Mac set up (owner,
+   2026-11-10): Xcode 26.3 (Universal, it's an Intel Mac) in
+   Applications, `xcode-select` pointed at it, Node 26 LTS, the repo cloned
+   to `~/moto-maintainer` (develop), `npm install`, `npx cap sync ios`,
+   and `ios/App/App.xcodeproj` open in Xcode. The owner is new to macOS:
+   give exact commands to paste, one at a time. ⏳ Next (owner): let
+   Xcode finish downloading its packages, pick an iPhone simulator, press
+   ▶, and report SwingArm Dev running or the error (signing may need the
+   approved team). Then the App Store listing (reusing
    `docs/store-listing.md` and the review account).
 3. Claude: wrap the app with Capacitor (icon, splash screen, deep links,
    Google sign-in through the system browser and back), native push through
