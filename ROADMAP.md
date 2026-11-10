@@ -868,7 +868,7 @@ for now.
      uses the test database).
      The email's link still opens the browser (needs Android App Links,
      below).
-  4. Links that open the app (Android App Links: `assetlinks.json` on
+  4. ✅ Links that open the app (Android App Links: `assetlinks.json` on
      swingarm.app), e.g. the sign-in email's link and share links.
      💤 Waits for the Play account (Claude, 2026-10-28): Android checks
      `assetlinks.json` against the store build's signing key, which Play
@@ -895,8 +895,10 @@ for now.
      sign in.", no more "same device and browser"); its Site URL was
      `http://localhost:3000`, now `https://test.swingarm.app`, so local dev
      signs in with the code (the link goes to the test site). Owner signed
-     in on the test site by the link (2026-11-09). ⏳ Production's
-     templates next.
+     in on the test site by the link (2026-11-09). ✅ Production's
+     templates changed the same way (Site URL `https://swingarm.app`);
+     the sign-in email's link, tapped in Gmail on the Pixel, opens the app
+     signed in (owner, 2026-11-09).
      Order: release so swingarm.app serves the file (Android checks it at
      install), then upload versionCode 2 and try a reminder email's link on
      the Pixel. Then the sign-in emails (Supabase → Authentication → Email
