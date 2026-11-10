@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { useState, type SubmitEvent } from 'react';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
-import { sendMagicLink, signInWithGoogle, verifyEmailCode } from '@/lib/actions/auth';
+import { sendMagicLink, signInReviewAccount, signInWithGoogle, verifyEmailCode } from '@/lib/actions/auth';
 import { isNativeApp } from '@/lib/nativeApp';
+import { isReviewEmail } from '@/lib/reviewAccount';
 import BrandLogo from './BrandLogo';
 import { ui } from './ui';
 
@@ -13,6 +14,9 @@ export default function LoginCard() {
   const [email, setEmail] = useState('');
   const [linkSent, setLinkSent] = useState(false);
   const [code, setCode] = useState('');
+  // The app store reviewers' account signs in with a password (lib/reviewAccount.ts).
+  const [askPassword, setAskPassword] = useState(false);
+  const [password, setPassword] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [sending, setSending] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
@@ -39,6 +43,10 @@ export default function LoginCard() {
     }
 
     setError(null);
+    if (isReviewEmail(normalizedEmail)) {
+      setAskPassword(true);
+      return;
+    }
     setSending(true);
     try {
       const formData = new FormData();
@@ -71,7 +79,7 @@ export default function LoginCard() {
     setError(null);
     setVerifying(true);
     try {
-      const result = await verifyEmailCode(email, code);
+      const result = askPassword ? await signInReviewAccount(email, password) : await verifyEmailCode(email, code);
       if (result.error) {
         setError(result.error);
         setVerifying(false);
@@ -90,6 +98,8 @@ export default function LoginCard() {
     setEmail('');
     setCode('');
     setLinkSent(false);
+    setAskPassword(false);
+    setPassword('');
     setError(null);
   };
 
@@ -166,6 +176,36 @@ export default function LoginCard() {
                   Different email
                 </button>
               </div>
+            </form>
+          ) : askPassword ? (
+            <form onSubmit={handleCodeSubmit} className="space-y-3">
+              <p className={`text-sm ${ui.muted}`}>
+                <span className="font-medium">{email.trim()}</span> signs in with a password.
+              </p>
+              <label htmlFor="review-password" className={ui.label}>
+                Password
+              </label>
+              <input
+                id="review-password"
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  if (error) setError(null);
+                }}
+                disabled={verifying}
+                className={ui.input}
+                autoFocus
+                required
+              />
+              <button type="submit" disabled={verifying || !password} className={`w-full py-3 ${ui.primaryButton}`}>
+                {verifying ? 'Signing in…' : 'Sign in'}
+              </button>
+              <button type="button" onClick={resetMagicLink} disabled={verifying} className={`w-full ${ui.secondaryButton}`}>
+                Different email
+              </button>
             </form>
           ) : (
             <form onSubmit={handleEmailSubmit} className="space-y-3">

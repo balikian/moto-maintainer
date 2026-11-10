@@ -1,6 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
+import { isReviewEmail, REVIEW_EMAIL } from '../reviewAccount';
 import { isAppId } from '../site';
 import { createClient } from '../supabase/server';
 import { redirect } from 'next/navigation';
@@ -87,6 +88,24 @@ export async function verifyEmailCode(email: string, code: string): Promise<{ er
   const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: 'email' });
   if (error) {
     return { error: 'That code didn’t work. Check it, or send a new one. Codes expire after an hour.' };
+  }
+  return {};
+}
+
+/**
+ * Signs in the app store reviewers' account with its password
+ * (lib/reviewAccount.ts). Refuses every other email, so password sign-in
+ * stays limited to that one account.
+ */
+export async function signInReviewAccount(email: string, password: string): Promise<{ error?: string }> {
+  if (!isReviewEmail(email) || !password) {
+    return { error: 'Enter the password.' };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithPassword({ email: REVIEW_EMAIL, password });
+  if (error) {
+    return { error: 'That password didn’t work.' };
   }
   return {};
 }

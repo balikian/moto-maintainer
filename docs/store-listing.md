@@ -67,11 +67,22 @@ Questions or ideas? support@swingarm.app
 
 **Privacy policy:** `https://swingarm.app/privacy`
 
-**App access:** All or some functionality is restricted. Instructions:
+**Sign in details** (was "App access"): Yes, part of the app is restricted.
+Reviewers can't create accounts or receive email codes, so they get the
+review account (`lib/reviewAccount.ts`), which signs in with a password.
+Name: `Review account`. Username: `review@swingarm.app`. Password: the one
+set in Supabase (only here and in the store consoles, never in the repo).
+Other information:
 
 ```
-SwingArm needs an account, and anyone can create one for free. On the sign-in screen, tap "Continue with Google" and use any Google account. No invite, payment or special credentials are needed.
+On the sign-in screen, type review@swingarm.app in the email box and tap "Email me a sign-in code". A password box appears instead of sending an email: enter the password above and tap Sign in. The account has sample bikes, maintenance tasks and service history.
 ```
+
+The review account (on each database): Supabase → Authentication → Users
+→ Add user → Create new user, with the email, a strong password and Auto
+Confirm User on. Sign in to it once, add sample bikes with history, and
+turn its reminder emails off (More), since nothing receives mail at that
+address.
 
 **Ads:** No, the app doesn't contain ads.
 
