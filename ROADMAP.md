@@ -128,7 +128,14 @@ signed up another way.)
    trader status declared (the LLC is a business); the organization's
    website, cheeseandbeer.com, verified in Search Console with a TXT record
    at DreamHost (its DNS host; keep the record).
-   ⏳ Apple next.
+   ⏳ **Apple next (owner):** enroll at developer.apple.com/programs/enroll
+   (Apple Account with two-factor on) → Organization, name exactly
+   "Cheese And Beer LLC", D-U-N-S 150042197, website cheeseandbeer.com
+   (verified); Apple may phone to confirm the owner can sign for the LLC.
+   Then: check whether the old MacBook runs macOS Sequoia 15.6+ (step 7,
+   item 7, under Phone apps), then Claude builds `ios/`, Sign in with
+   Apple (web too), APNs push, and the App Store listing (reusing
+   `docs/store-listing.md` and the review account).
 3. Claude: wrap the app with Capacitor (icon, splash screen, deep links,
    Google sign-in through the system browser and back), native push through
    the existing reminder job, Sign in with Apple (required on iPhone when
