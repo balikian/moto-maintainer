@@ -145,10 +145,13 @@ signed up another way.)
    reviewers can't create accounts (and they can't get our email codes),
    so `review@swingarm.app` signs in with a password: typing it on the
    sign-in screen shows a password box (`lib/reviewAccount.ts`,
-   `signInReviewAccount`, which refuses any other email). On `develop`.
-   ⏳ Owner: create the user on test (Supabase → Authentication → Users →
-   Add user, Auto Confirm) and try it; then production, sample bikes,
-   reminder emails off (nothing receives mail there). Apple needs the same.
+   `signInReviewAccount`, which refuses any other email). ✅ Released
+   2026-11-09; the user exists on test and production (each with its own
+   password, in the owner's password manager), and signs in on the test
+   site and in the Play build. `review@swingarm.app` is a forward-only
+   address at DreamHost (to the owner), so nothing sent there bounces.
+   ⏳ Sample bikes on production's review account, its reminder emails
+   off; Play's Sign in details. Apple needs the same account.
 5. ✅ **Decided (owner, 2026-11-08): enroll with the LLC's address as on
    the D&B record**, with no paid business address: the LLC has no other
    address, and the state's business registry already lists it. Google
