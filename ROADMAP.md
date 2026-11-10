@@ -136,6 +136,11 @@ signed up another way.)
 4. Owner + Claude: store listings (screenshots, description, privacy labels
    including analytics, age rating), privacy policy updates (Apple and
    Google push, Sign in with Apple), then review.
+   🔨 Google Play drafted (Claude, 2026-11-09): `docs/store-listing.md`
+   (name, descriptions, App content and data safety answers, target
+   audience 18+) and `assets/store/` (512 icon, feature graphic from the
+   link preview picture). ⏳ Owner: enter it in the Play Console;
+   screenshots from the Pixel.
 5. ✅ **Decided (owner, 2026-11-08): enroll with the LLC's address as on
    the D&B record**, with no paid business address: the LLC has no other
    address, and the state's business registry already lists it. Google
