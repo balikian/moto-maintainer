@@ -128,13 +128,14 @@ signed up another way.)
    trader status declared (the LLC is a business); the organization's
    website, cheeseandbeer.com, verified in Search Console with a TXT record
    at DreamHost (its DNS host; keep the record).
-   ⏳ **Apple next (owner):** enroll at developer.apple.com/programs/enroll
-   (Apple Account with two-factor on) → Organization, name exactly
-   "Cheese And Beer LLC", D-U-N-S 150042197, website cheeseandbeer.com
-   (verified); Apple may phone to confirm the owner can sign for the LLC.
-   Then: check whether the old MacBook runs macOS Sequoia 15.6+ (step 7,
-   item 7, under Phone apps), then Claude builds `ios/`, Sign in with
-   Apple (web too), APNs push, and the App Store listing (reusing
+   ✅ Apple Developer Program enrollment sent (owner, 2026-11-10) as the
+   Organization "Cheese And Beer LLC", D-U-N-S 150042197. ⏳ Waiting on
+   Apple's approval (they may phone to confirm the owner can sign for the
+   LLC). Meanwhile Claude builds what needs neither the account nor a Mac:
+   `ios/`, Sign in with Apple (web too), push through Firebase. After
+   approval: App IDs, keys, Team ID for universal links, App Store Connect.
+   ⏳ Owner: check whether the old MacBook runs macOS Sequoia 15.6+ (step
+   7, item 7, under Phone apps). Then the App Store listing (reusing
    `docs/store-listing.md` and the review account).
 3. Claude: wrap the app with Capacitor (icon, splash screen, deep links,
    Google sign-in through the system browser and back), native push through
@@ -995,6 +996,23 @@ for now.
      export later.
   7. iPhone once Apple approves: `ios/`, Sign in with Apple (web too),
      Apple's push key. Building needs a Mac (Xcode) or a cloud build.
+     🔨 `ios/` added (Claude, 2026-11-10; not built yet, no Mac): Debug
+     builds are `app.swingarm.dev` "SwingArm Dev", Release `app.swingarm`;
+     iPhone only for now (no iPad screenshots or iPad review; iPads run it
+     as an iPhone app). Icon and splash from `assets/app/`, the
+     `app.swingarm://` scheme for Google sign-in's return, a print plugin
+     (`PrintPlugin.swift`), the page color behind the web view, and push
+     through Firebase (the Firebase iOS SDK as a Swift package;
+     `AppDelegate.swift` trades Apple's address for a Firebase token, and
+     `lib/fcm.ts` adds Apple's expiry, collapse id and sound). Entitlements
+     for push, Sign in with Apple and `applinks:swingarm.app`.
+     ⏳ Still to do: Sign in with Apple (Supabase's Apple provider, web and
+     app); `public/.well-known/apple-app-site-association` (needs the Team
+     ID); add both iOS apps in Firebase (owner, can be done now) and upload
+     Apple's push key there (after approval). Check on the Mac: Google
+     sign-in's return from Safari's sheet (may ask "Open in SwingArm?"),
+     the print sheet (does it use the print styles?), safe areas, and the
+     share sheet's Save to Files for exports.
      ⚠ Owner may not have a Mac (2026-10-28): maybe, maybe not. Without
      one, build in the cloud (a Mac build service, or GitHub Actions' macOS
      runners) and test through TestFlight on a borrowed iPhone. Not

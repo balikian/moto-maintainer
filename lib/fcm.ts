@@ -3,13 +3,14 @@ import { APP_NOTIFICATION_CHANNEL, type PushMessage } from './pushMessage';
 import type { PushSendResult } from './push';
 
 // Server-only: sends the phone app's notifications through Firebase Cloud
-// Messaging (FCM), Google's delivery service for Android. The app registers
-// with Firebase and saves its token (see app/hooks/usePush.ts); we send to
-// the token with FCM's HTTP v1 API, signed in as the Firebase project's
-// service account. FIREBASE_SERVICE_ACCOUNT holds that account's key file
-// (the JSON from Firebase's Project settings, Service accounts). It's a
-// secret, never prefixed with NEXT_PUBLIC_. One Firebase project serves both
-// app ids, so every environment uses the same key.
+// Messaging (FCM), Google's delivery service for Android, which hands
+// iPhones' notifications on to Apple. The app registers with Firebase and
+// saves its token (see app/hooks/usePush.ts); we send to the token with
+// FCM's HTTP v1 API, signed in as the Firebase project's service account.
+// FIREBASE_SERVICE_ACCOUNT holds that account's key file (the JSON from
+// Firebase's Project settings, Service accounts). It's a secret, never
+// prefixed with NEXT_PUBLIC_. One Firebase project serves every app id, so
+// every environment uses the same key.
 
 type ServiceAccount = { project_id: string; client_email: string; private_key: string };
 
@@ -17,7 +18,8 @@ const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
 
 /** A reminder older than this isn't worth showing; Firebase drops it. */
-const TIME_TO_LIVE = '86400s';
+const TIME_TO_LIVE_SECONDS = 86_400;
+const TIME_TO_LIVE = `${TIME_TO_LIVE_SECONDS}s`;
 
 function serviceAccount(): ServiceAccount | null {
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
@@ -72,11 +74,13 @@ async function accessToken(account: ServiceAccount): Promise<string> {
 }
 
 /**
- * FCM's message for a notification. Android shows it on its own while the app
- * is closed (and the app shows it while open, see capacitor.config.ts); a tap
- * opens the app, which opens `data.url` (app/components/NativeAppLinks.tsx).
+ * FCM's message for a notification. The phone shows it on its own while the
+ * app is closed (and the app shows it while open, see capacitor.config.ts); a
+ * tap opens the app, which opens `data.url` (app/components/NativeAppLinks.tsx).
+ * Firebase passes the `apns` part to Apple for iPhones: Apple has no time to
+ * live, only an expiry time, so `now` (seconds) sets it.
  */
-export function fcmMessage(token: string, message: PushMessage) {
+export function fcmMessage(token: string, message: PushMessage, now = Math.floor(Date.now() / 1000)) {
   return {
     message: {
       token,
@@ -85,6 +89,11 @@ export function fcmMessage(token: string, message: PushMessage) {
       android: {
         ttl: TIME_TO_LIVE,
         notification: { tag: message.tag, channel_id: APP_NOTIFICATION_CHANNEL },
+      },
+      apns: {
+        // The tag, as on Android: a newer notification replaces the older one.
+        headers: { 'apns-expiration': String(now + TIME_TO_LIVE_SECONDS), 'apns-collapse-id': message.tag },
+        payload: { aps: { sound: 'default' } },
       },
     },
   };

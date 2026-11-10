@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "sync:bikes": "tsx scripts/sync-motorcycle-data.ts",
-    "app:icons": "capacitor-assets generate --android --assetPath assets/app",
+    "app:icons": "capacitor-assets generate --android --ios --assetPath assets/app",
     "test": "tsx --test lib/**/*.test.ts",
     "postinstall": "node scripts/copy-pdf-worker.mjs"
   },
@@ -19,6 +19,7 @@
     "@capacitor/browser": "^8.0.5",
     "@capacitor/core": "^8.5.3",
     "@capacitor/filesystem": "^8.1.5",
+    "@capacitor/ios": "^8.5.3",
     "@capacitor/push-notifications": "^8.1.3",
     "@capacitor/share": "^8.0.3",
     "@supabase/ssr": "^0.12.3",

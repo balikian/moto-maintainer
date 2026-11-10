@@ -26,12 +26,16 @@ describe('tokenRequestAssertion', () => {
 describe('fcmMessage', () => {
   it('sends the notification to the token, with its page and tag', () => {
     const message = testPush();
-    assert.deepEqual(fcmMessage('token-1', message), {
+    assert.deepEqual(fcmMessage('token-1', message, 1_800_000_000), {
       message: {
         token: 'token-1',
         notification: { title: message.title, body: message.body },
         data: { url: '/?view=more', tag: 'test' },
         android: { ttl: '86400s', notification: { tag: 'test', channel_id: 'reminders' } },
+        apns: {
+          headers: { 'apns-expiration': '1800086400', 'apns-collapse-id': 'test' },
+          payload: { aps: { sound: 'default' } },
+        },
       },
     });
   });
