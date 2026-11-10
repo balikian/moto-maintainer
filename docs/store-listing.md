@@ -52,7 +52,7 @@ Questions or ideas? support@swingarm.app
 
 - App icon: `assets/store/play-icon-512.png` (512×512; Play rounds the corners itself, so it's a full square).
 - Feature graphic: `assets/store/feature-graphic.png` (1024×500).
-- Phone screenshots: 2 to 8, portrait. Plan: Tasks (a bike with something due), log service, History, Garage, a reminder notification, More. Taken on the Pixel from a garage with real-looking bikes.
+- Phone screenshots: `assets/store/screenshots/` (1080×2160, in order: Tasks, the task list, Log service, Garage, History). Taken on the Pixel in production's review account over USB (`adb exec-out screencap -p`, with Android's status bar demo mode), then cropped to Play's 2:1 limit with the status bar trimmed off. Retake them when the screens change.
 
 **Category and contact** (Store presence → Store settings)
 
