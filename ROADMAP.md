@@ -1030,10 +1030,38 @@ for now.
      `AppDelegate.swift` trades Apple's address for a Firebase token, and
      `lib/fcm.ts` adds Apple's expiry, collapse id and sound). Entitlements
      for push, Sign in with Apple and `applinks:swingarm.app`.
-     ⏳ Still to do: Sign in with Apple (Supabase's Apple provider, web and
-     app); `public/.well-known/apple-app-site-association` (needs the Team
-     ID); add both iOS apps in Firebase (owner, can be done now) and upload
-     Apple's push key there (after approval). Check on the Mac: Google
+     🔨 **Sign in with Apple** built (Claude, 2026-11-11), hidden until
+     set up: the button shows only with `NEXT_PUBLIC_APPLE_SIGN_IN=on`
+     (Vercel, per environment). iPhone app: Apple's own sheet
+     (`AppleSignInPlugin.swift`, nonce from `lib/appleNonce.ts`), token
+     traded in `signInWithAppleToken`. Web and Android: Apple's web page
+     through Supabase (`signInWithProvider`, Google's path). Only email is
+     asked for (no name; the app doesn't use it). Setup after approval,
+     test database first:
+     - Apple (owner): App IDs `app.swingarm` and `app.swingarm.dev` with
+       Sign in with Apple; a Services ID for the web (`app.swingarm.signin`)
+       with domains `hizfldkwauwhrgkmaphe.supabase.co` and
+       `rybecfzjvkgfblbxcpct.supabase.co` and return URLs
+       `https://<ref>.supabase.co/auth/v1/callback` for both; a key with
+       Sign in with Apple (.p8, downloadable once; keep it outside the repo).
+     - `npm run apple:secret -- <.p8> <key id> <team id> app.swingarm.signin`
+       → Supabase → Authentication → Sign In / Providers → Apple: on,
+       Client IDs `app.swingarm.signin,app.swingarm,app.swingarm.dev`, the
+       secret. ⚠ The secret expires after 180 days: note its date here and
+       make a new one (both databases) before then.
+     - Apple's email relay: riders who hide their email get a
+       `@privaterelay.appleid.com` address, which only passes on mail from
+       registered senders. Register `swingarm.app` / `noreply@swingarm.app`
+       (and Supabase's sign-in email sender) under Sign in with Apple for
+       Email Communication, or reminders and sign-in codes won't reach them.
+     - Then `NEXT_PUBLIC_APPLE_SIGN_IN=on` in Vercel (Preview first), check
+       on the web, Android and the iPhone (TestFlight or the simulator with
+       an Apple Account), then Production. Update the privacy policy (Apple
+       as a sign-in service, its relay addresses, with the date), the help
+       page and the home page FAQ when it goes live.
+     ⏳ Also still to do: `public/.well-known/apple-app-site-association`
+     (needs the Team ID); upload Apple's push key to Firebase (after
+     approval). Check on the Mac: Google
      sign-in's return from Safari's sheet (may ask "Open in SwingArm?"),
      the print sheet (does it use the print styles?), safe areas, and the
      share sheet's Save to Files for exports.

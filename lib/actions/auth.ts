@@ -22,20 +22,25 @@ async function siteUrl(): Promise<string> {
 }
 
 /**
- * Starts Google sign-in. In a browser it redirects to Google. The phone app
- * passes its id instead: Google won't sign in inside an app's web view, so the
- * app gets the address back to open in an in-app browser tab, and Google
- * returns to `<app id>://auth/callback`, which the app hands back to its web
- * view (NativeAppLinks), where this request's sign-in cookie waits.
+ * Starts Google or Apple sign-in through their web page. In a browser it
+ * redirects there. The phone app passes its id instead: Google won't sign in
+ * inside an app's web view, so the app gets the address back to open in an
+ * in-app browser tab, and the provider returns to `<app id>://auth/callback`,
+ * which the app hands back to its web view (NativeAppLinks), where this
+ * request's sign-in cookie waits. The iPhone app signs in with Apple through
+ * the phone's own sheet instead (signInWithAppleToken).
  */
-export async function signInWithGoogle(appId?: string): Promise<{ error?: string; url?: string } | undefined> {
+export async function signInWithProvider(
+  provider: 'google' | 'apple',
+  appId?: string
+): Promise<{ error?: string; url?: string } | undefined> {
   if (appId !== undefined && !isAppId(appId)) {
     return { error: 'Sign-in isn’t set up for this app.' };
   }
   const supabase = await createClient();
 
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
+    provider,
     options: {
       redirectTo: appId ? `${appId}://auth/callback` : `${await siteUrl()}/auth/callback`,
     },
@@ -49,6 +54,25 @@ export async function signInWithGoogle(appId?: string): Promise<{ error?: string
   if (data.url) {
     redirect(data.url);
   }
+}
+
+/**
+ * Finishes Sign in with Apple from the iPhone app's own sheet
+ * (ios/App/App/AppleSignInPlugin.swift): trades Apple's identity token for a
+ * session. `nonce` is the value whose hash went to Apple (lib/appleNonce.ts).
+ * Supabase accepts the token because the app's bundle id is among the Apple
+ * provider's client ids.
+ */
+export async function signInWithAppleToken(token: string, nonce: string): Promise<{ error?: string }> {
+  if (!token || !nonce) {
+    return { error: 'Apple didn’t send a sign-in token. Please try again.' };
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithIdToken({ provider: 'apple', token, nonce });
+  if (error) {
+    return { error: `Sign in with Apple didn’t work: ${error.message}` };
+  }
+  return {};
 }
 
 export async function sendMagicLink(formData: FormData) {

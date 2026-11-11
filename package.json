@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "sync:bikes": "tsx scripts/sync-motorcycle-data.ts",
+    "apple:secret": "tsx scripts/apple-client-secret.ts",
     "app:icons": "capacitor-assets generate --android --ios --assetPath assets/app",
     "test": "tsx --test lib/**/*.test.ts",
     "postinstall": "node scripts/copy-pdf-worker.mjs"

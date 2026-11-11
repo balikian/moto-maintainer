@@ -5,6 +5,7 @@ import UIKit
 class SwingArmViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(PrintPlugin())
+        bridge?.registerPluginInstance(AppleSignInPlugin())
 
         // Until the site paints, the web view shows the page color for the
         // phone's light or dark mode (the rider's own theme is only known once
