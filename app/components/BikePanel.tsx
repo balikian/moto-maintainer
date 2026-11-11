@@ -22,6 +22,8 @@ type BikePanelProps = {
   editOdometer?: boolean;
   onCancelOdometer?: () => void;
   onOpenSpecs: () => void;
+  /** Open the bike's owner's manual and the maker's schedule. */
+  onOpenManual: () => void;
   /** The bike's starred specs. */
   favoriteSpecs: FavoriteSpecRow[];
 };
@@ -33,7 +35,7 @@ const STATUS_TILES: { status: TaskStatus; label: string; color: string }[] = [
   { status: 'Healthy', label: 'All good', color: 'text-muted' },
 ];
 
-/** The top of Tasks: the bike's name (tap to switch), its odometer, its starred specs (tap for all), and its tasks by status. */
+/** The top of Tasks: the bike's name (tap to switch), its odometer, its starred specs (tap for all), its manual, and its tasks by status. */
 export default function BikePanel(props: BikePanelProps) {
   const { statusCounts } = props;
 
@@ -68,6 +70,16 @@ export default function BikePanel(props: BikePanelProps) {
         )}
         <span className="inline-flex shrink-0 items-center gap-0.5 text-sm font-bold text-accent">
           Specs <ChevronRight size={16} aria-hidden="true" />
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={props.onOpenManual}
+        className="-mt-1.5 flex min-h-11 w-full items-center gap-2 rounded-xl bg-raised py-2.5 pl-3 pr-2 text-left transition-colors hover:bg-line/60"
+      >
+        <span className="min-w-0 flex-1 text-sm font-semibold text-muted">Owner&apos;s manual and schedule</span>
+        <span className="inline-flex shrink-0 items-center gap-0.5 text-sm font-bold text-accent">
+          Manual <ChevronRight size={16} aria-hidden="true" />
         </span>
       </button>
       {statusCounts && (

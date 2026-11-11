@@ -351,8 +351,8 @@ export default async function HelpPage() {
 
         <Section id="manual-and-schedule">
           <p>
-            Tap <Ui>Manual &amp; schedule</Ui> on Tasks to open your bike’s owner’s manual and see whether we have its
-            manufacturer schedule.
+            Tap <Ui>Manual</Ui> in your bike’s card at the top of Tasks to open its owner’s manual and see whether we have
+            its manufacturer schedule.
           </p>
           <Bullets>
             <li>

@@ -620,6 +620,7 @@ export default function GarageApp() {
                 editOdometer={odometerLinkBikeId === activeBike.id}
                 onCancelOdometer={() => setOdometerLinkBikeId(null)}
                 onOpenSpecs={() => setDialog({ type: 'specs', bikeId: activeBike.id })}
+                onOpenManual={() => setDialog({ type: 'manual' })}
                 favoriteSpecs={activeFavoriteSpecs}
               />
               <BikeList
@@ -668,7 +669,6 @@ export default function GarageApp() {
                 loading={tasksQuery.loading}
                 unitSystem={unitSystem}
                 onAddTask={() => setDialog({ type: 'addTask' })}
-                onOpenManual={() => setDialog({ type: 'manual' })}
                 onLogTask={(task) => setDialog({ type: 'logService', task })}
                 onLogPast={() => setDialog({ type: 'logService', task: null, past: true })}
                 onSaveIntervals={handleSaveIntervals}

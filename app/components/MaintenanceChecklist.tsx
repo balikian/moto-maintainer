@@ -1,6 +1,6 @@
 'use client';
 
-import { BookOpen, CalendarPlus, CheckCircle, ChevronDown, History, Plus } from 'lucide-react';
+import { CalendarPlus, CheckCircle, ChevronDown, History, Plus } from 'lucide-react';
 import { formatDisplayDate, parseIsoDate } from '@/lib/dates';
 import { groupTasksByUrgency, purchaseBaseline, type TaskDueState, type TaskStart } from '@/lib/maintenance';
 import type { ResolvedSpec } from '@/lib/specs';
@@ -20,7 +20,6 @@ type MaintenanceChecklistProps = {
   loading: boolean;
   unitSystem: UnitSystem;
   onAddTask: () => void;
-  onOpenManual: () => void;
   onLogTask: (task: MaintenanceTask) => void;
   /** Log a past service for any of the tasks without a start point. */
   onLogPast: () => void;
@@ -51,7 +50,6 @@ export default function MaintenanceChecklist({
   loading,
   unitSystem,
   onAddTask,
-  onOpenManual,
   onLogTask,
   onLogPast,
   onSaveIntervals,
@@ -103,24 +101,20 @@ export default function MaintenanceChecklist({
 
   return (
     <section>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-        <h2 className={ui.sectionTitle}>Needs attention</h2>
-        {/* Add task is here too, not only below a long list where it gets missed. */}
-        <div className="flex flex-wrap gap-2">
-          <button type="button" onClick={onSchedule} className={ui.chipButton}>
-            <CalendarPlus size={15} />
-            Schedule service
-          </button>
-          <button type="button" onClick={onAddTask} className={ui.chipButton}>
-            <Plus size={15} />
-            Add task
-          </button>
-          <button type="button" onClick={onOpenManual} className={ui.chipButton}>
-            <BookOpen size={15} />
-            Manual &amp; schedule
-          </button>
-        </div>
+      {/* Add task is here too, not only below a long list where it gets missed. */}
+      <div className="mb-4 flex flex-wrap gap-2">
+        <button type="button" onClick={onSchedule} className={ui.chipButton}>
+          <CalendarPlus size={15} />
+          Schedule service
+        </button>
+        <button type="button" onClick={onAddTask} className={ui.chipButton}>
+          <Plus size={15} />
+          Add task
+        </button>
       </div>
+
+      {/* Only when something does: with nothing due, "Nothing due soon" says it all. */}
+      {!loading && (count > 0 || needsAttention.length > 0) && <h2 className={`mb-3 ${ui.sectionTitle}`}>Needs attention</h2>}
 
       {loading ? (
         <div className={ui.emptyState}>Loading maintenance tasks…</div>
