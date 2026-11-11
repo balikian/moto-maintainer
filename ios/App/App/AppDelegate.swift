@@ -32,6 +32,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return
         }
         Messaging.messaging().apnsToken = deviceToken
+        // token(completion:) is deprecated for register(completion:), but that
+        // one gives no token: it moves to Firebase installation ids, which
+        // lib/fcm.ts doesn't send to (Android's app saves tokens too). Keep
+        // this until both phones and the reminder job move together.
         Messaging.messaging().token { token, error in
             if let error = error {
                 NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
