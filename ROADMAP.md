@@ -143,7 +143,7 @@ signed up another way.)
    needs Tahoe), then a newer Mac or a cloud build. ✅ Mac set up (owner,
    2026-11-10): Xcode 26.3 (Universal, it's an Intel Mac) in
    Applications, `xcode-select` pointed at it, Node 26 LTS, the repo cloned
-   to `~/moto-maintainer` (develop), `npm install`, `npx cap sync ios`,
+   to `~/workspace/moto-maintainer` (develop), `npm install`, `npx cap sync ios`,
    and `ios/App/App.xcodeproj` open in Xcode. The owner is new to macOS:
    give exact commands to paste, one at a time. ✅ First simulator run
    (2026-11-11): SwingArm Dev builds and runs (no signing needed for the
@@ -153,7 +153,13 @@ signed up another way.)
    sticky header, every platform); also the Tasks heading change. Checked
    in the simulator against the PC's dev server
    (`CAPACITOR_SERVER_URL=http://192.168.1.28:3000 npx cap sync ios`).
-   ⏳ Next (owner): add both iOS apps in Firebase. Then the App Store
+   ✅ Both iOS apps added in Firebase (owner, 2026-11-11); their
+   `GoogleService-Info` files are in `ios/App/App/Firebase/` on the PC and
+   the Mac (copied over the network from the dev server; the PC and Mac
+   don't share a clipboard, so give the Mac one short line, e.g.
+   `curl <PC>:3000/x.sh | sh` for a script served from `public/`, then
+   delete it). The app still runs with them. ⏳ Waiting on Apple's
+   approval for the push key, app IDs and Team ID. Then the App Store
    listing (reusing `docs/store-listing.md` and the review account).
 3. Claude: wrap the app with Capacitor (icon, splash screen, deep links,
    Google sign-in through the system browser and back), native push through
