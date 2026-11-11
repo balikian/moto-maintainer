@@ -134,7 +134,9 @@ signed up another way.)
    LLC). Meanwhile Claude builds what needs neither the account nor a Mac:
    `ios/`, Sign in with Apple (web too), push through Firebase. After
    approval: App IDs, keys, Team ID for universal links, App Store Connect.
-   ✅ The Mac (owner, 2026-11-10): a 2018 13" MacBook Pro on macOS
+   ✅ The Mac (owner, 2026-11-10): a borrowed 2018 13" MacBook Pro (not
+   signed in to the owner's iCloud; add the developer account in Xcode's
+   Settings → Accounts only) on macOS
    Sequoia 15.7.9, so Xcode 26.0–26.3 run on it (not 26.4+, which needs
    Tahoe, and Tahoe doesn't support this Mac). It works until Apple
    requires a newer Xcode for uploads (usually each April; Xcode 27 likely
