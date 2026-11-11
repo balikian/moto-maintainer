@@ -180,6 +180,24 @@ select.select-compact {
 input[type='date'],
 input[type='time'] {
   padding-right: 1.1rem;
+  /* iPhones give these a minimum width, wider than a phone's column, that w-full doesn't override. */
+  min-width: 0;
+}
+
+/* iPhones and iPads only: their date and time fields also keep their own
+   width and center the value until they lose the native look. Without it,
+   an empty field collapses, hence the height of a text field (ui.input). */
+@supports (-webkit-touch-callout: none) {
+  input[type='date'],
+  input[type='time'] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-height: 2.875rem;
+  }
+
+  input::-webkit-date-and-time-value {
+    text-align: left;
+  }
 }
 
 /* Thin scrollbars in the theme's colors. Phones already show theirs only while scrolling. */

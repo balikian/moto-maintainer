@@ -61,21 +61,25 @@ export default function Modal({ title, description, size = 'md', closeOnOutsideC
       }}
     >
       <div
-        className={`relative max-h-full w-full overflow-y-auto overscroll-contain p-4 sm:p-6 ${ui.popover} ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'}`}
+        className={`relative max-h-full w-full overflow-y-auto overscroll-contain px-4 pb-4 sm:px-6 sm:pb-6 ${ui.popover} ${size === 'lg' ? 'max-w-2xl' : 'max-w-md'}`}
       >
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-xl text-muted transition-colors hover:bg-raised hover:text-fg sm:right-3 sm:top-3"
-          aria-label="Close"
-        >
-          <X size={18} />
-        </button>
+        {/* The title and close button stay at the top while a long dialog scrolls under them. */}
+        <div className="sticky top-0 z-10 -mx-4 flex items-start gap-2 bg-surface px-4 pb-3 pt-4 sm:-mx-6 sm:px-6 sm:pt-6">
+          <div className="min-w-0 flex-1">
+            <h2 id={titleId} className="text-xl font-extrabold tracking-tight">{title}</h2>
+            {description && <p className={`mt-1 text-sm ${ui.muted}`}>{description}</p>}
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-muted transition-colors hover:bg-raised hover:text-fg sm:-mr-3 sm:-mt-3"
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
-        <h2 id={titleId} className="pr-10 text-xl font-extrabold tracking-tight">{title}</h2>
-        {description && <p className={`mt-1 text-sm ${ui.muted}`}>{description}</p>}
-
-        <div className="mt-5">{children}</div>
+        <div className="mt-2">{children}</div>
       </div>
     </div>
   );
