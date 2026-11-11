@@ -145,11 +145,16 @@ signed up another way.)
    Applications, `xcode-select` pointed at it, Node 26 LTS, the repo cloned
    to `~/moto-maintainer` (develop), `npm install`, `npx cap sync ios`,
    and `ios/App/App.xcodeproj` open in Xcode. The owner is new to macOS:
-   give exact commands to paste, one at a time. ⏳ Next (owner): let
-   Xcode finish downloading its packages, pick an iPhone simulator, press
-   ▶, and report SwingArm Dev running or the error (signing may need the
-   approved team). Then the App Store listing (reusing
-   `docs/store-listing.md` and the review account).
+   give exact commands to paste, one at a time. ✅ First simulator run
+   (2026-11-11): SwingArm Dev builds and runs (no signing needed for the
+   simulator), looks right. Found and fixed on develop: iPhone date fields
+   too wide (Log service scrolled sideways, Edit bike's purchase date ran
+   into the odometer), and dialogs' close button scrolled away (now a
+   sticky header, every platform); also the Tasks heading change. Checked
+   in the simulator against the PC's dev server
+   (`CAPACITOR_SERVER_URL=http://192.168.1.28:3000 npx cap sync ios`).
+   ⏳ Next (owner): add both iOS apps in Firebase. Then the App Store
+   listing (reusing `docs/store-listing.md` and the review account).
 3. Claude: wrap the app with Capacitor (icon, splash screen, deep links,
    Google sign-in through the system browser and back), native push through
    the existing reminder job, Sign in with Apple (required on iPhone when
