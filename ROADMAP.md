@@ -1030,8 +1030,8 @@ for now.
      `AppDelegate.swift` trades Apple's address for a Firebase token, and
      `lib/fcm.ts` adds Apple's expiry, collapse id and sound). Entitlements
      for push, Sign in with Apple and `applinks:swingarm.app`.
-     🔨 **Sign in with Apple** built (Claude, 2026-11-11), hidden until
-     set up: the button shows only with `NEXT_PUBLIC_APPLE_SIGN_IN=on`
+     🔨 **Sign in with Apple** built (Claude, 2026-11-11; compiles in Xcode
+     on the Mac), hidden until set up: the button shows only with `NEXT_PUBLIC_APPLE_SIGN_IN=on`
      (Vercel, per environment). iPhone app: Apple's own sheet
      (`AppleSignInPlugin.swift`, nonce from `lib/appleNonce.ts`), token
      traded in `signInWithAppleToken`. Web and Android: Apple's web page
