@@ -1075,8 +1075,8 @@ for now.
        `NEXT_PUBLIC_APPLE_SIGN_IN=on` in `.env.local` and Vercel (Production
        and Preview); checked on the test site. Privacy policy (dated
        2026-11-14), help and a FAQ entry updated. ✅ **Released 2026-11-14**
-       (web and Android; the links file too). ⏳ Check Apple sign-in in the
-       Android app; the iPhone app's own sheet on a real iPhone.
+       (web and Android; the links file too). ✅ Works in the Android app
+       (owner). ⏳ The iPhone app's own sheet on a real iPhone.
      - Apple's email relay: riders who hide their email get a
        `@privaterelay.appleid.com` address, which only passes on mail from
        registered senders. Register `swingarm.app` / `noreply@swingarm.app`
