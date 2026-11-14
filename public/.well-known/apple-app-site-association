@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["W92KMFBD35.app.swingarm", "W92KMFBD35.app.swingarm.dev"],
+        "components": [
+          { "/": "/", "comment": "The dashboard, where reminder emails go" },
+          { "/": "/auth/confirm", "comment": "The sign-in email's link" }
+        ]
+      }
+    ]
+  }
+}

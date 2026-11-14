@@ -26,6 +26,12 @@ const nextConfig: NextConfig = {
           { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
         ],
       },
+      {
+        // iPhone universal links (lib/appLinks.ts): Apple reads it as JSON,
+        // and the file has no extension to say so.
+        source: "/.well-known/apple-app-site-association",
+        headers: [{ key: "Content-Type", value: "application/json" }],
+      },
     ];
   },
 };

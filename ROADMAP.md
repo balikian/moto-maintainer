@@ -1070,9 +1070,10 @@ for now.
        an Apple Account), then Production. Update the privacy policy (Apple
        as a sign-in service, its relay addresses, with the date), the help
        page and the home page FAQ when it goes live.
-     ⏳ Also still to do: `public/.well-known/apple-app-site-association`
-     (needs the Team ID); upload Apple's push key to Firebase (after
-     approval). Check on the Mac: Google
+     ✅ Apple approved the membership (2026-11-14); Team ID `W92KMFBD35`
+     (public: it's in the links file). `public/.well-known/apple-app-site-association`
+     lists `/` and `/auth/confirm` for both app ids, and the Xcode project
+     has the team. ⏳ Upload Apple's push key to Firebase. Check on the Mac: Google
      sign-in's return from Safari's sheet (may ask "Open in SwingArm?"),
      the print sheet (does it use the print styles?), safe areas, and the
      share sheet's Save to Files for exports.

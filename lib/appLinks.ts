@@ -4,9 +4,11 @@ import { isAppId, SITE_URL } from './site';
 const APP_SCHEME_PATHS = ['/auth/callback'];
 
 /**
- * swingarm.app pages that open in the Android app rather than the browser
+ * swingarm.app pages that open in the phone app rather than the browser
  * (Android App Links: the intent filter in AndroidManifest.xml, which must
- * list the same paths, and public/.well-known/assetlinks.json): the
+ * list the same paths, and public/.well-known/assetlinks.json; iPhone
+ * universal links: public/.well-known/apple-app-site-association, which
+ * lists them too): the
  * dashboard, where reminder emails go (`/?bike=…`, `/?view=garage`), and the
  * sign-in email's link. Share links stay in the browser: they're someone
  * else's bike.
