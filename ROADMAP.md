@@ -1060,6 +1060,19 @@ for now.
        Client IDs `app.swingarm.signin,app.swingarm,app.swingarm.dev`, the
        secret. ⚠ The secret expires after 180 days: note its date here and
        make a new one (both databases) before then.
+       ✅ 2026-11-14: App IDs (Dev grouped under `app.swingarm` for Sign in
+       with Apple), Services ID `app.swingarm.signin` (both databases'
+       domains and return URLs), key `SV73S9WSYU` (APNs and Sign in with
+       Apple; the .p8 is kept outside the repo). ⚠ **Secret made
+       2026-11-14 expires 2027-05-13**: make a new one by late April 2027.
+       ✅ Apple provider on in Supabase, test and production (2026-11-14),
+       hidden until the flag is on. Tested on the dev server (test
+       database): works, and the same email opens the same account as
+       Google and the email code (Supabase links verified emails). Riders
+       who pick Hide My Email get a separate account: say so in help/FAQ.
+       ✅ Email relay: `swingarm.app`, `send.swingarm.app` (Resend's
+       sending subdomain) and `noreply@swingarm.app` registered.
+       `NEXT_PUBLIC_APPLE_SIGN_IN=on` is in `.env.local`; not yet in Vercel.
      - Apple's email relay: riders who hide their email get a
        `@privaterelay.appleid.com` address, which only passes on mail from
        registered senders. Register `swingarm.app` / `noreply@swingarm.app`
