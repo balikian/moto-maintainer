@@ -384,6 +384,17 @@ released 2026-10-23, migration on production first; from
   bigger title, C status tag and thin line, D grouped rows). **On hold**
   (owner, 2026-10-23); today's cards stay.
 - ✅ **Released 2026-11-02** (all of `develop`, owner's go-ahead; the five migrations pushed to production first): a purchase date on the bike (John), preferred shop (one per bike), scheduling service (booked visit, ask the shop, add to calendar), and storage mode with the battery reminder. Details below.
+- **Signed out every weekend (rider feedback, 2026-11-14).** Supabase
+  sessions don't expire (one-hour access token, renewal token with no time
+  limit; cookies set for 400 days), but Safari caps cookies written by
+  script at 7 days, in the browser and in iPhone apps, and the browser
+  client saved every renewal that way. Also, server components (the
+  dashboard at `/`) renewed an expired session but couldn't save it. Fix on
+  `develop`: `proxy.ts` renews the session before pages render and sets the
+  cookies from the server, and after each renewal in the browser,
+  `lib/supabase/client.ts` posts to `app/api/auth/session`, which sends the
+  same cookies back from the server (`lib/authCookies.ts`). Ask the rider
+  after a week or two whether it still happens (and Safari or not).
 
 Discussed (2026-10-21), nothing decided: other sign-in options. Passkeys
 are the most secure and quickest but Supabase's support is limited (check
