@@ -52,6 +52,10 @@ const FAQ = [
     a: 'No. Switch between miles and kilometers any time; your history converts with it.',
   },
   {
+    q: 'How do I sign in?',
+    a: 'With Google, Apple or a code emailed to you; no password. The same email address opens the same garage every way. With Apple, choose Share My Email: Hide My Email starts a separate garage.',
+  },
+  {
     q: 'Who can see my garage?',
     a: 'Only you. A service history is shared only when you create a link, and you can turn the link off.',
   },

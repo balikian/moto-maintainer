@@ -79,6 +79,11 @@ export default async function HelpPage() {
             <Ui>Garage</Ui> and <Ui>More</Ui>, with the red <Ui>Log service</Ui> button in the middle. On a computer
             they’re in the navigation bar at the top. Your avatar at the top right opens the <Ui>More</Ui> page.
           </p>
+          <p className="text-muted">
+            Sign in with Google, with Apple, or with a code emailed to you. Any of them opens the same garage as long as
+            the email address is the same. With Apple, choose <Ui>Share My Email</Ui>: <Ui>Hide My Email</Ui> gives
+            SwingArm a different address, so you’d start a new, empty garage.
+          </p>
         </div>
 
         <nav aria-label="On this page" className={`${ui.card} p-4`}>

@@ -18,7 +18,7 @@ export default async function PrivacyPage() {
   return (
     <LegalPage
       title="Privacy policy"
-      updated="November 3, 2026"
+      updated="November 14, 2026"
       signedIn={user !== null}
       intro={
         <>
@@ -37,7 +37,8 @@ export default async function PrivacyPage() {
         <Bullets>
           <li>
             <strong>Your account:</strong> your email address. If you sign in with Google, Google also gives us your name
-            and profile picture.
+            and profile picture. If you sign in with Apple, Apple gives us only your email address, or, if you choose
+            Hide My Email, a private address from Apple that forwards our emails to you.
           </li>
           <li>
             <strong>Your bikes and service:</strong> each bike’s year, make, model, odometer readings, when you bought it
@@ -138,12 +139,12 @@ export default async function PrivacyPage() {
             <strong>Push services:</strong> if you turn on push notifications, the company behind your browser delivers
             them to your device: Google (Chrome and Android), Apple (Safari, iPhone and iPad), Microsoft (Edge) or
             Mozilla (Firefox). The notification’s text is encrypted on the way, so they can’t read it; they see your
-            device’s push address and when a notification is sent. In the SwingArm app for Android, Google’s Firebase
-            Cloud Messaging delivers them instead; Google handles the notification’s text, along with the app’s push
-            address, to deliver it.
+            device’s push address and when a notification is sent. In the SwingArm apps for Android and iPhone, Google’s
+            Firebase Cloud Messaging delivers them instead, through Apple’s push service on iPhone; Google (and, on
+            iPhone, Apple) handles the notification’s text, along with the app’s push address, to deliver it.
           </li>
           <li>
-            <strong>Google:</strong> if you choose Sign in with Google.
+            <strong>Google or Apple:</strong> if you choose Sign in with Google or Sign in with Apple.
           </li>
           <li>
             <strong>Anthropic:</strong> when we add a manufacturer’s maintenance schedule from an owner’s manual, the
