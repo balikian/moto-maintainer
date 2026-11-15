@@ -1109,8 +1109,14 @@ for now.
      invite email has no redeem code, only a "View in TestFlight" link,
      which worked on Cindy's iPhone under her Apple ID. Store build signs
      in and its test notification arrives (Apple's live push service).
-     ⏳ Add for Review (manual release, so the site's App Store link goes
-     up when it's out).
+     ✅ **Submitted for App Review (2026-11-14)**, manual release, with the
+     review account in App Review Information and Content Rights answered
+     (third-party content: yes, rights: yes; makes from NHTSA, intervals
+     from manuals, manuals linked). ⏳ Apple's answer. When approved: the
+     owner clicks Release, then Claude turns the home page's App Store box
+     into a link (the listing's id is in App Store Connect → App
+     Information → Apple ID), updates help, and the announcement can go
+     out (Resend Pro the day before; see Launch checklist item 3).
      ✅ Google Play is live (seen 2026-11-14, listed as "SwingArm: Motorcycle
      Service"). Home page and help now link to it; the App Store stays
      "coming soon" until Apple approves.
