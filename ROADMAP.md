@@ -1090,6 +1090,18 @@ for now.
      (`lib/reviewAccount.ts`, review@swingarm.app with a password, made for
      Play). Check "Sign-in required" and enter it, and change the notes'
      first paragraph to say so (Claude first suggested unchecking it).
+     ✅ Screenshots: the Play set's five screens from production's review
+     account, iPhone 17 Pro Max simulator (1320×2868), uploaded under
+     "iPhone with Dynamic Island (medium display)" (2026-11-14).
+     ✅ Fixed (2026-11-14): signing in with a password or emailed code
+     showed "Can't reach SwingArm" in the iPhone app. Capacitor loads the
+     offline page for any failed load, including one cancelled because
+     another replaced it (LoginCard's full load of `/` racing Next's
+     redirect from /login). `CancelledLoadFilter` in
+     `SwingArmViewController.swift` drops cancelled loads; checked in the
+     simulator. Needs the store build to reach riders.
+     ⏳ Before submitting: Pricing and Availability → leave out the EU
+     storefronts (decided 2026-11-08, item 5 above: no EU trader address).
      ✅ App Store Connect record created (2026-11-14): **"SwingArm: Moto
      Maintenance"** ("SwingArm" was taken; the Home Screen name stays
      SwingArm), bundle `app.swingarm`, SKU `swingarm-ios`.
