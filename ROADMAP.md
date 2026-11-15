@@ -1084,7 +1084,12 @@ for now.
      URLs), CSV export through the share sheet. ✗ Print said "This page is
      private": the iPhone app hands `target="_blank"` links to Safari,
      which isn't signed in. Fixed (ExportMenu opens the page in place in
-     the app); ⏳ check on the iPhone once released.
+     the app); released 2026-11-14 and ✅ works on the iPhone (print
+     sheet, Back to garage).
+     ⏳ App Review Information: there IS a review account
+     (`lib/reviewAccount.ts`, review@swingarm.app with a password, made for
+     Play). Check "Sign-in required" and enter it, and change the notes'
+     first paragraph to say so (Claude first suggested unchecking it).
      ✅ App Store Connect record created (2026-11-14): **"SwingArm: Moto
      Maintenance"** ("SwingArm" was taken; the Home Screen name stays
      SwingArm), bundle `app.swingarm`, SKU `swingarm-ios`.
