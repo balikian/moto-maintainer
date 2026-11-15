@@ -1112,7 +1112,11 @@ for now.
      ✅ **Submitted for App Review (2026-11-14)**, manual release, with the
      review account in App Review Information and Content Rights answered
      (third-party content: yes, rights: yes; makes from NHTSA, intervals
-     from manuals, manuals linked). ⏳ Apple's answer. When approved: the
+     from manuals, manuals linked). ✅ **Approved by App Review
+     (2026-11-15)** and released by the owner the same day; Apple ID
+     6834998878 (`APP_STORE_URL` in `lib/site.ts`). Home page and help link
+     to it (Claude, 2026-11-15, on develop). Next: the announcement. The
+     plan was: the
      owner clicks Release, then Claude turns the home page's App Store box
      into a link (the listing's id is in App Store Connect → App
      Information → Apple ID), updates help, and the announcement can go

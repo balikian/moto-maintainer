@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { OPEN_GRAPH, PLAY_STORE_URL, SUPPORT_EMAIL } from '@/lib/site';
+import { APP_STORE_URL, OPEN_GRAPH, PLAY_STORE_URL, SUPPORT_EMAIL } from '@/lib/site';
 import { getSignedInClient } from '@/lib/supabase/server';
 import { SITE_WRAP, SiteFooter, SiteHeader } from '../components/SiteChrome';
 import { ui } from '../components/ui';
@@ -85,11 +85,15 @@ export default async function HelpPage() {
             SwingArm a different address, so you’d start a new, empty garage.
           </p>
           <p className="text-muted">
-            SwingArm works in any browser, and there’s an app for Android on{' '}
+            SwingArm works in any browser, and there are apps for iPhone on the{' '}
+            <a href={APP_STORE_URL} className="font-bold text-accent hover:underline">
+              App Store
+            </a>{' '}
+            and for Android on{' '}
             <a href={PLAY_STORE_URL} className="font-bold text-accent hover:underline">
               Google Play
             </a>
-            . The iPhone app is coming soon. Your garage is the same everywhere you sign in.
+            . Your garage is the same everywhere you sign in.
           </p>
         </div>
 

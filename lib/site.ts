@@ -13,6 +13,9 @@ export const SITE_URL = 'https://swingarm.app';
 /** The Android app's Google Play listing (live since 2026-11). */
 export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=app.swingarm';
 
+/** The iPhone app's App Store listing (live since 2026-11-15; its Apple ID from App Store Connect). */
+export const APP_STORE_URL = 'https://apps.apple.com/app/id6834998878';
+
 /** Describes the link preview picture, app/opengraph-image.tsx. */
 export const OG_IMAGE_ALT = 'SwingArm: know what your bike needs before it’s overdue.';
 

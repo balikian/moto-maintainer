@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Check, X } from 'lucide-react';
-import { PLAY_STORE_URL, SUPPORT_EMAIL } from '@/lib/site';
+import { APP_STORE_URL, PLAY_STORE_URL, SUPPORT_EMAIL } from '@/lib/site';
 import { SITE_WRAP, SiteFooter, SiteHeader } from './SiteChrome';
 import { ui } from './ui';
 
@@ -163,7 +163,7 @@ export default function HomePage({ signedIn, accountDeleted = false }: HomePageP
                 See pricing
               </a>
             </div>
-            <p className="text-sm font-semibold text-muted">Free during early access. Works in your browser and on Android; iPhone app coming soon.</p>
+            <p className="text-sm font-semibold text-muted">Free during early access. Works in your browser, on iPhone and on Android.</p>
           </div>
           <PhonePreview />
         </section>
@@ -219,11 +219,20 @@ export default function HomePage({ signedIn, accountDeleted = false }: HomePageP
             <div className="flex max-w-xl flex-col gap-2">
               <h2 className="text-3xl font-extrabold tracking-tight">Get the app</h2>
               <p className="leading-relaxed text-muted">
-                The Android app is here and the iPhone app is on the way, with reminders right on your phone. Your garage comes
-                with you: sign in with the same account.
+                SwingArm is on iPhone and Android, with reminders right on your phone. Your garage comes with you: sign in
+                with the same account.
               </p>
             </div>
             <ul className="flex flex-wrap gap-3">
+              <li>
+                <a
+                  href={APP_STORE_URL}
+                  className="flex min-h-14 min-w-44 flex-col justify-center rounded-xl border border-line bg-page px-4 transition-colors hover:border-accent"
+                >
+                  <span className="text-xs font-bold text-muted">Download on the</span>
+                  <span className="text-[17px] font-extrabold">App Store</span>
+                </a>
+              </li>
               <li>
                 <a
                   href={PLAY_STORE_URL}
@@ -232,10 +241,6 @@ export default function HomePage({ signedIn, accountDeleted = false }: HomePageP
                   <span className="text-xs font-bold text-muted">Get it on</span>
                   <span className="text-[17px] font-extrabold">Google Play</span>
                 </a>
-              </li>
-              <li className="flex min-h-14 min-w-44 flex-col justify-center rounded-xl border border-line bg-page px-4">
-                <span className="text-xs font-bold text-muted">Coming soon to</span>
-                <span className="text-[17px] font-extrabold">App Store</span>
               </li>
             </ul>
           </div>
