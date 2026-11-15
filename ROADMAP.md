@@ -1077,6 +1077,17 @@ for now.
        2026-11-14), help and a FAQ entry updated. ✅ **Released 2026-11-14**
        (web and Android; the links file too). ✅ Works in the Android app
        (owner). ⏳ The iPhone app's own sheet on a real iPhone.
+     ✅ Real iPhone (Cindy's, development build on production, 2026-11-14):
+     Sign in with Apple's own sheet, push (test, and tapping it opens the
+     app), a texted swingarm.app link opens the app, Google sign-in (after
+     adding `app.swingarm.dev://auth/callback` to production's Redirect
+     URLs), CSV export through the share sheet. ✗ Print said "This page is
+     private": the iPhone app hands `target="_blank"` links to Safari,
+     which isn't signed in. Fixed (ExportMenu opens the page in place in
+     the app); ⏳ check on the iPhone once released.
+     ✅ App Store Connect record created (2026-11-14): **"SwingArm: Moto
+     Maintenance"** ("SwingArm" was taken; the Home Screen name stays
+     SwingArm), bundle `app.swingarm`, SKU `swingarm-ios`.
      - Apple's email relay: riders who hide their email get a
        `@privaterelay.appleid.com` address, which only passes on mail from
        registered senders. Register `swingarm.app` / `noreply@swingarm.app`

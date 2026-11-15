@@ -1,8 +1,10 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useRef, useState } from 'react';
 import { Check, Download, FileDown, Printer } from 'lucide-react';
 import { buildServiceHistoryCsv, historyFileName } from '@/lib/historyExport';
+import { isNativeApp } from '@/lib/nativeApp';
 import type { Motorcycle, ServiceLog, UnitSystem } from '@/lib/types';
 import { useDismiss } from '../hooks/useDismiss';
 import { downloadFile, type SaveResult } from './download';
@@ -22,6 +24,7 @@ function downloadCsv(bike: Motorcycle, logs: ServiceLog[], unitSystem: UnitSyste
 }
 
 export default function ExportMenu({ bike, logs, unitSystem }: ExportMenuProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   // In the Android app the file lands in Downloads without a sign from the phone, so the menu says so before closing.
   const [savedToDownloads, setSavedToDownloads] = useState(false);
@@ -74,7 +77,15 @@ export default function ExportMenu({ bike, logs, unitSystem }: ExportMenuProps) 
             href={`/history/${bike.id}`}
             target="_blank"
             rel="noreferrer"
-            onClick={() => setIsOpen(false)}
+            onClick={(event) => {
+              setIsOpen(false);
+              // The iPhone app hands new tabs to Safari, which isn't signed in,
+              // so in the app the page opens in place (it has a way back).
+              if (isNativeApp()) {
+                event.preventDefault();
+                router.push(`/history/${bike.id}`);
+              }
+            }}
             className={menuItemClass}
           >
             <Printer size={15} className="text-accent" /> Print / Save as PDF
