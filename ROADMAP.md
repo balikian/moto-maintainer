@@ -1104,9 +1104,13 @@ for now.
      countries, EU included** (changed from 2026-11-08: Google Play's
      public listing already shows the LLC's Renton address everywhere), and
      the Digital Services Act trader declaration done under Business.
-     ✅ Build 1.0 (1) uploaded from Xcode (2026-11-14). ⏳ Processing, then
-     TestFlight on Cindy's iPhone (store push goes through Apple's live
-     service), then Add for Review.
+     ✅ Build 1.0 (1) uploaded from Xcode (2026-11-14), processed in under
+     an hour. ✅ TestFlight: internal group "Team" (owner as tester); the
+     invite email has no redeem code, only a "View in TestFlight" link,
+     which worked on Cindy's iPhone under her Apple ID. Store build signs
+     in and its test notification arrives (Apple's live push service).
+     ⏳ Add for Review (manual release, so the site's App Store link goes
+     up when it's out).
      ✅ Google Play is live (seen 2026-11-14, listed as "SwingArm: Motorcycle
      Service"). Home page and help now link to it; the App Store stays
      "coming soon" until Apple approves.
