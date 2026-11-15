@@ -10,6 +10,9 @@ export const COMPANY_NAME = 'Cheese and Beer LLC';
 /** The production site, for links in emails sent from production. */
 export const SITE_URL = 'https://swingarm.app';
 
+/** The Android app's Google Play listing (live since 2026-11). */
+export const PLAY_STORE_URL = 'https://play.google.com/store/apps/details?id=app.swingarm';
+
 /** Describes the link preview picture, app/opengraph-image.tsx. */
 export const OG_IMAGE_ALT = 'SwingArm: know what your bike needs before it’s overdue.';
 

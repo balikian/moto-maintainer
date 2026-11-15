@@ -1100,8 +1100,16 @@ for now.
      redirect from /login). `CancelledLoadFilter` in
      `SwingArmViewController.swift` drops cancelled loads; checked in the
      simulator. Needs the store build to reach riders.
-     ⏳ Before submitting: Pricing and Availability → leave out the EU
-     storefronts (decided 2026-11-08, item 5 above: no EU trader address).
+     ✅ Pricing and Availability (owner, 2026-11-14): Free, **all
+     countries, EU included** (changed from 2026-11-08: Google Play's
+     public listing already shows the LLC's Renton address everywhere), and
+     the Digital Services Act trader declaration done under Business.
+     ✅ Build 1.0 (1) uploaded from Xcode (2026-11-14). ⏳ Processing, then
+     TestFlight on Cindy's iPhone (store push goes through Apple's live
+     service), then Add for Review.
+     ✅ Google Play is live (seen 2026-11-14, listed as "SwingArm: Motorcycle
+     Service"). Home page and help now link to it; the App Store stays
+     "coming soon" until Apple approves.
      ✅ App Store Connect record created (2026-11-14): **"SwingArm: Moto
      Maintenance"** ("SwingArm" was taken; the Home Screen name stays
      SwingArm), bundle `app.swingarm`, SKU `swingarm-ios`.

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { OPEN_GRAPH, SUPPORT_EMAIL } from '@/lib/site';
+import { OPEN_GRAPH, PLAY_STORE_URL, SUPPORT_EMAIL } from '@/lib/site';
 import { getSignedInClient } from '@/lib/supabase/server';
 import { SITE_WRAP, SiteFooter, SiteHeader } from '../components/SiteChrome';
 import { ui } from '../components/ui';
@@ -83,6 +83,13 @@ export default async function HelpPage() {
             Sign in with Google, with Apple, or with a code emailed to you. Any of them opens the same garage as long as
             the email address is the same. With Apple, choose <Ui>Share My Email</Ui>: <Ui>Hide My Email</Ui> gives
             SwingArm a different address, so you’d start a new, empty garage.
+          </p>
+          <p className="text-muted">
+            SwingArm works in any browser, and there’s an app for Android on{' '}
+            <a href={PLAY_STORE_URL} className="font-bold text-accent hover:underline">
+              Google Play
+            </a>
+            . The iPhone app is coming soon. Your garage is the same everywhere you sign in.
           </p>
         </div>
 
