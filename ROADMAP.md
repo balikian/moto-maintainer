@@ -1115,7 +1115,12 @@ for now.
      from manuals, manuals linked). ✅ **Approved by App Review
      (2026-11-15)** and released by the owner the same day; Apple ID
      6834998878 (`APP_STORE_URL` in `lib/site.ts`). Home page and help link
-     to it (Claude, 2026-11-15, on develop). Next: the announcement. The
+     to it (Claude, 2026-11-15, on develop). ✗ Still 404 on 2026-11-20:
+     App Store Connect said "Removed from App Store" because App
+     Availability had no countries. Owner set all countries again
+     (2026-11-20; "Processing to Available"). ✅ **Live on the App Store**
+     (link opens; home page and help links released to production). Both
+     apps are now in both stores. Next: the announcement. The
      plan was: the
      owner clicks Release, then Claude turns the home page's App Store box
      into a link (the listing's id is in App Store Connect → App
