@@ -8,7 +8,9 @@ import { getSignedInClient } from '@/lib/supabase/server';
 import type { BikeManual, ModelEntry } from '@/lib/types';
 import AppNav from '../components/AppNav';
 import { ui } from '../components/ui';
+import { deploymentSiteUrl } from '@/lib/site';
 import AddScheduleForm from './AddScheduleForm';
+import FoundingRidersAdmin, { type AdminFoundingRider, type AdminInvite } from './FoundingRidersAdmin';
 import ImportScheduleButton from './ImportScheduleButton';
 
 type PendingCustomModel = { id: string; make: string; model: string; created_at: string };
@@ -32,12 +34,17 @@ export default async function AdminPage() {
   const { data: isAdmin } = await supabase.rpc('is_app_admin');
   if (!isAdmin) notFound();
 
-  const [manualsResult, schedulesResult, customModelsResult, approvedModelsResult] = await Promise.all([
+  const [manualsResult, schedulesResult, customModelsResult, approvedModelsResult, invitesResult, foundingResult] = await Promise.all([
     supabase.from('bike_manuals').select('*').neq('status', 'rejected').order('created_at', { ascending: true }),
     supabase.from('model_schedules').select('id,make,model,year_from,year_to,status,submitted_by,created_at'),
     supabase.from('custom_models').select('*').eq('status', 'pending').order('created_at', { ascending: true }),
     supabase.from('custom_models').select('make,model').eq('status', 'approved'),
+    supabase.from('invites').select('code,note,active,created_at').order('created_at', { ascending: false }),
+    supabase.rpc('admin_founding_riders'),
   ]);
+  // Before the founding riders migration has been run, this section just stays empty.
+  const invites = (invitesResult.data ?? []) as AdminInvite[];
+  const foundingRiders = (foundingResult.data ?? []) as AdminFoundingRider[];
   // The make and model lists riders pick from, for "Add a schedule".
   const catalog = mergeCatalog(BASE_CATALOG, approvedModelsResult.data ?? []);
   if (manualsResult.error) throw new Error(manualsResult.error.message);
@@ -62,6 +69,11 @@ export default async function AdminPage() {
             ← Back to garage
           </Link>
         </div>
+
+        <section className="space-y-3">
+          <h2 className={ui.sectionTitle}>Founding riders</h2>
+          <FoundingRidersAdmin invites={invites} riders={foundingRiders} siteUrl={deploymentSiteUrl()} />
+        </section>
 
         <section className="space-y-3">
           <h2 className={ui.sectionTitle}>Add a schedule</h2>

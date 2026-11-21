@@ -12,6 +12,7 @@ import Avatar from './Avatar';
 import CountBadge from './CountBadge';
 import DeleteAccountModal from './DeleteAccountModal';
 import DownloadDataButton from './DownloadDataButton';
+import FoundingBadge from './FoundingBadge';
 import ImportDataModal from './ImportDataModal';
 import { SUPPORT_EMAIL } from '@/lib/site';
 import { ui } from './ui';
@@ -30,6 +31,8 @@ type MoreViewProps = {
   isAdmin: boolean;
   /** Admins only: submissions waiting for review. */
   reviewCount: number;
+  /** Founding riders (invited at launch) keep SwingArm free for good. */
+  founding: boolean;
   /** The rider's bikes, so Import can point out ones already in the garage. */
   bikes: Motorcycle[];
   onChangeUnits: (unitSystem: UnitSystem) => void;
@@ -356,6 +359,7 @@ export default function MoreView({
   push,
   isAdmin,
   reviewCount,
+  founding,
   bikes,
   onChangeUnits,
   onChangeTheme,
@@ -369,12 +373,23 @@ export default function MoreView({
 
   return (
     <div className="space-y-6">
-      <div className={`${ui.card} flex items-center gap-3 p-3.5`}>
-        <Avatar url={avatarUrl} className="h-11 w-11" iconSize={20} />
-        <div className="min-w-0">
-          <div className="truncate text-base font-extrabold" title={email ?? undefined}>{email ?? 'Signed in'}</div>
-          <div className="text-sm font-medium text-muted">{providerLabel(provider)}</div>
+      <div className={`${ui.card} p-3.5`}>
+        <div className="flex items-center gap-3">
+          <span className="relative shrink-0">
+            <Avatar url={avatarUrl} className="h-11 w-11" iconSize={20} />
+            {founding && <FoundingBadge className="absolute -right-1 -top-1 h-5 w-5 ring-2 ring-surface" />}
+          </span>
+          <div className="min-w-0">
+            <div className="truncate text-base font-extrabold" title={email ?? undefined}>{email ?? 'Signed in'}</div>
+            <div className="text-sm font-medium text-muted">{providerLabel(provider)}</div>
+          </div>
         </div>
+        {founding && (
+          <p className="mt-3 border-t border-line pt-3 text-sm text-muted">
+            <span className="font-extrabold text-fg">Founding rider.</span> SwingArm stays free for you for good, paid
+            features included. Thanks for riding with us from the start.
+          </p>
+        )}
       </div>
 
       <Group

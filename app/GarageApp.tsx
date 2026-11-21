@@ -232,6 +232,13 @@ export default function GarageApp() {
   });
   const reviewCount = reviewCountQuery.data ?? 0;
 
+  // Founding riders (invited at launch; free for good) get a star on their avatar.
+  const foundingQuery = useSupabaseQuery<boolean>(userId, async () => {
+    const { data, error } = await supabase.from('founding_riders').select('user_id').maybeSingle();
+    return { data: data !== null, error };
+  });
+  const founding = foundingQuery.data === true;
+
   // Makes/models riders added; approved ones (and your own) join the bike form's lists.
   const customModelsQuery = useSupabaseQuery<CustomModel[]>(userId, () =>
     supabase.from('custom_models').select('make,model').neq('status', 'rejected')
@@ -582,6 +589,7 @@ export default function GarageApp() {
         avatarUrl={avatarUrl}
         email={email}
         reviewCount={reviewCount}
+        founding={founding}
         onNavigate={setView}
         onLogService={logService}
         canLogService={activeBike !== null}
@@ -589,7 +597,14 @@ export default function GarageApp() {
 
       {/* grid-cols-1 lets columns shrink below their longest unbroken line (a long bike name) instead of overflowing. */}
       <main className={`mx-auto grid w-full max-w-2xl flex-1 grid-cols-1 content-start gap-6 px-4 pb-8 pt-4 md:px-8 md:pt-8 lg:pb-12 lg:pt-7 ${DESKTOP_WIDTH[view]}`}>
-        <TopBar avatarUrl={avatarUrl} email={email} reviewCount={reviewCount} onNavigate={setView} showAvatar={view !== 'more'} />
+        <TopBar
+          avatarUrl={avatarUrl}
+          email={email}
+          reviewCount={reviewCount}
+          founding={founding}
+          onNavigate={setView}
+          showAvatar={view !== 'more'}
+        />
         {view === 'tasks' ? (
           <h1 className="sr-only">Your tasks</h1>
         ) : (
@@ -742,6 +757,7 @@ export default function GarageApp() {
             push={preferences.push}
             isAdmin={isAdmin}
             reviewCount={reviewCount}
+            founding={founding}
             bikes={bikes}
             onImported={handleImported}
             onChangeUnits={(next) => void updatePreferences({ unitSystem: next })}

@@ -17,9 +17,10 @@ export default function CountBadge({ count, className = '' }: CountBadgeProps) {
   );
 }
 
-/** The avatar link's label, with the review count for admins. */
-export function accountLinkLabel(email: string | null, reviewCount: number): string {
-  const base = email ? `Signed in as ${email}. Account and settings` : 'Account and settings';
+/** The avatar link's label, with founding riders' star and the review count for admins. */
+export function accountLinkLabel(email: string | null, reviewCount: number, founding = false): string {
+  const who = email ? `Signed in as ${email}${founding ? ', founding rider' : ''}.` : founding ? 'Founding rider.' : '';
+  const base = `${who ? `${who} ` : ''}Account and settings`;
   if (reviewCount <= 0) return base;
   return `${base}, ${reviewCount} ${reviewCount === 1 ? 'submission' : 'submissions'} to review`;
 }

@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
-import { HOME_SCREEN_NAME, OPEN_GRAPH, SITE_URL, TEST_SITE_URL } from "@/lib/site";
+import { HOME_SCREEN_NAME, OPEN_GRAPH, deploymentSiteUrl } from "@/lib/site";
 import NativeAppLinks from "./components/NativeAppLinks";
 import NativeSystemBars from "./components/NativeSystemBars";
 import SiteAnalytics from "./components/SiteAnalytics";
@@ -21,9 +21,7 @@ export const metadata: Metadata = {
   // Link previews need full addresses (the Open Graph image is
   // app/opengraph-image.tsx). The test site's own address, so its previews
   // can be checked there; Vercel's default for previews is behind its login.
-  metadataBase: new URL(
-    isProduction ? SITE_URL : process.env.VERCEL_ENV === "preview" ? TEST_SITE_URL : "http://localhost:3000",
-  ),
+  metadataBase: new URL(deploymentSiteUrl()),
   title: "SwingArm",
   description,
   // What a shared link shows. A page that sets its own openGraph replaces

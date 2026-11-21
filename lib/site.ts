@@ -35,6 +35,16 @@ export const OPEN_GRAPH = {
 export const TEST_SITE_URL = 'https://test.swingarm.app';
 
 /**
+ * This deployment's own address: production, the test site, or the dev
+ * server. Server-only (VERCEL_ENV isn't in the browser).
+ */
+export function deploymentSiteUrl(): string {
+  if (process.env.VERCEL_ENV === 'production') return SITE_URL;
+  if (process.env.VERCEL_ENV === 'preview') return TEST_SITE_URL;
+  return 'http://localhost:3000';
+}
+
+/**
  * The phone apps' ids (capacitor.config.ts; development builds add .dev),
  * which are also their link schemes: `app.swingarm://auth/callback` opens the app.
  */

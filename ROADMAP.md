@@ -59,7 +59,7 @@ do it; Claude = code or setup Claude can do.
    left at their defaults). ⏳ Resend's free plan is 100 emails a day, shared
    by sign-in codes and reminders (the reminder run stops at 80): switch to
    Pro ($20 a month, no daily cap) the day before announcing; drop back if
-   sign-ups stay low.
+   sign-ups stay low. ✅ Resend on Pro (owner, 2026-11-21).
 4. ✅ Claude: link previews and search basics: an Open Graph image and
    description (what a link shows in texts and Facebook groups), a sitemap
    and robots file; owner submits the sitemap in Search Console (swingarm.app
@@ -104,6 +104,22 @@ do it; Claude = code or setup Claude can do.
    (people who know the owner at store approval, then model groups, forums
    and Reddit at spring prep), goals, channels, a readiness checklist, open
    decisions. ⏳ Owner: read it and settle the open decisions.
+   **Decided (owner, 2026-11-21):** wave 1 (people the owner knows) goes
+   out the week of 2026-11-23; wave 2 (groups, forums, Reddit) soon after,
+   not held for spring. **Founding riders:** wave 1 stays free even after
+   paid plans start; later sign-ups start free and pay once plans arrive.
+   **Decided (owner, 2026-11-21):** founding riders get everything free for
+   good: one free tier and one paid (Pro) tier are planned, and founding
+   riders are always on Pro without paying. Invite links will also serve
+   one-off invites once the paid tier exists (the `invites.kind` column).
+   🔨 Built (Claude, 2026-11-21, on develop): `founding_riders` and
+   `invites` (`20261121120000_founding_riders.sql`, on test), invite links
+   at `/join/<code>` (works with every sign-in method through `proxy.ts`),
+   the admin page's Founding riders section (new link, on/off, add by
+   email, remove), and a star on the avatar plus a line on More. ⏳ Owner:
+   try it on the test site; then the migration on production and a
+   release, before wave 1's texts go out (or add wave 1 by email
+   afterwards).
 
 **Decided (owner, 2026-10-27): announce after the phone apps and Sign in
 with Apple**, not before as first planned, so riders who hear about it can

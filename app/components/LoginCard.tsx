@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, type SubmitEvent } from 'react';
+import { useState, type ReactNode, type SubmitEvent } from 'react';
 import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Capacitor, registerPlugin } from '@capacitor/core';
@@ -30,7 +30,12 @@ function AppleLogo() {
   );
 }
 
-export default function LoginCard() {
+type LoginCardProps = {
+  /** Replaces the line under the logo, e.g. an invite's welcome (app/join). */
+  intro?: ReactNode;
+};
+
+export default function LoginCard({ intro }: LoginCardProps = {}) {
   const [email, setEmail] = useState('');
   const [linkSent, setLinkSent] = useState(false);
   const [code, setCode] = useState('');
@@ -163,7 +168,7 @@ export default function LoginCard() {
           <h1 className="flex justify-center">
             <BrandLogo className="h-14" />
           </h1>
-          <p className={`mt-2 text-sm ${ui.muted}`}>Sign in to unlock your digital garage.</p>
+          {intro ?? <p className={`mt-2 text-sm ${ui.muted}`}>Sign in to unlock your digital garage.</p>}
         </div>
 
         <div className="space-y-4">
