@@ -116,10 +116,12 @@ do it; Claude = code or setup Claude can do.
    `invites` (`20261121120000_founding_riders.sql`, on test), invite links
    at `/join/<code>` (works with every sign-in method through `proxy.ts`),
    the admin page's Founding riders section (new link, on/off, add by
-   email, remove), and a star on the avatar plus a line on More. ⏳ Owner:
-   try it on the test site; then the migration on production and a
-   release, before wave 1's texts go out (or add wave 1 by email
-   afterwards).
+   email, remove), and a star on the avatar plus a line on More. ✅ Owner
+   tried it on test; released 2026-11-23, migrations on production.
+   **Decided (owner, 2026-11-23):** everyone with an account at release
+   is a founding rider (`20261123120000_founding_riders_launch.sql`);
+   invite links aren't needed for a few weeks, so riders who sign up
+   after that are added by email on the admin page.
 
 **Decided (owner, 2026-10-27): announce after the phone apps and Sign in
 with Apple**, not before as first planned, so riders who hear about it can
