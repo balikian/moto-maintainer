@@ -232,7 +232,7 @@ export default function GarageApp() {
   });
   const reviewCount = reviewCountQuery.data ?? 0;
 
-  // Founding riders (invited at launch; free for good) get a wrench on their avatar.
+  // Founding riders (invited at launch; free for good) get a sprocket on their avatar.
   // Filtered by user: admins can read every rider's row.
   const foundingQuery = useSupabaseQuery<boolean>(userId, async (uid) => {
     const { data, error } = await supabase.from('founding_riders').select('user_id').eq('user_id', uid).maybeSingle();

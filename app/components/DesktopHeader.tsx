@@ -16,7 +16,7 @@ type DesktopHeaderProps = {
   email: string | null;
   /** Admins only: submissions waiting for review, shown as a badge on the avatar. */
   reviewCount: number;
-  /** Founding riders get a wrench on the avatar. */
+  /** Founding riders get a sprocket on the avatar. */
   founding: boolean;
   onNavigate: (view: View) => void;
   onLogService: () => void;
