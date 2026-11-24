@@ -17,7 +17,7 @@ export default function CountBadge({ count, className = '' }: CountBadgeProps) {
   );
 }
 
-/** The avatar link's label, with founding riders' star and the review count for admins. */
+/** The avatar link's label, with founding riders' badge and the review count for admins. */
 export function accountLinkLabel(email: string | null, reviewCount: number, founding = false): string {
   const who = email ? `Signed in as ${email}${founding ? ', founding rider' : ''}.` : founding ? 'Founding rider.' : '';
   const base = `${who ? `${who} ` : ''}Account and settings`;

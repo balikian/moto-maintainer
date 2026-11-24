@@ -10,7 +10,7 @@ type TopBarProps = {
   email: string | null;
   /** Admins only: submissions waiting for review, shown as a badge on the avatar. */
   reviewCount: number;
-  /** Founding riders get a star on the avatar. */
+  /** Founding riders get a wrench on the avatar. */
   founding: boolean;
   onNavigate: (view: View) => void;
   /** False on More itself, where the avatar would link to the same screen. */

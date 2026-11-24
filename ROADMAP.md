@@ -116,8 +116,8 @@ do it; Claude = code or setup Claude can do.
    `invites` (`20261121120000_founding_riders.sql`, on test), invite links
    at `/join/<code>` (works with every sign-in method through `proxy.ts`),
    the admin page's Founding riders section (new link, on/off, add by
-   email, remove), and a star on the avatar plus a line on More. ✅ Owner
-   tried it on test; released 2026-11-23, migrations on production.
+   email, remove), and a badge on the avatar (a wrench, picked over a
+   star on 2026-11-23) plus a line on More. ✅ Owner tried it on test; released 2026-11-23, migrations on production.
    **Decided (owner, 2026-11-23):** everyone with an account at release
    is a founding rider (`20261123120000_founding_riders_launch.sql`);
    invite links aren't needed for a few weeks, so riders who sign up

@@ -232,7 +232,7 @@ export default function GarageApp() {
   });
   const reviewCount = reviewCountQuery.data ?? 0;
 
-  // Founding riders (invited at launch; free for good) get a star on their avatar.
+  // Founding riders (invited at launch; free for good) get a wrench on their avatar.
   const foundingQuery = useSupabaseQuery<boolean>(userId, async () => {
     const { data, error } = await supabase.from('founding_riders').select('user_id').maybeSingle();
     return { data: data !== null, error };
